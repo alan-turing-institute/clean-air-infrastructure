@@ -34,13 +34,16 @@ from cleanair.databases.tables.fakes import (
     SatelliteGridSchema,
     SatelliteForecastSchema,
 )
+from cleanair.instance import AirQualityInstance
 from cleanair.models import ModelConfig, ModelData
 from cleanair.types import (
     BaseModelParams,
     DataConfig,
+    FeatureBufferSize,
     FeatureNames,
     KernelParams,
     KernelType,
+    ModelName,
     MRDGPParams,
     Source,
     Species,
@@ -50,7 +53,7 @@ from ..data_generators.scoot_generator import ScootGenerator
 
 # pylint: disable=W0613
 @pytest.fixture(scope="class")
-def valid_config(dataset_start_date, dataset_end_date) -> DataConfig:
+def valid_config(dataset_start_date, dataset_end_date, num_forecast_days):
     "Valid config for 'fake_cleanair_dataset' fixture"
 
     return DataConfig(
@@ -58,7 +61,7 @@ def valid_config(dataset_start_date, dataset_end_date) -> DataConfig:
             "train_start_date": dataset_start_date,
             "train_end_date": dataset_end_date,
             "pred_start_date": dataset_end_date,
-            "pred_end_date": dataset_end_date + timedelta(days=2),
+            "pred_end_date": dataset_end_date + timedelta(days=num_forecast_days),
             "include_prediction_y": False,
             "train_sources": ["laqn", "aqe", "satellite"],
             "pred_sources": ["laqn", "aqe", "satellite", "hexgrid"],
@@ -104,6 +107,12 @@ def dataset_start_date():
 def dataset_end_date():
     "Fake dataset end date"
     return isoparse("2020-01-05")
+
+
+@pytest.fixture(scope="module")
+def num_forecast_days():
+    "Number of days for the model to forecast on."
+    return 2
 
 
 @pytest.fixture(scope="module")
@@ -422,22 +431,16 @@ def static_feature_records(meta_records):
     return static_features
 
 
-# pylint: disable=R0913
 @pytest.fixture(scope="class")
-def fake_cleanair_dataset(
+def fake_laqn_static_dataset(
     secretfile,
     connection_class,
     meta_records,
     laqn_site_records,
-    aqe_site_records,
     laqn_reading_records,
-    aqe_reading_records,
-    satellite_box_records,
-    satellite_meta_point_and_box_records,
     static_feature_records,
-    satellite_forecast,
 ):
-    """Insert a fake air quality dataset into the database"""
+    """Only insert laqn and static features."""
 
     writer = DBWriter(secretfile=secretfile, connection=connection_class)
 
@@ -457,6 +460,30 @@ def fake_cleanair_dataset(
         on_conflict="overwrite",
         table=LAQNReading,
     )
+
+    # Insert static features data
+    writer.commit_records(
+        [i.dict() for i in static_feature_records],
+        on_conflict="overwrite",
+        table=StaticFeature,
+    )
+
+
+# pylint: disable=R0913
+@pytest.fixture(scope="class")
+def fake_cleanair_dataset(
+    secretfile,
+    connection_class,
+    fake_laqn_static_dataset,
+    aqe_site_records,
+    aqe_reading_records,
+    satellite_box_records,
+    satellite_meta_point_and_box_records,
+    satellite_forecast,
+):
+    """Insert a fake air quality dataset into the database"""
+
+    writer = DBWriter(secretfile=secretfile, connection=connection_class)
 
     # Insert AQESite data
     writer.commit_records(
@@ -491,12 +518,33 @@ def fake_cleanair_dataset(
         table=SatelliteForecast,
     )
 
-    # Insert static features data
-    writer.commit_records(
-        [i.dict() for i in static_feature_records],
-        on_conflict="overwrite",
-        table=StaticFeature,
+
+@pytest.fixture(scope="class")
+def laqn_config(dataset_start_date, dataset_end_date, num_forecast_days):
+    """LAQN dataset with just one feature."""
+    return DataConfig(
+        train_start_date=dataset_start_date,
+        train_end_date=dataset_end_date,
+        pred_start_date=dataset_end_date,
+        pred_end_date=dataset_end_date + timedelta(days=num_forecast_days),
+        include_prediction_y=False,
+        train_sources=[Source.laqn],
+        pred_sources=[Source.laqn],
+        train_interest_points={Source.laqn.value: "all"},
+        pred_interest_points={Source.laqn.value: "all"},
+        species=[Species.NO2],
+        features=[FeatureNames.total_a_road_length],
+        buffer_sizes=[FeatureBufferSize.two_hundred],
+        norm_by=Source.laqn,
+        model_type=ModelName.svgp,
     )
+
+
+@pytest.fixture(scope="class")
+def laqn_full_config(fake_laqn_static_dataset, laqn_config, model_config):
+    """Generate full config for laqn."""
+    model_config.validate_config(laqn_config)
+    return model_config.generate_full_config(laqn_config)
 
 
 @pytest.fixture(scope="function")
@@ -604,7 +652,7 @@ def scoot_writer(
     return scoot_writer
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="class")
 def matern32_params() -> KernelParams:
     """Matern 32 kernel params."""
     return KernelParams(
@@ -616,7 +664,7 @@ def matern32_params() -> KernelParams:
     )
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="class")
 def base_model(matern32_params: KernelParams) -> BaseModelParams:
     """Model params for SVGP and sub-MRDGP"""
     return BaseModelParams(
@@ -628,13 +676,13 @@ def base_model(matern32_params: KernelParams) -> BaseModelParams:
     )
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="class")
 def svgp_model_params(base_model: BaseModelParams) -> SVGPParams:
     """Create a model params pydantic class."""
     return SVGPParams(**base_model.dict(), jitter=0.1,)
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="class")
 def mr_linear_params() -> KernelParams:
     """Matern 32 kernel params."""
     return KernelParams(
@@ -647,7 +695,7 @@ def mr_linear_params() -> KernelParams:
     )
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="class")
 def sub_model(mr_linear_params: KernelParams) -> BaseModelParams:
     """Model params for sub-MRDGP"""
     return BaseModelParams(
@@ -659,7 +707,7 @@ def sub_model(mr_linear_params: KernelParams) -> BaseModelParams:
     )
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="class")
 def mrdgp_model_params(sub_model: BaseModelParams) -> MRDGPParams:
     """Create MRDGP model params."""
     return MRDGPParams(
@@ -682,3 +730,19 @@ def model_config(secretfile, connection_class):
 def model_data(secretfile, connection_class):
     "Return a ModelData instance"
     return ModelData(secretfile=secretfile, connection=connection_class)
+
+
+@pytest.fixture(scope="class")
+def fake_laqn_svgp_instance(
+    secretfile, connection_class, svgp_model_params, laqn_full_config, model_config
+):
+    """Write an instance to the database. Return the instance."""
+    instance = AirQualityInstance(
+        laqn_full_config,
+        ModelName.svgp,
+        svgp_model_params,
+        secretfile=secretfile,
+        connection=connection_class,
+    )
+    instance.update_remote_tables()
+    return instance

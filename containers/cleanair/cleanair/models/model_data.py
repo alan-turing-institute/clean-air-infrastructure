@@ -1,11 +1,13 @@
 """Vizualise available sensor data for a model fit"""
 from __future__ import annotations
+import sys
 from typing import Dict, List, Tuple, overload, Callable
 from datetime import datetime, timedelta
 from itertools import groupby
 import pandas as pd
 import numpy as np
 from nptyping import NDArray, Float64
+from pydantic import ValidationError
 from sqlalchemy import func, text, column, String, cast, and_
 from sqlalchemy.sql.expression import Alias
 from sqlalchemy.dialects.postgresql import UUID
@@ -273,7 +275,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
 
         Args:
             full_config: A configuration class
-            prediction_data: When True get training data, else get prediction data
+            training_data: When True get training data, else get prediction data
                 Defaults to True. However, if the source  is Satellite it always gets sensor
                 readings regardless of this flag
         """
@@ -317,6 +319,24 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
             )
         return data_output
 
+    def download_forecast_data(
+        self, full_config: FullDataConfig
+    ) -> Dict[Source, pd.DateFrame]:
+        """Download the readings for a forecast period. Used for calculating metrics."""
+        data_output: Dict[Source, pd.DataFrame] = {}
+        for source in full_config.pred_sources:
+            self.logger.info("Downloading source %s forecast data.", source.value)
+            data_output[source] = self.__download_config_data(
+                with_sensor_readings=True,
+                start_date=full_config.pred_start_date,
+                end_date=full_config.pred_end_date,
+                species=full_config.species,
+                point_ids=full_config.pred_interest_points[source],
+                features=full_config.features,
+                source=source,
+            )
+        return data_output
+
     # pylint: disable=R0913
     def __download_config_data(
         self,
@@ -337,16 +357,21 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
         else:
             f_get_data = self.get_static_features
 
-        # Get source dataframe
-        source_data = f_get_data(
-            start_date=start_date,
-            end_date=end_date,
-            point_ids=point_ids,
-            features=features,
-            source=source,
-            species=species,
-            output_type="all",
-        )
+        try:
+            source_data = f_get_data(
+                start_date=start_date,
+                end_date=end_date,
+                point_ids=point_ids,
+                features=features,
+                source=source,
+                species=species,
+                output_type="all",
+            )
+        except ValidationError:
+            self.logger.error(
+                "Failed to download static features. This could mean that feature processing needs to be re-ran"
+            )
+            sys.exit()
 
         # Get dictionaries of wide data
         self.logger.debug("Postprocessing downloaded data")

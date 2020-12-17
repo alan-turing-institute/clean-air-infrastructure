@@ -16,6 +16,7 @@
 <!-- Style -->
 <link href="{{ url_for('static', path='css/map.css') }}" rel="stylesheet">
 
+
 <!-- Mapbox -->
 <script src='https://api.mapbox.com/mapbox-gl-js/v1.11.0/mapbox-gl.js'></script>
 <link href='https://api.mapbox.com/mapbox-gl-js/v1.11.0/mapbox-gl.css' rel='stylesheet' />
@@ -30,7 +31,7 @@
         <div class="controls-options">Options</div>
         <div class="controls-container">
             <label for="controls">Detection Classs</label><br>
-            <select id="select-detection-class" onchange="changeMarkerType()">
+            <select id="select-detection-class" onchange="changeDetectionClass()">
                 <option value="person">People</option>
                 <option value="car">Cars</option>
                 <option value="bus">Buses</option>
@@ -39,9 +40,15 @@
                 <option value="all">All</option>
             </select>
             <br>
-            <label for="controls">Date</label><br>
+            <label for="date">Date</label><br>
             <input type="date" id="date" min="2020-05-29" onchange="updateDate()">
-            <span style="color: red;">(experimental)</span>
+            <br>
+            <label for="controls">Lock colour scale range</label><br>
+            <input type="checkbox" id="lock-colour-scale" onchange="updateMapMarkers()">
+            <input type="range" id="colour-scale-limit" min="0" max="100" onchange="updateMapMarkers()">
+            <br>
+            <label for="display-tomtom">Show Tomtom data</label>
+            <input type="checkbox" id="display-tomtom" onchange="toggleTomtom()">
         </div><br>
     </div>
 
@@ -55,7 +62,10 @@
         <div style="text-align: right;"><a class="close" onclick="hideDetailsPanel()" >X</a></div>
         <div>
             <strong id="panel-camera-id">CAMERA:</strong>
-            <br><br>
+            <span style="text-align: right;"><img id='img-warn' width='20px' height='20px' src="{{ url_for('static', path='img/warn.svg') }}" alt="Camera is not currently being used by Odysseus"/></span>
+            <br>
+            <p id="camera-count">Average count</p>
+            <br>
             <img id='img-ground-estimate' class='annotation image' src='' visibility="show">
             <img id='img-camera-view' class='image' src='' alr='" + camera.id}' width='281' height='230'>
             <br>
@@ -104,18 +114,31 @@
         'buses'
     ];
 
+    const DETECTION_CLASS_LABELS = [
+        'person',
+        'all',
+        'truck',
+        'car',
+        'motorbike',
+        'bus'
+    ]
+
     let markerType = 'person';
     let showGroundEstimates = true;
     let selectedCam = '';
 
+    let cameras = new Map();
+    let data = new Map();
+    for (const cls of DETECTION_CLASS_LABELS) {
+        data.set(cls, new Map());
+    }
     let mapData = {
         'type': 'FeatureCollection',
         'features': []
     };
-
     let histogramData = new Map();
 
-	mapboxgl.accessToken = 'pk.eyJ1IjoiamJyYW5kcmV0aCIsImEiOiJja2M2ZHB5eGEwcWd2Mnl0aXkzd2F4ajIwIn0.5C0L8qaycmDFzauh9kCQWw';
+    mapboxgl.accessToken = 'pk.eyJ1IjoiamJyYW5kcmV0aCIsImEiOiJja2M2ZHB5eGEwcWd2Mnl0aXkzd2F4ajIwIn0.5C0L8qaycmDFzauh9kCQWw';
     let map = new mapboxgl.Map({
         container: 'mapid',
         style: 'mapbox://styles/mapbox/dark-v10',
@@ -124,8 +147,15 @@
     });
 
     function getDate() {
-        var x = document.getElementById("date").value;
-        return x;
+        return document.getElementById("date").value;
+    }
+
+    function getColourScaleLimit(){
+        if (document.getElementById("lock-colour-scale").checked) {
+            return document.getElementById("colour-scale-limit").value;
+        } else {
+            return undefined;
+        }
     }
       
     function updateGraph() {
@@ -168,9 +198,19 @@
     map.on('load', () => {
 
         // Map setup is contained in here - as layers can only be added after loading
-        
-        loadData(getDate());
+
         map.addSource('jamcams', { type: 'geojson', data: mapData }); // This can be used to update the data later
+        loadData(getDate()).then(() => {
+            updateMapMarkers();
+            });
+        map.addSource('tomtom', {
+            type: 'raster',
+            tiles: [
+                "{{ url_for('traffic_data') }}/{z}/{x}/{y}"
+            ],
+            maxzoom: 22,
+            minzoom: 0
+        });
         map.addLayer({
             id: 'jamcams',
             type: 'circle',
@@ -190,7 +230,7 @@
                 'circle-opacity': 0.7
             }
         })
-        // This just highlights the selected camera on the map:
+        // Highlights the selected camera on the map:
         map.addLayer({
             id: 'jamcams-highlighted',
             type: 'circle',
@@ -207,6 +247,7 @@
                 'circle-opacity': 0
             }
         })
+
 
         // Make the cusor a pointer when over markers:
         map.on('mouseenter', 'jamcams', function() {
@@ -234,10 +275,11 @@
 
     function loadData(date){
         console.debug("Loading data");
+        mapData.features = [];
+        clearBar();
+        map.getSource('jamcams').setData(mapData); // This clears out the old data and updates the map
 
-        let cameras; // To hold the camera data in between api calls
-
-        fetch("  {{ url_for('metadata') }}  ")
+        return fetch("  {{ url_for('metadata') }}  ")
         .then((response) => {
             return response.json();
         })
@@ -255,88 +297,111 @@
             return Promise.all(responses.map(res => res.json()));
         })
         .then((detection_class_json_responses) => {
-            for (const activities of detection_class_json_responses){
+            for (activities of detection_class_json_responses) {
 
                 let detection_class = activities[0].detection_class;
                 let all_counts = activities.map(({counts}) => (counts));
-                const max_count = Math.max(...all_counts);
                 histogramData[detection_class] = all_counts;
                 for (const measurement of activities) {
                     const camera_id = measurement.camera_id;
                     const camera = cameras.get(camera_id);
                     if (camera != undefined) {
                         const counts = parseInt(measurement.counts);
-                        const colour = VIRIDIS[Math.floor(Math.min(counts / max_count, 1) * 255)];
-                        mapData.features.push(
-                            {
-                                'type': 'Feature',
-                                'geometry': {
-                                    'type': 'Point',
-                                    'coordinates': [
-                                        camera.lon,
-                                        camera.lat
-                                    ]
-                                },
-                                'properties': {
-                                    'id': camera_id,
-                                    'type': detection_class,
-                                    'red': 255 * colour[0],
-                                    'blue': 255 * colour[1],
-                                    'green': 255 * colour[2],
-                                }
-                            }
-                        )
+                        data.get(detection_class).set(camera_id, counts);
                     }
                 }
             }
-            map.getSource('jamcams').setData(mapData); // This loads the data into mapbox
-            setHistogramDetectionClass();
         });
     }
 
+
+    function injectMapData(scale_upper_limit) {
+
+        for (const detection_class of DETECTION_CLASS_LABELS) {
+            let class_upper_limit;
+            if (scale_upper_limit === undefined) {
+                class_upper_limit = Math.max(
+                    ...data.get(detection_class).values()
+                );
+            } else {
+                class_upper_limit = scale_upper_limit;
+            }
+            for (const [camera_id, camera] of cameras.entries()) {
+
+                let value = data.get(detection_class).get(camera_id)
+                if (value === undefined) {
+                    value = 0;
+                }
+
+                const colour = VIRIDIS[Math.floor(Math.min(value / class_upper_limit, 1) * 255)];
+                mapData.features.push(
+                    {
+                        'type': 'Feature',
+                        'geometry': {
+                            'type': 'Point',
+                            'coordinates': [
+                                camera.lon,
+                                camera.lat
+                            ]
+                        },
+                        'properties': {
+                            'id': camera_id,
+                            'flag': camera.flag,
+                            'type': detection_class,
+                            'count': value,
+                            'red': 255 * colour[0],
+                            'blue': 255 * colour[1],
+                            'green': 255 * colour[2],
+                        }
+                    }
+                )
+            }
+        }
+        map.getSource('jamcams').setData(mapData); // This loads the data into mapbox
+        setHistogramDetectionClass();
+    }
+
+    function updateMapMarkers(){
+        document.getElementById("colour-scale-limit").disabled = !document.getElementById("lock-colour-scale").checked;
+        injectMapData(getColourScaleLimit());
+    }
+
+    function clearBar(){
+        histogramChartConfig.data.labels = [];
+        histogramChartConfig.data.datasets = [];
+        histogramChartConfig.options.title.text = 'Total activity per bucket on ' + getDate() + ' by Type (all cameras)';
+        histogram.update();
+    }
             
     function updateBar(counts, type){
-        
+
         let max = Math.max(...counts);
-        let domain = 0;
+
+        let bin_size;
         if (max > 10){
-            domain = Math.ceil(Math.ceil(max) / 10);
+            bin_size = Math.ceil(Math.ceil(max) / 10);
         } else {
-            domain = Math.ceil(Math.ceil(max) / (Math.ceil (max) -1)) ;
-        }
-        let array = [];
-        let frequency=[];
-        array[0] = { no: 0, x: 0, y: domain};
-        frequency[0]=0;
-        for (let i = 1; i < (max / domain) ; i++){
-            frequency[i]= 0;
-            array[i]= { no: i, x: array[i-1].y, y: array[i-1].y + domain};
-        }
-        let number;
-        for(let count of counts){
-            number = array.filter(function (item){return count<item.y})
-            frequency[parseInt(number[0].no)] +=1;
-        }
-        var data=[];
-        for(let i= 0; i < frequency.length; i++){
-            data[i]= array[i].x +"-" + (array[i].y);
+            bin_size = 2;
         }
 
-        let cmax = Math.max(...counts);
-        let interval = cmax / 10;
-        let frequency1 = [0,0,0,0,0,0,0,0,0,0];
-        for(let count of counts){
-            frequency1[count % interval] += 1
+        let bins = [];
+        let lables = [];
+        for (let i=0; i*bin_size<=max; i++) {
+            bins.push(0);
+            lables.push(`${(i*bin_size)}-${((i+1)*bin_size)-1}`);
         }
-                
-        histogramChartConfig.data.labels = data;
+        for(let count of counts) {
+            bins[Math.floor(count/bin_size)] += 1;
+        }
+
+        histogramChartConfig.data.labels = lables;
         histogramChartConfig.data.datasets = [];
         histogramChartConfig.data.datasets.push(
             {
                 label: type,
                 backgroundColor: COLORS[type],
                 borderColor: COLORS[type],
-                data: frequency,
+                data: bins,
                 fill: false,
             }
         );
@@ -349,6 +414,8 @@
         document.getElementById('panel-camera-id').innerText = `CAMERA: ${camera.id}`;
         document.getElementById('img-ground-estimate').src = `/static/img/annotations/${camera.id.replace("0000", "")}_annotated_image.png`
         document.getElementById('img-camera-view').src = `https://s3-eu-west-1.amazonaws.com/jamcams.tfl.gov.uk/${camera.id}.jpg`;
+        document.getElementById('img-warn').style.display = (camera.flag === 1) ? "inline" : "none";
+        changeDetectionClassCount();
     }
 
     function setDetectionClassFilter(){
@@ -359,8 +426,17 @@
         updateBar(histogramData[markerType], markerType);
     }
 
-    function changeMarkerType() {
+    function changeDetectionClassCount(){
+        if (selectedCam != "") {
+            document.getElementById("camera-count").innerText = `Average ${markerType} count: ${mapData.features.filter((el) => {
+                return el.properties.id == selectedCam && el.properties.type == markerType
+            }).shift().properties.count.toFixed(2)}`;
+        }
+    }
+
+    function changeDetectionClass() {
         markerType = document.getElementById("select-detection-class").value;
+        changeDetectionClassCount();
         setDetectionClassFilter();
         setHistogramDetectionClass();
     }
@@ -387,8 +463,24 @@
     }
 
     function updateDate(){
-        loadData(getDate());
+        loadData(getDate()).then(() => {
+            updateMapMarkers();
+            });
         updateGraph();
+    }
+
+    function toggleTomtom(){
+        if (map.getLayer('tomtom')) {
+            map.removeLayer('tomtom');
+        } else {
+            map.addLayer({
+                id: 'tomtom',
+                type: 'raster',
+                source: 'tomtom',
+            },
+            'jamcams'
+            )
+        }
     }
 
 
