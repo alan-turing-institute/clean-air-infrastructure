@@ -28,7 +28,6 @@ extra:
     - icon: fontawesome/brands/github-alt
       link: https://github.com/alan-turing-institute/clean-air-infrastructure
 
-
 # Extensions
 markdown_extensions:
   - admonition
@@ -36,6 +35,10 @@ markdown_extensions:
       guess_lang: false
   - toc:
       permalink: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:materialx.emoji.twemoji
+  - pymdownx.highlight
+  - pymdownx.superfences
 
 plugins:
   - search
@@ -52,6 +55,8 @@ docs_dir: 'docs_src/'
 nav:
   - Cleanair: index.md
   - Minikube: minikube.md
+  - Models:
+    - fitting_model.md
 
 # ToDo: Add API docs
 # - API: 
