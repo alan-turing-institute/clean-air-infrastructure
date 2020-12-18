@@ -2,6 +2,7 @@
 
 from cleanair.utils import total_num_features
 
+
 def test_total_num_features(laqn_valid_config, valid_full_config_dataset):
     """Test the total number of features is calculated"""
     assert total_num_features(laqn_valid_config) == 4
