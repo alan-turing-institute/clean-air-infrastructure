@@ -3,7 +3,8 @@ import pandas as pd
 from pandas.util.testing import assert_frame_equal
 import numpy as np
 from dateutil import rrule
-from datetime import timedelta
+from datetime import time, timedelta
+from cleanair.inputs.scoot_writer import ScootReader
 
 
 def test_scoot_detector(
@@ -112,3 +113,25 @@ def test_process_hour(scoot_detector_single_hour, scoot_writer, dataset_start_da
 
     # assert len(null_entries) == 1
     # assert null_entries[0] == scoot_detector_single_hour[1]
+
+
+def test_scoot_reader(scoot_writer, dataset_start_date, connection, secretfile):
+    "Test that we can check what data is in the database"
+    # Insert some data
+    scoot_writer.process_hour(dataset_start_date)
+
+    # Check the hour
+    end = dataset_start_date + timedelta(hours=1)
+    scoot_reader = ScootReader(
+        end=end, nhours=1, secretfile=secretfile, connection=connection,
+    )
+
+    # Check we have 100% of readings
+    assert (
+        scoot_reader.get_percentage_quantiles(output_type="df",).iloc[0]["1"] == 100.0
+    )
+
+    # Check we got all data except one sensor
+    assert scoot_reader.get_percentage_quantiles(missing=True, output_type="df",).iloc[
+        0
+    ]["1"] == pytest.approx(12420 / 12421 * 100)
