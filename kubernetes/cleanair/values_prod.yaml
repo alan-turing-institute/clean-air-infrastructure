@@ -582,7 +582,7 @@ ingressRules:
           servicePort: 80
 
 # Should always be set to staging to check certificates. Once configured correctly change to prod
-letsencryptType: prod
+letsencryptType: staging
 
 letsencryptIssuer:
     - name: letsencrypt-staging
