@@ -553,8 +553,8 @@ def scoot_generator(
 ) -> ScootGenerator:
     """Write scoot data to database"""
     return ScootGenerator(
-        dataset_start_date,
-        dataset_end_date,
+        start=dataset_start_date.isoformat(),
+        upto=dataset_end_date.isoformat(),
         offset=0,
         limit=100,
         secretfile=secretfile,
@@ -608,7 +608,7 @@ def scoot_writer(
     dataset_start_date,
     dataset_end_date,
 ):
-    "Return a ScootWriter instance"
+    "Return a ScootWriter instance which inserts data for all detectors but one"
 
     def request_remote_data(
         start_datetime_utc, detector_ids,

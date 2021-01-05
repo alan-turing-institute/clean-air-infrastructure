@@ -117,9 +117,10 @@ def generate_discrete_timeseries(
     )
 
     # floor function and add poisson noise
-    return np.random.choice([-1, 1], size) * (
-        np.random.poisson(lambda_noise, size) - 1
-    ) + np.floor(underlying_function)
+    return (
+        np.random.choice([-1, 1], size) * (np.random.poisson(lambda_noise, size) - 1)
+        + np.floor(underlying_function)
+    ).astype(int)
 
 
 def generate_detector_id() -> str:
