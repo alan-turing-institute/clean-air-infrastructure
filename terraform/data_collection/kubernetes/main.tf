@@ -138,7 +138,7 @@ resource "azurerm_kubernetes_cluster" "this" {
 # ------------------------------------------------------
 # Create a role with appropriate permissions for Kubernetes clusters
 resource "azurerm_role_definition" "configure_kubernetes" {
-  name        = "Configure Kubernetes"
+  name        = "Configure Kubernetes Urbanair"
   scope       = "${azurerm_resource_group.this.id}"
   description = "Configure Kubernetes cluster"
 
@@ -160,6 +160,7 @@ resource "azurerm_role_assignment" "service_principal_configure_kubernetes" {
   role_definition_id = split("|", azurerm_role_definition.configure_kubernetes.id)[0]
   principal_id       = "${data.azuread_service_principal.this.id}"
 }
+
 # :: grant the managed identity for this VM "get" and "list" access to the key vault
 resource "azurerm_key_vault_access_policy" "allow_service_principal" {
   key_vault_id = "${var.infrastructure.key_vault.id}"
