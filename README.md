@@ -115,6 +115,13 @@ docker build -t database:latest -f ./containers/dockerfiles/test_database.docker
 docker run --name docker_database -e POSTGRES_HOST_AUTH_METHOD=trust -p 5432:5432 database
 ```
 
+! If you have another Postgres install running, it will likely be using port 5432. In this case ,use a different port number, for example to 5000: (Remeber to change your local secrets file to match)
+
+```bash
+docker run --name docker_database -e POSTGRES_HOST_AUTH_METHOD=trust -p 5000:5432 database
+```
+
+
 <details>
 <summary>Alternatively, you can install Postgres with your package manager, such as Homebrew:</summary>
 
