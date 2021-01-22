@@ -111,14 +111,23 @@ Download and install [Docker Desktop](https://www.docker.com/products/docker-des
 Setting up a local Postgres intance with PostGIS can be troublesome, so we recommend using a docker image.
 
 ```bash
-docker build -t database:latest -f ./containers/dockerfiles/test_database.dockerfile .
-docker run --name docker_database -e POSTGRES_HOST_AUTH_METHOD=trust -p 5432:5432 database
+docker run --name database -e POSTGRES_HOST_AUTH_METHOD=trust -p 5432:5432 cleanairdocker.azurecr.io/database
 ```
 
-! If you have another Postgres install running, it will likely be using port 5432. In this case ,use a different port number, for example to 5000: (Remeber to change your local secrets file to match)
+<details>
+<summary>If you aren't logged in with access to the cleanairdocker registry, you can build the image yourself and run it with:</summary>
 
 ```bash
-docker run --name docker_database -e POSTGRES_HOST_AUTH_METHOD=trust -p 5000:5432 database
+docker build -t database:latest -f ./containers/dockerfiles/test_database.dockerfile .
+docker run --name database -e POSTGRES_HOST_AUTH_METHOD=trust -p 5432:5432 database
+```
+
+</details>
+
+! If you have another Postgres install running, it will likely be using port 5432. In this case, use a different port number, for example to 5000 (Remember to change your local secrets file to match). Run instead with:
+
+```bash
+docker run --name database -e POSTGRES_HOST_AUTH_METHOD=trust -p 5000:5432 database
 ```
 
 
