@@ -16,22 +16,14 @@ get_satellite_readings
 
 """
 
-from typing import List
-import pytest
-from enum import Enum
 import uuid
-from itertools import product
-from dateutil.parser import isoparse
-from dateutil import rrule
 from datetime import timedelta, datetime, time
-from pydantic import ValidationError
-from cleanair.models import ModelConfig, StaticFeatureTimeSpecies
-from cleanair.types.dataset_types import DataConfig, FullDataConfig
+from itertools import product
 
-from cleanair.types import Species, Source, StaticFeatureNames, FeatureBufferSize
-from cleanair.databases import DBWriter
-from cleanair.databases.tables import MetaPoint
-from cleanair.exceptions import MissingFeatureError, MissingSourceError
+import pytest
+from cleanair.types import Species, Source, StaticFeatureNames
+from dateutil import rrule
+from pydantic import ValidationError
 
 
 def unique_filter(lam, iter):

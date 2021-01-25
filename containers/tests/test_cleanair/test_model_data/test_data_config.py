@@ -1,14 +1,10 @@
 """
 Tests related to the ModelConfig class
 """
-import pytest
 from enum import Enum
-from dateutil.parser import isoparse
-from datetime import timedelta
-from pydantic import ValidationError
-from cleanair.models import ModelConfig
-from cleanair.types.dataset_types import DataConfig, FullDataConfig
 
+import pytest
+from cleanair.exceptions import MissingFeatureError, MissingSourceError
 from cleanair.types import (
     Species,
     Source,
@@ -16,9 +12,7 @@ from cleanair.types import (
     DynamicFeatureNames,
     FeatureBufferSize,
 )
-from cleanair.databases import DBWriter
-from cleanair.databases.tables import MetaPoint
-from cleanair.exceptions import MissingFeatureError, MissingSourceError
+from pydantic import ValidationError
 
 
 class TestDataConfig:

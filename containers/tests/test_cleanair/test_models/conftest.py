@@ -1,6 +1,7 @@
 """Fixtures for modelling."""
 
 from datetime import timedelta
+
 import pytest
 from cleanair.types import (
     DataConfig,
@@ -10,6 +11,7 @@ from cleanair.types import (
     Source,
     Species,
 )
+
 
 #  pylint: disable=redefined-outer-name
 

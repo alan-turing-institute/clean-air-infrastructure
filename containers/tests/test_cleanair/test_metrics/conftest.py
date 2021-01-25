@@ -3,12 +3,14 @@
 from datetime import datetime
 from typing import List
 from uuid import UUID
-import pytest
+
 import numpy as np
 import pandas as pd
-from nptyping import NDArray, Float64
+import pytest
 from cleanair.metrics import AirQualityMetrics
 from cleanair.types import Source, Species
+from nptyping import NDArray, Float64
+
 
 # pylint: disable=redefined-outer-name
 
