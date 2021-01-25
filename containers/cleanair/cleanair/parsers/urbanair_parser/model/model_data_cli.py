@@ -88,7 +88,7 @@ def generate_config(
         help="Pollutants to train and predict on",
         show_default=True,
     ),
-    features: List[StaticFeatureNames] = typer.Option(
+    static_features: List[StaticFeatureNames] = typer.Option(
         [
             StaticFeatureNames.total_road_length.value,
             StaticFeatureNames.total_a_road_length.value,
@@ -135,7 +135,7 @@ def generate_config(
         pred_sources=pred_source,
         species=species,
         norm_by=norm_by,
-        features=features,
+        static_features=static_features,
         dynamic_features=dynamic_features,
         buffer_sizes=feature_buffer,
     )

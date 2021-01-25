@@ -1,21 +1,24 @@
 """Vizualise available sensor data for a model fit"""
 from __future__ import annotations
-from typing import List
+
 from datetime import datetime, timedelta
-from cleanair.types.enum_types import DynamicFeatureNames
+from typing import List
 from sqlalchemy import func, text, cast, String
-from ..databases.tables import StaticFeature, MetaPoint
-from ..databases.materialised_views import LondonBoundaryView
+
+from cleanair.types.enum_types import DynamicFeatureNames
+
 from ..databases import DBReader
+from ..databases.materialised_views import LondonBoundaryView
+from ..databases.tables import StaticFeature, MetaPoint
+from ..decorators import db_query
+from ..exceptions import MissingFeatureError, MissingSourceError
+from ..loggers import get_logger, green
 from ..mixins.availability_mixins import (
     LAQNAvailabilityMixin,
     AQEAvailabilityMixin,
     SatelliteAvailabilityMixin,
 )
-from ..loggers import get_logger, green
 from ..timestamps import as_datetime
-from ..decorators import db_query
-from ..exceptions import MissingFeatureError, MissingSourceError
 from ..types import (
     Source,
     Species,
@@ -25,7 +28,6 @@ from ..types import (
     FeatureBufferSize,
     InterestPointDict,
 )
-
 
 ONE_HOUR_INTERVAL = text("interval '1 hour'")
 ONE_DAY_INTERVAL = text("interval '1 day'")
@@ -146,7 +148,7 @@ class ModelConfig(
         # Create full config and validate
         config_dict = config.dict()
         config_dict["feature_names"] = (
-            feature_names + dynamic_feature_names
+            static_feature_names + dynamic_feature_names
             if dynamic_feature_names
             else static_feature_names
         )

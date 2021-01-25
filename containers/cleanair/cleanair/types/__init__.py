@@ -1,6 +1,7 @@
 """Types for the cleanair package."""
 
 from .enum_types import (
+    ScootProcessType,
     Borough,
     ClusterId,
     Tag,

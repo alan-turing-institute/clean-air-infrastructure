@@ -2,12 +2,14 @@
 PydanticModels for serialising database query results
 """
 from datetime import datetime
-from typing import Optional
 from enum import Enum
+from typing import Optional
 from uuid import UUID
-from cleanair.databases.tables.features_tables import DynamicFeature
+
 from pydantic import BaseModel, validator, ValidationError
+
 from ..types import StaticFeatureNames, DynamicFeatureNames, Source, Species
+
 
 # pylint: disable=R0201,C0115,E0213
 
@@ -36,6 +38,26 @@ class BaseFeatures(BaseModel):
                 dict_entries.append((field_name, value))
         return dict(dict_entries)
 
+
+class DynamicFeatureSchema(BaseFeatures):
+    "Dynamic feature schema"
+
+    feature_name: DynamicFeatureNames
+    measurement_start_utc: datetime
+    epoch: Optional[int]
+
+    @validator("epoch", always=True)
+    def gen_measurement_end_time(cls, v, values):
+        "Generate end time one hour after start time"
+        if v:
+            raise ValidationError(
+                "Dont pass a value for epoch. It is generated automatically"
+            )
+        return values["measurement_start_utc"].timestamp()
+
+    class Config:
+        orm_mode = True
+
     def dict_flatten(self, *args, **kwargs):
         """Same as self.dict_enums except values and feature name
         are replaced with 'value_1000_{feature_name}
@@ -56,26 +78,6 @@ class BaseFeatures(BaseModel):
 
             new_dict[new_key] = new_value
         return new_dict
-
-
-class DynamicFeatureSchema(BaseFeatures):
-    "Dynamic feature schema"
-
-    feature_name: DynamicFeatureNames
-    measurement_start_utc: datetime
-    epoch: Optional[int]
-
-    @validator("epoch", always=True)
-    def gen_measurement_end_time(cls, v, values):
-        "Generate end time one hour after start time"
-        if v:
-            raise ValidationError(
-                "Dont pass a value for epoch. It is generated automatically"
-            )
-        return values["measurement_start_utc"].timestamp()
-
-    class Config:
-        orm_mode = True
 
 
 class StaticFeatureSchema(BaseFeatures):

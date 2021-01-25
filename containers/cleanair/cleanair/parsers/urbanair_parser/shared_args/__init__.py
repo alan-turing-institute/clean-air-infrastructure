@@ -21,8 +21,6 @@ from .shared_args import (
     From,
     InputDir,
     InsertMethod,
-    AWSId,
-    AWSKey,
     ValidInsertMethods,
     ValidFeatureSources,
     ValidDynamicFeatureSources,
@@ -35,8 +33,6 @@ from .shared_args import (
     Species,
     UpTo_callback,
     UpTo,
-    ValidFeatureSources,
-    ValidInsertMethods,
     ValidSources,
     Web,
 )

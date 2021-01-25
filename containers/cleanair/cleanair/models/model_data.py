@@ -1,29 +1,36 @@
 """Vizualise available sensor data for a model fit"""
 from __future__ import annotations
+
 import sys
-from typing import Dict, List, Tuple, overload, Callable
 from datetime import datetime, timedelta
-from dateutil.parser import isoparse
 from itertools import groupby
-from cleanair.types.enum_types import DynamicFeatureNames
-import pandas as pd
+from typing import Dict, List, Tuple, overload, Callable
+
 import numpy as np
+import pandas as pd
 from nptyping import NDArray, Float64
 from pydantic import ValidationError
 from sqlalchemy import func, text, column, String, cast, and_
-from sqlalchemy.sql.expression import Alias
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.sql.expression import Alias
+from cleanair.types.enum_types import DynamicFeatureNames
+
+from .schemas import (
+    DynamicFeatureSchema,
+    StaticFeatureTimeSpecies,
+    StaticFeatureLocSchema,
+    StaticFeaturesWithSensors,
+)
+from ..databases import DBReader
+from ..databases.base import Values
 from ..databases.tables import (
     StaticFeature,
     DynamicFeature,
     MetaPoint,
 )
-from ..databases import DBReader
-from ..databases.base import Values
-from ..mixins import DBQueryMixin
-from ..loggers import get_logger, green
 from ..decorators import db_query
-
+from ..loggers import get_logger, green
+from ..mixins import DBQueryMixin
 from ..types import (
     FullDataConfig,
     Source,
@@ -32,12 +39,6 @@ from ..types import (
     FeaturesDict,
     IndexedDatasetDict,
     TargetDict,
-)
-from .schemas import (
-    DynamicFeatureSchema,
-    StaticFeatureTimeSpecies,
-    StaticFeatureLocSchema,
-    StaticFeaturesWithSensors,
 )
 
 # pylint: disable=too-many-lines
@@ -387,7 +388,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
                 start_date=start_date,
                 end_date=end_date,
                 point_ids=point_ids,
-                features=(features + dynamic_features),
+                features=dynamic_features,
                 output_type="all",
             )
         else:
@@ -421,6 +422,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
         features: List[DynamicFeatureNames],
         point_ids: List[str],
     ):
+        "Get the selected dynamic features for a specific locatoin and time"
 
         with self.dbcnxn.open_session() as session:
 

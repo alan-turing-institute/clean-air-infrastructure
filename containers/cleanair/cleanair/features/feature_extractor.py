@@ -181,7 +181,7 @@ class ScootFeatureExtractor(DateRangeMixin, DBWriter, FeatureExtractorMixin):
 
     @db_query()
     def raw_scoot_readings(self, start_datetime: str, end_datetime: str):
-
+        "Fetch raw scoot reading from the database"
         with self.dbcnxn.open_session() as session:
 
             return (
