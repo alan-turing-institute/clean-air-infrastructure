@@ -157,8 +157,11 @@ class ModelConfig(
 
         return FullDataConfig(**config_dict)
 
-    def check_features_available( #TODO make a check for availability of dynamic features too
-        self, features: List[StaticFeatureNames], start_date: datetime, end_date: datetime
+    def check_features_available(  # TODO make a check for availability of dynamic features too
+        self,
+        features: List[StaticFeatureNames],
+        start_date: datetime,
+        end_date: datetime,
     ) -> None:
         """Check that all requested features exist in the database"""
 

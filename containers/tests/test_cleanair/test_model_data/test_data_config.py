@@ -9,7 +9,13 @@ from pydantic import ValidationError
 from cleanair.models import ModelConfig
 from cleanair.types.dataset_types import DataConfig, FullDataConfig
 
-from cleanair.types import Species, Source, StaticFeatureNames, DynamicFeatureNames, FeatureBufferSize
+from cleanair.types import (
+    Species,
+    Source,
+    StaticFeatureNames,
+    DynamicFeatureNames,
+    FeatureBufferSize,
+)
 from cleanair.databases import DBWriter
 from cleanair.databases.tables import MetaPoint
 from cleanair.exceptions import MissingFeatureError, MissingSourceError
