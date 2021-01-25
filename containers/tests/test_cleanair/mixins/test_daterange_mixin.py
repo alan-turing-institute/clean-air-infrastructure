@@ -1,5 +1,6 @@
 """Daterange mixin  tests"""
 from cleanair.mixins import DateRangeMixin
+
 # pylint: skip-file
 from dateutil.parser import isoparse
 

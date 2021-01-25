@@ -9,9 +9,7 @@ from cleanair.databases.tables import (
     AQESite,
     AQEReading,
 )
-from cleanair.databases.tables.fakes import (
-    LAQNSiteSchema,
-)
+from cleanair.databases.tables.fakes import LAQNSiteSchema
 from cleanair.types import Source
 from sqlalchemy.exc import IntegrityError
 
