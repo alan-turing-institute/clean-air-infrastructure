@@ -9,7 +9,7 @@ from pydantic import ValidationError
 from cleanair.models import ModelConfig
 from cleanair.types.dataset_types import DataConfig, FullDataConfig
 
-from cleanair.types import Species, Source, FeatureNames, FeatureBufferSize
+from cleanair.types import Species, Source, StaticFeatureNames, DynamicFeatureNames, FeatureBufferSize
 from cleanair.databases import DBWriter
 from cleanair.databases.tables import MetaPoint
 from cleanair.exceptions import MissingFeatureError, MissingSourceError
@@ -31,7 +31,8 @@ class TestDataConfig:
                 [Source.laqn, Source.aqe, Source.satellite],
                 [Source.laqn, Source.hexgrid],
                 [Species.NO2],
-                [i.value for i in FeatureNames],
+                [i.value for i in StaticFeatureNames],
+                [i.value for i in DynamicFeatureNames],
                 [i.value for i in FeatureBufferSize],
                 Source.laqn,
             )
@@ -39,7 +40,7 @@ class TestDataConfig:
             pytest.fail(e)
 
     @pytest.mark.parametrize(
-        "trainupto,train_sources,pred_sources,species,features,buffer_sizes,norm_by",
+        "trainupto,train_sources,pred_sources,species,static_features,dynamic_features,buffer_sizes,norm_by",
         [
             # Uses an invalid source
             pytest.param(
@@ -47,7 +48,8 @@ class TestDataConfig:
                 [Source.laqn, Source.aqe, Source.satellite],
                 [Source.laqn, Source.hexgrid],
                 [Species.NO2],
-                [i.value for i in FeatureNames],
+                [i.value for i in StaticFeatureNames],
+                [i.value for i in DynamicFeatureNames],
                 [i.value for i in FeatureBufferSize],
                 "not_a_source",
             ),
@@ -57,7 +59,8 @@ class TestDataConfig:
                 [Source.laqn, Source.aqe, Source.satellite],
                 [Source.laqn, Species.NO2],
                 [Species.NO2],
-                [i.value for i in FeatureNames],
+                [i.value for i in StaticFeatureNames],
+                [i.value for i in DynamicFeatureNames],
                 [i.value for i in FeatureBufferSize],
                 Source.laqn,
             ),
@@ -70,7 +73,8 @@ class TestDataConfig:
         train_sources,
         pred_sources,
         species,
-        features,
+        static_features,
+        dynamic_features,
         buffer_sizes,
         norm_by,
     ):
@@ -84,7 +88,8 @@ class TestDataConfig:
                 train_sources,
                 pred_sources,
                 species,
-                features,
+                static_features,
+                dynamic_features,
                 buffer_sizes,
                 norm_by,
             )
@@ -102,7 +107,7 @@ class TestDataConfig:
         # Check feature availability doesn't raise an error
         try:
             model_config.check_features_available(
-                valid_config.features,
+                valid_config.static_features,
                 valid_config.train_start_date,
                 valid_config.pred_end_date,
             )

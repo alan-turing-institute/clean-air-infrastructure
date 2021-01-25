@@ -14,7 +14,7 @@ from ....models import ModelConfig, ModelData
 from ....types import (
     Species,
     Source,
-    FeatureNames,
+    StaticFeatureNames,
     DynamicFeatureNames,
     FeatureBufferSize,
 )
@@ -88,18 +88,18 @@ def generate_config(
         help="Pollutants to train and predict on",
         show_default=True,
     ),
-    features: List[FeatureNames] = typer.Option(
+    features: List[StaticFeatureNames] = typer.Option(
         [
-            FeatureNames.total_road_length.value,
-            FeatureNames.total_a_road_length.value,
-            FeatureNames.total_a_road_primary_length.value,
-            FeatureNames.total_b_road_length.value,
-            FeatureNames.grass.value,
-            FeatureNames.building_height.value,
-            FeatureNames.water.value,
-            FeatureNames.park.value,
-            FeatureNames.max_canyon_narrowest.value,
-            FeatureNames.max_canyon_ratio.value,
+            StaticFeatureNames.total_road_length.value,
+            StaticFeatureNames.total_a_road_length.value,
+            StaticFeatureNames.total_a_road_primary_length.value,
+            StaticFeatureNames.total_b_road_length.value,
+            StaticFeatureNames.grass.value,
+            StaticFeatureNames.building_height.value,
+            StaticFeatureNames.water.value,
+            StaticFeatureNames.park.value,
+            StaticFeatureNames.max_canyon_narrowest.value,
+            StaticFeatureNames.max_canyon_ratio.value,
         ],
         help="Features to predict on",
     ),

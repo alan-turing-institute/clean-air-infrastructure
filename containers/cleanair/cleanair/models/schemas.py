@@ -7,7 +7,7 @@ from enum import Enum
 from uuid import UUID
 from cleanair.databases.tables.features_tables import DynamicFeature
 from pydantic import BaseModel, validator, ValidationError
-from ..types import FeatureNames, DynamicFeatureNames, Source, Species
+from ..types import StaticFeatureNames, DynamicFeatureNames, Source, Species
 
 # pylint: disable=R0201,C0115,E0213
 
@@ -81,7 +81,7 @@ class DynamicFeatureSchema(BaseFeatures):
 class StaticFeatureSchema(BaseFeatures):
     """Static Features Schema"""
 
-    feature_name: FeatureNames
+    feature_name: StaticFeatureNames
     source: Source
     in_london: bool
 

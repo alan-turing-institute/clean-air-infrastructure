@@ -29,7 +29,7 @@ class Tag(str, Enum):
 
 
 @unique
-class FeatureNames(str, Enum):
+class StaticFeatureNames(str, Enum):
     "Features"
     min_canyon_ratio = "min_canyon_ratio"
     avg_canyon_ratio = "avg_canyon_ratio"

@@ -6,7 +6,7 @@ from .enum_types import (
     Tag,
     Species,
     Source,
-    FeatureNames,
+    StaticFeatureNames,
     DynamicFeatureNames,
     FeatureBufferSize,
     KernelType,

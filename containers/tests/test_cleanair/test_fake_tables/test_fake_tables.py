@@ -20,7 +20,7 @@ from cleanair.databases.tables.fakes import (
     AQEReadingSchema,
     StaticFeaturesSchema,
 )
-from cleanair.types import Source, Species, FeatureNames
+from cleanair.types import Source, Species, StaticFeatureNames
 
 
 class TestDataFaker:

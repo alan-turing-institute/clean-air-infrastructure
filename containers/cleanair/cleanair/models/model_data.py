@@ -28,7 +28,7 @@ from ..types import (
     FullDataConfig,
     Source,
     Species,
-    FeatureNames,
+    StaticFeatureNames,
     FeaturesDict,
     IndexedDatasetDict,
     TargetDict,
@@ -351,7 +351,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
         end_date: datetime,
         species: List[Species],
         point_ids: List[str],
-        features: List[FeatureNames],
+        features: List[StaticFeatureNames],
         dynamic_features: List[DynamicFeatureNames],
         source: Source,
     ) -> pd.DataFrame:
@@ -499,7 +499,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
         self,
         start_date: datetime,
         end_date: datetime,
-        features: List[FeatureNames],
+        features: List[StaticFeatureNames],
         source: Source,
         point_ids: List[str],
         species: List[Species],
@@ -522,7 +522,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
 
     @db_query(StaticFeatureLocSchema)
     def select_static_features(
-        self, point_ids: List[str], features: List[FeatureNames], source: Source,
+        self, point_ids: List[str], features: List[StaticFeatureNames], source: Source,
     ):
         """
         Return static features from the database for a list of point ids
@@ -653,7 +653,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
         end_date: datetime,
         species: List[Species],
         point_ids: List[str],
-        features: List[FeatureNames],
+        features: List[StaticFeatureNames],
         source: Source,
     ):
         """Get static features with sensor readings joined"""

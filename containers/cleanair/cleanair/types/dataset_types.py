@@ -7,7 +7,7 @@ from pydantic import BaseModel, validator
 from .enum_types import (
     Species,
     Source,
-    FeatureNames,
+    StaticFeatureNames,
     FeatureBufferSize,
     DynamicFeatureNames,
 )
@@ -37,7 +37,7 @@ class DataConfig(BaseModel):
         Source.hexgrid: "all",
     }
     species: List[Species]
-    features: List[FeatureNames]
+    static_features: List[StaticFeatureNames]
     dynamic_features: Optional[List[DynamicFeatureNames]]
     buffer_sizes: List[FeatureBufferSize]
     norm_by: Source = Source.laqn

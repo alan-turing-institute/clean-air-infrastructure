@@ -28,7 +28,7 @@ from pydantic import ValidationError
 from cleanair.models import ModelConfig, StaticFeatureTimeSpecies
 from cleanair.types.dataset_types import DataConfig, FullDataConfig
 
-from cleanair.types import Species, Source, FeatureNames, FeatureBufferSize
+from cleanair.types import Species, Source, StaticFeatureNames, FeatureBufferSize
 from cleanair.databases import DBWriter
 from cleanair.databases.tables import MetaPoint
 from cleanair.exceptions import MissingFeatureError, MissingSourceError
@@ -146,7 +146,7 @@ class TestModelData:
 
         point_id = [str(point_ids_valid(Source.laqn)[0])]
         source = Source.laqn
-        features = [FeatureNames.building_height, FeatureNames.grass]
+        features = [StaticFeatureNames.building_height, StaticFeatureNames.grass]
         # Get a single valid point id
         dat = model_data.select_static_features(
             point_id, features, source, output_type="all",
@@ -164,7 +164,7 @@ class TestModelData:
         point_id = [str(uuid.uuid4())]
 
         source = Source.laqn
-        features = [FeatureNames.building_height, FeatureNames.grass]
+        features = [StaticFeatureNames.building_height, StaticFeatureNames.grass]
 
         # Get a single valid point id
         dat = model_data.select_static_features(
@@ -204,7 +204,7 @@ class TestModelData:
         # Request static features
         dat = model_data.select_static_features(
             config_ids,
-            [FeatureNames.building_height, FeatureNames.grass],
+            [StaticFeatureNames.building_height, StaticFeatureNames.grass],
             source,
             output_type="all",
         )
@@ -240,7 +240,7 @@ class TestModelData:
         start_datetime = valid_full_config_dataset.train_start_date
         end_datetime = valid_full_config_dataset.train_end_date
 
-        features = [FeatureNames.building_height, FeatureNames.grass]
+        features = [StaticFeatureNames.building_height, StaticFeatureNames.grass]
 
         # Return Pydantic model types
         static_species_time = model_data.get_static_features(
@@ -296,7 +296,7 @@ class TestModelData:
         start_datetime = valid_full_config_dataset.train_start_date
         end_datetime = valid_full_config_dataset.train_end_date
 
-        features = [FeatureNames.building_height, FeatureNames.grass]
+        features = [StaticFeatureNames.building_height, StaticFeatureNames.grass]
 
         data = model_data.get_static_with_sensors(
             start_datetime,
