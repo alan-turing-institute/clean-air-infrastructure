@@ -319,7 +319,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
                 end_date=_end_date,
                 species=full_config.species,
                 point_ids=point_ids[source],
-                features=full_config.features,
+                static_features=full_config.static_features,
                 dynamic_features=full_config.dynamic_features,
                 source=source,
             )
@@ -338,7 +338,8 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
                 end_date=full_config.pred_end_date,
                 species=full_config.species,
                 point_ids=full_config.pred_interest_points[source],
-                features=full_config.features,
+                static_features=full_config.static_features,
+                dynamic_features=full_config.dynamic_features,
                 source=source,
             )
         return data_output
@@ -351,7 +352,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
         end_date: datetime,
         species: List[Species],
         point_ids: List[str],
-        features: List[StaticFeatureNames],
+        static_features: List[StaticFeatureNames],
         dynamic_features: List[DynamicFeatureNames],
         source: Source,
     ) -> pd.DataFrame:
@@ -369,7 +370,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
                 start_date=start_date,
                 end_date=end_date,
                 point_ids=point_ids,
-                features=features,
+                features=static_features,
                 source=source,
                 species=species,
                 output_type="all",
@@ -386,7 +387,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
                 start_date=start_date,
                 end_date=end_date,
                 point_ids=point_ids,
-                features=dynamic_features,
+                features=(features + dynamic_features),
                 output_type="all",
             )
         else:
