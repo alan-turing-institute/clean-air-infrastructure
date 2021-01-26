@@ -231,155 +231,155 @@ cronjobs:
   #       cpu: "3"
   #       nvidia.com/gpu: 1
 
-  # - name: test-jamcam-cron-on-hour
-  #   schedule: "0 4-19 * * *"
-  #   concurrencyPolicy: Allow
-  #   restartPolicy: OnFailure
-  #   failedJobsHistoryLimit: 10
-  #   image:
-  #       repository: cleanairdocker.azurecr.io/traffic/tfl_traffic_analysis
-  #       tag: latest
-  #       imagePullPolicy: Always
-  #   command: ["bash", "/application/deployscripts/cluster.sh"]
-  #   args: ["-m", "3", "4", "5"]
-  #   volumeMounts:
-  #   - name: secrets
-  #     mountPath: "/secrets/"
-  #     readOnly: true
-  #   - mountPath: /application/conf/local/
-  #     name: credentials
-  #     readOnly: true
-  #   - mountPath: /dev/shm
-  #     name: dshm
-  #   volumes:
-  #   - name: secrets
-  #     secret:
-  #       secretName: secrets
-  #   - name: credentials
-  #     secret:
-  #       secretName: credentials.yaml
-  #   - name: dshm
-  #     emptyDir:
-  #       medium: Memory
-  #       sizeLimit: "200Gi"
-  #   imagePullSecrets:
-  #       - name: regcred
-  #   nodeSelector:
-  #       agentpool: jamcam
-  #   tolerations:
-  #     - key: "group"
-  #       operator: "Equal"
-  #       value: "gpu"
-  #       effect: "NoSchedule"
-  #   resources:
-  #     limits:
-  #         cpu: "23"
-  #         nvidia.com/gpu: 4
-  #     requests:
-  #         cpu: "23"
-  #         nvidia.com/gpu: 4
+  - name: test-jamcam-cron-on-hour
+    schedule: "0 4-19 * * *"
+    concurrencyPolicy: Allow
+    restartPolicy: OnFailure
+    failedJobsHistoryLimit: 10
+    image:
+        repository: cleanairdocker.azurecr.io/traffic/tfl_traffic_analysis
+        tag: latest
+        imagePullPolicy: Always
+    command: ["bash", "/application/deployscripts/cluster.sh"]
+    args: ["-m", "3", "4", "5"]
+    volumeMounts:
+    - name: secrets
+      mountPath: "/secrets/"
+      readOnly: true
+    - mountPath: /application/conf/local/
+      name: credentials
+      readOnly: true
+    - mountPath: /dev/shm
+      name: dshm
+    volumes:
+    - name: secrets
+      secret:
+        secretName: secrets
+    - name: credentials
+      secret:
+        secretName: credentials.yaml
+    - name: dshm
+      emptyDir:
+        medium: Memory
+        sizeLimit: "200Gi"
+    imagePullSecrets:
+        - name: regcred
+    nodeSelector:
+        agentpool: jamcam
+    tolerations:
+      - key: "group"
+        operator: "Equal"
+        value: "gpu"
+        effect: "NoSchedule"
+    resources:
+      limits:
+          cpu: "23"
+          nvidia.com/gpu: 4
+      requests:
+          cpu: "23"
+          nvidia.com/gpu: 4
 
-  # - name: compute-daily-average-counts
-  #   schedule: "0 23 * * *"
-  #   concurrencyPolicy: Allow
-  #   restartPolicy: OnFailure
-  #   failedJobsHistoryLimit: 10
-  #   image:
-  #     repository: cleanairdocker.azurecr.io/jamcamcron
-  #     imagePullPolicy: IfNotPresent
-  #   env:
-  #     - name: DB_SECRET_FILE
-  #       value: "/secrets/db_secrets.json"
-  #   command: ["python", "/scripts/jamcam_daily_stats.py"]
-  #   imagePullSecrets:
-  #     - name: regcred
-  #   volumeMounts:
-  #     - name: secrets
-  #       mountPath: "/secrets/"
-  #       readOnly: true
-  #   volumes:
-  #     - name: secrets
-  #       secret:
-  #         secretName: secrets
-  #   resources:
-  #     limits:
-  #       cpu: "0.5"
+  - name: compute-daily-average-counts
+    schedule: "0 23 * * *"
+    concurrencyPolicy: Allow
+    restartPolicy: OnFailure
+    failedJobsHistoryLimit: 10
+    image:
+      repository: cleanairdocker.azurecr.io/jamcamcron
+      imagePullPolicy: IfNotPresent
+    env:
+      - name: DB_SECRET_FILE
+        value: "/secrets/db_secrets.json"
+    command: ["python", "/scripts/jamcam_daily_stats.py"]
+    imagePullSecrets:
+      - name: regcred
+    volumeMounts:
+      - name: secrets
+        mountPath: "/secrets/"
+        readOnly: true
+    volumes:
+      - name: secrets
+        secret:
+          secretName: secrets
+    resources:
+      limits:
+        cpu: "0.5"
 
-  # - name: test-jamcam-cron-on-half-hour
-  #   schedule: "30 4-19 * * *"
-  #   concurrencyPolicy: Allow
-  #   restartPolicy: OnFailure
-  #   failedJobsHistoryLimit: 10
-  #   image:
-  #       repository: cleanairdocker.azurecr.io/traffic/tfl_traffic_analysis
-  #       tag: latest
-  #       imagePullPolicy: Always
-  #   command: ["bash", "/application/deployscripts/cluster.sh"]
-  #   args: ["-m", "0", "1", "2"]
-  #   volumeMounts:
-  #   - name: secrets
-  #     mountPath: "/secrets/"
-  #     readOnly: true
-  #   - mountPath: /application/conf/local/
-  #     name: credentials
-  #     readOnly: true
-  #   - mountPath: /dev/shm
-  #     name: dshm
-  #   volumes:
-  #   - name: secrets
-  #     secret:
-  #       secretName: secrets
-  #   - name: credentials
-  #     secret:
-  #       secretName: credentials.yaml
-  #   - name: dshm
-  #     emptyDir:
-  #       medium: Memory
-  #       sizeLimit: "200Gi"
-  #   imagePullSecrets:
-  #       - name: regcred
-  #   nodeSelector:
-  #       agentpool: jamcam
-  #   tolerations:
-  #     - key: "group"
-  #       operator: "Equal"
-  #       value: "gpu"
-  #       effect: "NoSchedule"
-  #   resources:
-  #     limits:
-  #       cpu: "23"
-  #       nvidia.com/gpu: 4
-  #     requests:
-  #       cpu: "23"
-  #       nvidia.com/gpu: 4
+  - name: test-jamcam-cron-on-half-hour
+    schedule: "30 4-19 * * *"
+    concurrencyPolicy: Allow
+    restartPolicy: OnFailure
+    failedJobsHistoryLimit: 10
+    image:
+        repository: cleanairdocker.azurecr.io/traffic/tfl_traffic_analysis
+        tag: latest
+        imagePullPolicy: Always
+    command: ["bash", "/application/deployscripts/cluster.sh"]
+    args: ["-m", "0", "1", "2"]
+    volumeMounts:
+    - name: secrets
+      mountPath: "/secrets/"
+      readOnly: true
+    - mountPath: /application/conf/local/
+      name: credentials
+      readOnly: true
+    - mountPath: /dev/shm
+      name: dshm
+    volumes:
+    - name: secrets
+      secret:
+        secretName: secrets
+    - name: credentials
+      secret:
+        secretName: credentials.yaml
+    - name: dshm
+      emptyDir:
+        medium: Memory
+        sizeLimit: "200Gi"
+    imagePullSecrets:
+        - name: regcred
+    nodeSelector:
+        agentpool: jamcam
+    tolerations:
+      - key: "group"
+        operator: "Equal"
+        value: "gpu"
+        effect: "NoSchedule"
+    resources:
+      limits:
+        cpu: "23"
+        nvidia.com/gpu: 4
+      requests:
+        cpu: "23"
+        nvidia.com/gpu: 4
 
-  # - name: jamcam-cron-view-refresh
-  #   schedule: "0 4-19 * * *"
-  #   concurrencyPolicy: Forbid
-  #   restartPolicy: OnFailure
-  #   failedJobsHistoryLimit: 10
-  #   image:
-  #       repository: cleanairdocker.azurecr.io/traffic/tfl_traffic_analysis
-  #       tag: latest
-  #       imagePullPolicy: Always
-  #   command: ["bash", "/application/deployscripts/refresh.sh"]
-  #   args: []
-  #   volumeMounts:
-  #   - name: secrets
-  #     mountPath: "/secrets/"
-  #     readOnly: true
-  #   - mountPath: /application/conf/local/
-  #     name: credentials
-  #     readOnly: true
-  #   volumes:
-  #   - name: secrets
-  #     secret:
-  #       secretName: secrets
-  #   - name: credentials
-  #     secret:
-  #       secretName: credentials.yaml
-  #   imagePullSecrets:
-  #       - name: regcred
+  - name: jamcam-cron-view-refresh
+    schedule: "0 4-19 * * *"
+    concurrencyPolicy: Forbid
+    restartPolicy: OnFailure
+    failedJobsHistoryLimit: 10
+    image:
+        repository: cleanairdocker.azurecr.io/traffic/tfl_traffic_analysis
+        tag: latest
+        imagePullPolicy: Always
+    command: ["bash", "/application/deployscripts/refresh.sh"]
+    args: []
+    volumeMounts:
+    - name: secrets
+      mountPath: "/secrets/"
+      readOnly: true
+    - mountPath: /application/conf/local/
+      name: credentials
+      readOnly: true
+    volumes:
+    - name: secrets
+      secret:
+        secretName: secrets
+    - name: credentials
+      secret:
+        secretName: credentials.yaml
+    imagePullSecrets:
+        - name: regcred
 
 #   - name: feature_scoot_forecasts
 #     image:
