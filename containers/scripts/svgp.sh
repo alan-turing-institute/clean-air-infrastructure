@@ -22,19 +22,19 @@ urbanair processors scoot forecast --traindays 5 --preddays 2 --trainupto today
 urbanair features scoot fill --ndays 7 --upto overmorrow \
     --source laqn \
     # --source satellite \
-    # --source hexgrid \
+    --source hexgrid \
     --insert-method missing \
     --nworkers 2
     # --use-readings
 
 # generate the data config
 urbanair model data generate-config \
-    --trainupto '2020-10-21' \
+    --trainupto yesterday \
     --traindays 5 \
     --preddays 2 \
     --train-source laqn \
     --pred-source laqn \
-    # --pred-source hexgrid \
+    --pred-source hexgrid \
     --species NO2 \
     --static_features total_a_road_length \
     --dynamic-features max_n_vehicles \
