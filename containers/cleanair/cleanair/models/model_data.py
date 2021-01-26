@@ -357,7 +357,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
         dynamic_features: List[DynamicFeatureNames],
         source: Source,
     ) -> pd.DataFrame:
-        """Download all training data (static, dynamic[not yet implimented] and sensor readings)
+        """Download all training data and sensor readings)
         for a given source (e.g. laqn, aqe, satellite)
         """
 

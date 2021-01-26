@@ -106,7 +106,7 @@ class TestDataConfig:
 
         # Check feature availability doesn't raise an error
         try:
-            model_config.check_features_available(
+            model_config.check_static_features_available(
                 valid_config.static_features,
                 valid_config.train_start_date,
                 valid_config.pred_end_date,
@@ -120,7 +120,7 @@ class TestDataConfig:
 
         # Check error raised when features missing
         with pytest.raises(MissingFeatureError):
-            model_config.check_features_available(
+            model_config.check_static_features_available(
                 [FakeFeature.fake_feature],
                 valid_config.train_start_date,
                 valid_config.pred_end_date,

@@ -97,7 +97,7 @@ class ModelConfig(
 
         self.logger.info("Validating config")
 
-        self.check_features_available(
+        self.check_static_features_available(
             config.static_features, config.train_start_date, config.pred_end_date
         )
         self.logger.info(green("Requested features are available"))
@@ -157,7 +157,7 @@ class ModelConfig(
 
         return FullDataConfig(**config_dict)
 
-    def check_features_available(  # TODO make a check for availability of dynamic features too
+    def check_static_features_available(  # TODO make a check for availability of dynamic features too
         self,
         features: List[StaticFeatureNames],
         start_date: datetime,
