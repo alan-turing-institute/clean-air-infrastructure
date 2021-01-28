@@ -1,15 +1,17 @@
 """Fixtures for modelling."""
 
 from datetime import timedelta
+
 import pytest
 from cleanair.types import (
     DataConfig,
-    FeatureNames,
+    StaticFeatureNames,
     FeatureBufferSize,
     ModelName,
     Source,
     Species,
 )
+
 
 #  pylint: disable=redefined-outer-name
 
@@ -28,7 +30,8 @@ def sat_config(dataset_start_date):
         train_interest_points={Source.laqn.value: "all", Source.satellite.value: "all"},
         pred_interest_points={Source.laqn.value: "all", Source.satellite.value: "all"},
         species=[Species.NO2],
-        features=[FeatureNames.total_a_road_length],
+        static_features=[StaticFeatureNames.total_a_road_length],
+        dynamic_features=[],
         buffer_sizes=[FeatureBufferSize.two_hundred],
         norm_by=Source.laqn,
         model_type=ModelName.mrdgp,
