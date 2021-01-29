@@ -14,19 +14,19 @@ Currently repurposed to assess `busyness` in London during the COVID-19 pandemic
 
 A list of key developers on the project. A good place to start if you wish to contribute.
 
-| Name               | GitHub ID                                            | Email                       | Admin  |
-| ------------------ | -----------------------------------------------------| --------------------------- | ------ |
-| James Brandreth    | [@jamesbrandreth](https://github.com/jamesbrandreth) | <jbrandreth@turing.ac.uk>   | |
-| Oscar Giles        | [@OscartGiles](https://github.com/OscartGiles)       | <ogiles@turing.ac.uk>       | Infrastructure, Prod Database, Kubernetes Cluster |
-| Oliver Hamelijnck  | [@defaultobject](https://github.com/defaultobject)   | <ohamelijnck@turing.ac.uk>  | |
-| Chance Haycock     | [@chancehaycock](https://github.com/chancehaycock)   | <chaycock@turing.ac.uk>     | |
-| Christy Nakou      | [@ChristyNou](https://github.com/ChristyNou)         | <cnakou@turing.ac.uk>       | |
-| Patrick O'Hara     | [@PatrickOHara](https://github.com/PatrickOHara)     | <pohara@turing.ac.uk>       | |
-| Harry Moss     | [@harryjmoss](https://github.com/harryjmoss)     | <h.moss@ucl.ac.uk>       | |
-| David Perez-Suarez | [@dpshelio](https://github.com/dpshelio)             | <d.perez-suarez@ucl.ac.uk>  | |
-| James Robinson     | [@jemrobinson](https://github.com/jemrobinson)       | <jrobinson@turing.ac.uk>    | Infrastructure, Prod Database, Kubernetes Cluster |
-| Tim Spain          | [@timspainUCL](https://github.com/timspainUCL)       | <t.spain@ucl.ac.uk>         | |
-| Edward Thorpe-Woods | [@TeddyTW](https://github.com/TeddyTW)              | <ethorpe-woods@turing.ac.uk>| |
+| Name                | GitHub ID                                            | Email                       | Admin  |
+|---------------------|------------------------------------------------------|-----------------------------|--------|
+| James Brandreth     | [@jamesbrandreth](https://github.com/jamesbrandreth) | <jbrandreth@turing.ac.uk>   | |
+| Oscar Giles         | [@OscartGiles](https://github.com/OscartGiles)       | <ogiles@turing.ac.uk>       | Infrastructure, Prod Database, Kubernetes Cluster |
+| Oliver Hamelijnck   | [@defaultobject](https://github.com/defaultobject)   | <ohamelijnck@turing.ac.uk>  | |
+| Chance Haycock      | [@chancehaycock](https://github.com/chancehaycock)   | <chaycock@turing.ac.uk>     | |
+| Christy Nakou       | [@ChristyNou](https://github.com/ChristyNou)         | <cnakou@turing.ac.uk>       | |
+| Patrick O'Hara      | [@PatrickOHara](https://github.com/PatrickOHara)     | <pohara@turing.ac.uk>       | |
+| Harry Moss          | [@harryjmoss](https://github.com/harryjmoss)         | <h.moss@ucl.ac.uk>          | |
+| David Perez-Suarez  | [@dpshelio](https://github.com/dpshelio)             | <d.perez-suarez@ucl.ac.uk>  | |
+| James Robinson      | [@jemrobinson](https://github.com/jemrobinson)       | <jrobinson@turing.ac.uk>    | Infrastructure, Prod Database, Kubernetes Cluster |
+| Tim Spain           | [@timspainUCL](https://github.com/timspainUCL)       | <t.spain@ucl.ac.uk>         | |
+| Edward Thorpe-Woods | [@TeddyTW](https://github.com/TeddyTW)               | <ethorpe-woods@turing.ac.uk>| |
 
 # Contents
 
@@ -531,6 +531,30 @@ Then run the docker image:
 DB_SECRET_FILE='.db_secrets_ad.json'
 SECRET_DIR=$(pwd)/.secrets
 docker run -i -p 80:80 -e DB_SECRET_FILE -e PGPASSWORD -e APP_MODULE="urbanair.main:app" -v $SECRET_DIR:/secrets fastapi:test
+```
+
+# Processing Scoot Data
+Scoot data and air quality can be forecasted with the Urbanair CLI. To run locally:
+
+Ensure you have the CLI installed
+```bash
+pip install -e containers/cleanair
+```
+Log into database:
+```bash
+urbanair init production
+```
+Create mappings from roads to scoot sensors (need only be done once):
+```bash
+urbanair features scoot update-road-maps
+```
+Check what interest points haven't been processed for a given date range for a list of sources
+```bash
+urbanair features scoot check  --ndays 1 --upto 2020-01-05  --source laqn  --source aqe --only-missing
+```
+Process all the features for any interest points that have any unprocessed data between the dates of interest
+```bash
+urbanair features scoot fill  --ndays 1 --upto 2020-01-05  --source laqn  --source aqe --insert-method missing 
 ```
 
 # Developer guide
