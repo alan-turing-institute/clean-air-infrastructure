@@ -574,7 +574,7 @@ We extract scoot features in multiple steps using the urbanair cli:
 
 2. Check what features have already been processed between the times of interest. Return a list of point_ids that haven't been processed.
 3. Create buffers around these interest points and inner join with OSHighway where geoms intersect (not joined with scoot data yet - so much smaller join). We now have a lookup table telling us every road segment which is in each buffer. For two interest points this might look like this:
-![Example buffers around scoot detectors"](readme_assets/scoot_buffer.png)
+![Example buffers around scoot detectors](readme_assets/scoot_buffer.png)
 4. Join the scoot readings to table above and then calculate road readings using  precalculated weightings and store as a [CTE](https://www.postgresql.org/docs/9.1/queries-with.html). This gives us a reading for every road segment in a buffer.
 5. For every feature we want to extract aggregate the appropriate column from the CTE created in step 4. Then `UNION` all of these together so can process all features in the same query. Otherwise we'd have to repeat all the above steps for every feature.
 
