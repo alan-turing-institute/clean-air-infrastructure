@@ -53,6 +53,9 @@ A list of key developers on the project. A good place to start if you wish to co
 ### Running the UrbanAir API
 - [Running the UrbanAir API](#urbanair-api)
 
+### Processing Scoot Data
+- [Processing Scoot Data](#processing-scoot-data)
+
 ### Developer guide
 - [Style guide](#style-guide)
 - [Running tests](#running-tests)
