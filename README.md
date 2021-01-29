@@ -57,7 +57,7 @@ A list of key developers on the project. A good place to start if you wish to co
 - [Processing Scoot Data](#scoot-data-processing)
 
 ### Method
-- [Forecasting](#forecasting-scoot-data-&-air-quality)
+- [Forecasting](#forecasting-scoot-data)
 
 
 ### Developer guide
@@ -567,7 +567,7 @@ urbanair features scoot fill  --ndays 1 --upto 2020-01-05  --source laqn  --sour
 
 # Method
 
-## Forecasting Scoot Data & Air Quality
+## Forecasting Scoot Data
 We extract scoot features in multiple steps using the urbanair cli:
 
 1. Map scoot sensors to the road network and calculate weighting to use for mapping scoot readings to roads. (This need only be done once)
