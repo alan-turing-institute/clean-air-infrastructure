@@ -54,7 +54,11 @@ A list of key developers on the project. A good place to start if you wish to co
 - [Running the UrbanAir API](#urbanair-api)
 
 ### Processing Scoot Data
-- [Processing Scoot Data](#processing-scoot-data)
+- [Processing Scoot Data](#scoot-data-processing)
+
+### Method
+- [Forecasting](forecasting-scoot-data-&-air-quality)
+
 
 ### Developer guide
 - [Style guide](#style-guide)
@@ -536,7 +540,7 @@ SECRET_DIR=$(pwd)/.secrets
 docker run -i -p 80:80 -e DB_SECRET_FILE -e PGPASSWORD -e APP_MODULE="urbanair.main:app" -v $SECRET_DIR:/secrets fastapi:test
 ```
 
-# Processing Scoot Data
+# Scoot Data Processing
 Scoot data and air quality can be forecasted with the Urbanair CLI. To run locally:
 
 Ensure you have the CLI installed
@@ -559,6 +563,29 @@ Process all the features for any interest points that have any unprocessed data 
 ```bash
 urbanair features scoot fill  --ndays 1 --upto 2020-01-05  --source laqn  --source aqe --insert-method missing 
 ```
+
+
+# Method
+
+## Forecasting Scoot Data & Air Quality
+We extract scoot features in multiple steps using the urbanair cli:
+
+1. Map scoot sensors to the road network and calculate weighting to use for mapping scoot readings to roads. (This need only be done once)
+
+2. Check what features have already been processed between the times of interest. Return a list of point_ids that haven't been processed.
+3. Create buffers around these interest points and inner join with OSHighway where geoms intersect (not joined with scoot data yet - so much smaller join). We now have a lookup table telling us every road segment which is in each buffer. For two interest points this might look like this:
+![Example buffers around scoot detectors"](readme_assets/scoot_buffer.png)
+4. Join the scoot readings to table above and then calculate road readings using  precalculated weightings and store as a [CTE](https://www.postgresql.org/docs/9.1/queries-with.html). This gives us a reading for every road segment in a buffer.
+5. For every feature we want to extract aggregate the appropriate column from the CTE created in step 4. Then `UNION` all of these together so can process all features in the same query. Otherwise we'd have to repeat all the above steps for every feature.
+
+### Benefits of this approach:
+- We map scoot sensors to road readings when we need them. If you just need scoot features at LAQN or AQE sensors you don't want to have to map scoot readings to the entire road network before you can start feature processing
+- Dont need to store road readings in the database, which will get very large fast.
+- Avoid doing a massive inner join of OSHighway X timestamps with buffers based on a spatial intersection. Instead just join OSHighway with buffers based on spatial intersection and then join scoot readings based on point_id. 
+
+Calculating features for more days is not particularly expensive. Adding more interest points is more expensive. 
+
+
 
 # Developer guide
 
