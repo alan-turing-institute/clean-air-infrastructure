@@ -9,7 +9,7 @@ from cleanair.types.enum_types import DynamicFeatureNames
 
 from ..databases import DBReader
 from ..databases.materialised_views import LondonBoundaryView
-from ..databases.tables import StaticFeature, MetaPoint
+from ..databases.tables import StaticFeature, DynamicFeature, MetaPoint
 from ..decorators import db_query
 from ..exceptions import MissingFeatureError, MissingSourceError
 from ..loggers import get_logger, green
@@ -23,6 +23,7 @@ from ..types import (
     Source,
     Species,
     StaticFeatureNames,
+    DynamicFeatureNames,
     DataConfig,
     FullDataConfig,
     FeatureBufferSize,
@@ -100,7 +101,12 @@ class ModelConfig(
         self.check_static_features_available(
             config.static_features, config.train_start_date, config.pred_end_date
         )
-        self.logger.info(green("Requested features are available"))
+        self.logger.info(green("Requested static features are available"))
+
+        self.check_dynamic_features_available(
+            config.dynamic_features, config.train_start_date, config.pred_end_date
+        )
+        self.logger.info(green("Requested dynamic features are available"))
 
         # Check training sources are available
         self.check_sources_available(config.train_sources)
@@ -163,7 +169,7 @@ class ModelConfig(
         start_date: datetime,
         end_date: datetime,
     ) -> None:
-        """Check that all requested features exist in the database"""
+        """Check that all requested static features exist in the database"""
 
         available_features = self.get_available_static_features(output_type="list")
         unavailable_features = []
@@ -178,6 +184,18 @@ class ModelConfig(
                     unavailable_features
                 )
             )
+
+
+    def check_dynamic_features_available(
+            self,
+            features: List[DynamicFeatureNames],
+            start_date: datetime,
+            end_date: datetime,
+    ) -> None:
+        """Check that all requested dynamic features exist in the database"""
+
+        available_features = self.get_available_dynamic_features(output_type="list")
+
 
     def check_sources_available(self, sources: List[Source]):
         """Check that sources are available in the database
@@ -236,6 +254,21 @@ class ModelConfig(
             )
 
             return feature_types_q
+
+
+    @db_query()
+    def  get_available_dynamic_features(self):
+        """Return available dynamic features from the CleanAir database
+        """
+
+        with self.dbcnxn.open_session() as session:
+
+            feature_types_q = session.query(DynamicFeature.feature_name).distinct(
+                StaticFeature.feature_name
+            )
+
+            return feature_types_q
+
 
     @db_query()
     def get_available_sources(self):
