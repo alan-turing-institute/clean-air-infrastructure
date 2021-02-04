@@ -163,7 +163,7 @@ class ModelConfig(
 
         return FullDataConfig(**config_dict)
 
-    def check_static_features_available(  # TODO make a check for availability of dynamic features too
+    def check_static_features_available(
         self,
         features: List[StaticFeatureNames],
         start_date: datetime,
@@ -195,6 +195,21 @@ class ModelConfig(
         """Check that all requested dynamic features exist in the database"""
 
         available_features = self.get_available_dynamic_features(output_type="list")
+        unavailable_features = []
+
+        for feature in features:
+            if feature.value not in available_features:
+                unavailable_features.append(feature)
+
+        print(unavailable_features)
+
+        if unavailable_features:
+            raise MissingFeatureError(
+                """The following features are not available the cleanair database: {}.
+                   If requesting dynamic features they may not be available for the selected dates""".format(
+                    unavailable_features
+                )
+            )
 
 
     def check_sources_available(self, sources: List[Source]):
@@ -230,7 +245,6 @@ class ModelConfig(
                 isinstance(interest_point_dict[key], str)
                 and interest_point_dict[key] == "all"
             ):
-
                 output_dict[key] = self.get_available_interest_points(
                     key,
                     within_london_only=(key != Source.satellite),
@@ -255,7 +269,6 @@ class ModelConfig(
 
             return feature_types_q
 
-
     @db_query()
     def  get_available_dynamic_features(self):
         """Return available dynamic features from the CleanAir database
@@ -264,7 +277,7 @@ class ModelConfig(
         with self.dbcnxn.open_session() as session:
 
             feature_types_q = session.query(DynamicFeature.feature_name).distinct(
-                StaticFeature.feature_name
+                DynamicFeature.feature_name
             )
 
             return feature_types_q
