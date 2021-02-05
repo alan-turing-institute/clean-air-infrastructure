@@ -265,7 +265,7 @@ cronjobs:
     imagePullSecrets:
         - name: regcred
     nodeSelector:
-        agentpool: jamcamnorm
+        agentpool: jamcam
     tolerations:
       - key: "group"
         operator: "Equal"
@@ -339,7 +339,7 @@ cronjobs:
     imagePullSecrets:
         - name: regcred
     nodeSelector:
-        agentpool: jamcamprom
+        agentpool: jamcam
     tolerations:
       - key: "group"
         operator: "Equal"
