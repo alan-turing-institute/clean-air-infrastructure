@@ -185,12 +185,12 @@ class ModelConfig(
                 )
             )
 
-
+    # pylint: disable=C0103
     def check_dynamic_features_available(
-            self,
-            features: List[DynamicFeatureNames],
-            start_date: datetime,
-            end_date: datetime,
+        self,
+        features: List[DynamicFeatureNames],
+        start_date: datetime,
+        end_date: datetime,
     ) -> None:
         """Check that all requested dynamic features exist in the database"""
 
@@ -210,7 +210,6 @@ class ModelConfig(
                     unavailable_features
                 )
             )
-
 
     def check_sources_available(self, sources: List[Source]):
         """Check that sources are available in the database
@@ -270,7 +269,7 @@ class ModelConfig(
             return feature_types_q
 
     @db_query()
-    def  get_available_dynamic_features(self):
+    def get_available_dynamic_features(self):
         """Return available dynamic features from the CleanAir database
         """
 
@@ -281,7 +280,6 @@ class ModelConfig(
             )
 
             return feature_types_q
-
 
     @db_query()
     def get_available_sources(self):
