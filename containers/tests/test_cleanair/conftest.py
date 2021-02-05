@@ -40,7 +40,7 @@ from cleanair.types import (
     BaseModelParams,
     DataConfig,
     FeatureBufferSize,
-    FeatureNames,
+    StaticFeatureNames,
     KernelParams,
     KernelType,
     ModelName,
@@ -73,7 +73,7 @@ def valid_config(dataset_start_date, dataset_end_date, num_forecast_days):
                 "hexgrid": "all",
             },
             "species": ["NO2"],
-            "features": [
+            "static_features": [
                 "total_road_length",
                 "total_a_road_length",
                 "total_a_road_primary_length",
@@ -85,6 +85,7 @@ def valid_config(dataset_start_date, dataset_end_date, num_forecast_days):
                 "max_canyon_narrowest",
                 "max_canyon_ratio",
             ],
+            "dynamic_features": [],
             "buffer_sizes": ["1000", "500"],
             "norm_by": "laqn",
         }
@@ -420,7 +421,7 @@ def static_feature_records(meta_records):
     """Static features records"""
     static_features = []
     for rec in meta_records:
-        for feature in FeatureNames:
+        for feature in StaticFeatureNames:
 
             static_features.append(
                 StaticFeaturesSchema(
@@ -533,7 +534,8 @@ def laqn_config(dataset_start_date, dataset_end_date, num_forecast_days):
         train_interest_points={Source.laqn.value: "all"},
         pred_interest_points={Source.laqn.value: "all"},
         species=[Species.NO2],
-        features=[FeatureNames.total_a_road_length],
+        static_features=[StaticFeatureNames.total_a_road_length],
+        dynamic_features=[],
         buffer_sizes=[FeatureBufferSize.two_hundred],
         norm_by=Source.laqn,
         model_type=ModelName.svgp,

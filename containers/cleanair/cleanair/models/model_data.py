@@ -1,39 +1,44 @@
 """Vizualise available sensor data for a model fit"""
 from __future__ import annotations
+
 import sys
-from typing import Dict, List, Tuple, overload, Callable
 from datetime import datetime, timedelta
 from itertools import groupby
-import pandas as pd
+from typing import Dict, List, Tuple, overload, Callable
+
 import numpy as np
+import pandas as pd
 from nptyping import NDArray, Float64
 from pydantic import ValidationError
 from sqlalchemy import func, text, column, String, cast, and_
-from sqlalchemy.sql.expression import Alias
 from sqlalchemy.dialects.postgresql import UUID
-from ..databases.tables import (
-    StaticFeature,
-    MetaPoint,
+from sqlalchemy.sql.expression import Alias
+from cleanair.types.enum_types import DynamicFeatureNames
+
+from .schemas import (
+    DynamicFeatureSchema,
+    StaticFeatureTimeSpecies,
+    StaticFeatureLocSchema,
+    StaticFeaturesWithSensors,
 )
 from ..databases import DBReader
 from ..databases.base import Values
-from ..mixins import DBQueryMixin
-from ..loggers import get_logger, green
+from ..databases.tables import (
+    StaticFeature,
+    DynamicFeature,
+    MetaPoint,
+)
 from ..decorators import db_query
-
+from ..loggers import get_logger, green
+from ..mixins import DBQueryMixin
 from ..types import (
     FullDataConfig,
     Source,
     Species,
-    FeatureNames,
+    StaticFeatureNames,
     FeaturesDict,
     IndexedDatasetDict,
     TargetDict,
-)
-from .schemas import (
-    StaticFeatureTimeSpecies,
-    StaticFeatureLocSchema,
-    StaticFeaturesWithSensors,
 )
 
 # pylint: disable=too-many-lines
@@ -308,13 +313,15 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
             _end_date = (
                 end_date if source != Source.satellite else full_config.pred_end_date
             )
+
             data_output[source] = self.__download_config_data(
                 with_sensor_readings=training_data,
                 start_date=start_date,
                 end_date=_end_date,
                 species=full_config.species,
                 point_ids=point_ids[source],
-                features=full_config.features,
+                static_features=full_config.static_features,
+                dynamic_features=full_config.dynamic_features,
                 source=source,
             )
         return data_output
@@ -332,7 +339,8 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
                 end_date=full_config.pred_end_date,
                 species=full_config.species,
                 point_ids=full_config.pred_interest_points[source],
-                features=full_config.features,
+                static_features=full_config.static_features,
+                dynamic_features=full_config.dynamic_features,
                 source=source,
             )
         return data_output
@@ -345,10 +353,11 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
         end_date: datetime,
         species: List[Species],
         point_ids: List[str],
-        features: List[FeatureNames],
+        static_features: List[StaticFeatureNames],
+        dynamic_features: List[DynamicFeatureNames],
         source: Source,
     ) -> pd.DataFrame:
-        """Download all training data (static, dynamic[not yet implimented] and sensor readings)
+        """Download all training data and sensor readings)
         for a given source (e.g. laqn, aqe, satellite)
         """
 
@@ -362,7 +371,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
                 start_date=start_date,
                 end_date=end_date,
                 point_ids=point_ids,
-                features=features,
+                features=static_features,
                 source=source,
                 species=species,
                 output_type="all",
@@ -373,9 +382,24 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
             )
             sys.exit()
 
+        # Get dynamic features
+        if dynamic_features:
+            dynamic_source_data = self.get_dynamic_features(
+                start_date=start_date,
+                end_date=end_date,
+                point_ids=point_ids,
+                features=dynamic_features,
+                output_type="all",
+            )
+        else:
+            dynamic_source_data = []
+
         # Get dictionaries of wide data
         self.logger.debug("Postprocessing downloaded data")
-        source_data_dicts = [i.dict_flatten(exclude={"source"}) for i in source_data]
+        source_data_dicts = [
+            i.dict_flatten(exclude={"source"})
+            for i in source_data + dynamic_source_data
+        ]
 
         # Create a dataframe from a list of dictionaries
         # pylint: disable=W0108
@@ -390,12 +414,95 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
         )
         return wide_pd
 
+    @db_query(model=DynamicFeatureSchema)
+    def get_dynamic_features(
+        self,
+        start_date: datetime,
+        end_date: datetime,
+        features: List[DynamicFeatureNames],
+        point_ids: List[str],
+    ):
+        "Get the selected dynamic features for a specific locatoin and time"
+
+        with self.dbcnxn.open_session() as session:
+
+            # Get a row with all the point ids requested
+            point_id_sq = session.query(
+                Values(
+                    [column("point_id", String),],
+                    *[(point_id,) for point_id in point_ids],
+                    alias_name="point_ids",
+                )
+            ).subquery()
+
+            feature_sq = session.query(
+                Values(
+                    [column("feature_name", String),],
+                    *[(feature.value,) for feature in features],
+                    alias_name="features",
+                )
+            ).subquery()
+
+            expected_date_times_sq = session.query(
+                func.generate_series(
+                    start_date.isoformat(),
+                    (end_date - timedelta(hours=1)).isoformat(),
+                    ONE_HOUR_INTERVAL,
+                ).label("measurement_start_utc")
+            ).subquery()
+
+            # Expected dynamic features
+            point_id_feature_cross_join_sq = session.query(
+                point_id_sq, expected_date_times_sq, feature_sq
+            ).subquery()
+
+            dynamic_features_sq = (
+                session.query(
+                    DynamicFeature.point_id,
+                    DynamicFeature.feature_name,
+                    DynamicFeature.measurement_start_utc,
+                    DynamicFeature.value_1000,
+                    DynamicFeature.value_500,
+                    DynamicFeature.value_200,
+                    DynamicFeature.value_100,
+                    DynamicFeature.value_10,
+                )
+                .filter(
+                    DynamicFeature.point_id.in_(point_ids),
+                    DynamicFeature.feature_name.in_(features),
+                )
+                .subquery()
+            )
+
+            return session.query(
+                cast(point_id_feature_cross_join_sq.c.point_id, UUID).label("point_id"),
+                point_id_feature_cross_join_sq.c.measurement_start_utc,
+                point_id_feature_cross_join_sq.c.feature_name,
+                dynamic_features_sq.c.value_1000,
+                dynamic_features_sq.c.value_500,
+                dynamic_features_sq.c.value_200,
+                dynamic_features_sq.c.value_100,
+                dynamic_features_sq.c.value_10,
+            ).join(
+                dynamic_features_sq,
+                and_(
+                    and_(
+                        dynamic_features_sq.c.point_id
+                        == cast(point_id_feature_cross_join_sq.c.point_id, UUID),
+                        dynamic_features_sq.c.measurement_start_utc
+                        == point_id_feature_cross_join_sq.c.measurement_start_utc,
+                    ),
+                    dynamic_features_sq.c.feature_name
+                    == point_id_feature_cross_join_sq.c.feature_name,
+                ),
+            )
+
     @db_query(model=StaticFeatureTimeSpecies)
     def get_static_features(
         self,
         start_date: datetime,
         end_date: datetime,
-        features: List[FeatureNames],
+        features: List[StaticFeatureNames],
         source: Source,
         point_ids: List[str],
         species: List[Species],
@@ -418,7 +525,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
 
     @db_query(StaticFeatureLocSchema)
     def select_static_features(
-        self, point_ids: List[str], features: List[FeatureNames], source: Source
+        self, point_ids: List[str], features: List[StaticFeatureNames], source: Source,
     ):
         """
         Return static features from the database for a list of point ids
@@ -549,7 +656,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
         end_date: datetime,
         species: List[Species],
         point_ids: List[str],
-        features: List[FeatureNames],
+        features: List[StaticFeatureNames],
         source: Source,
     ):
         """Get static features with sensor readings joined"""

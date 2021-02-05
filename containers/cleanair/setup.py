@@ -27,6 +27,7 @@ setuptools.setup(
         "numpy==1.18.5",
         "pathos==0.2.5",
         "pandas==1.0.5",
+        "pathos==0.2.5",
         "pydantic==1.6.1",
         "pyeccodes==0.1.1",
         "python-dateutil==2.8.1",
