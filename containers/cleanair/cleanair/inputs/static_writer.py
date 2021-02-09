@@ -78,7 +78,7 @@ class StaticWriter(DBWriter):
             error_message += (
                 "Set password to be empty single quotations in your secretfile:"
             )
-            error_message += '\n \n "password": "\'\'"\n'
+            error_message += "\n \n \"password\": \"''\"\n"
             raise ValueError(error_message)
         # Get the connection string
         cnxn_string = create_ogr2ogr_connection_string().format(
