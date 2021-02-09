@@ -10,6 +10,20 @@ from ..databases.tables import MetaPoint
 from ..loggers import get_logger, green
 
 
+def create_ogr2ogr_connection_string() -> str:  #pylint: disable=invalid-name
+    """Creates a ogr2ogr connection string that works for Docker"""
+    return " ".join(
+        [
+            "dbname={db_name}",
+            "port={port}",
+            "user={username}",
+            "password={password}",
+            "host={host}",
+            "sslmode={ssl_mode}",
+        ]
+    )
+
+
 class StaticWriter(DBWriter):
     """Manage interactions with the static database on Azure"""
 
@@ -58,17 +72,18 @@ class StaticWriter(DBWriter):
             )
             return False
 
+        # raise error if empty string is passed - must contain ''
+        if self.dbcnxn.connection["password"] == "":
+            error_message = "You passed an empty password for PostgreSQL."
+            error_message += (
+                "Set password to be empty single quotations in your secretfile:"
+            )
+            error_message += '\n \n "password": "\'\'"\n'
+            raise ValueError(error_message)
         # Get the connection string
-        cnxn_string = " ".join(
-            [
-                "dbname={db_name}",
-                "port={port}",
-                "user={username}",
-                "password={password}",
-                "host={host}",
-                "sslmode={ssl_mode}",
-            ]
-        ).format(**self.dbcnxn.connection_info)
+        cnxn_string = create_ogr2ogr_connection_string().format(
+            **self.dbcnxn.connection_info
+        )
 
         # Add additional arguments if the input data contains shape files
         extra_args = ["-lco", "GEOMETRY_NAME=geom"]
