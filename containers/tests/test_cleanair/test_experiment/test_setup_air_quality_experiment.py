@@ -11,9 +11,9 @@ def assert_statements_for_dataset_df(
 ) -> None:
     """Simple checks for an air quality normalised dataframe"""
     assert len(dataset) > 0
-    for feature in data_config.features:
+    for static_feature in data_config.static_features:
         for buffer in data_config.buffer_sizes:
-            full_feature_name = "value_" + str(buffer.value) + "_" + feature.value
+            full_feature_name = "value_" + str(buffer.value) + "_" + static_feature.value
             assert full_feature_name in dataset.columns
 
 

@@ -3,6 +3,8 @@
 from abc import abstractmethod
 from datetime import datetime
 import json
+from multiprocessing import Pool
+from os import cpu_count
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 import tensorflow as tf
@@ -201,15 +203,16 @@ class RunnableExperimentMixin(SetupExperimentMixin):
         # make sure to load the datasets first
         for instance_id, instance in self._instances.items():
             instance.fit_start_time = datetime.now()
-            
+            tf.compat.v1.reset_default_graph()
             with tf.compat.v1.Graph().as_default():
-                with tf.compat.v1.get_default_session():
+                with tf.compat.v1.Session().as_default() as session:
+                    # session.reset(graph)
                     self.load_model(instance_id)
                     self.train_model(instance_id)
                     self.predict_on_training_set(instance_id)
                     self.predict_on_test_set(instance_id)
                     self.save_result(instance_id)
-                    # tf.compat.v1.reset_default_graph()
+                    session.close()
 
 
 class UpdateExperimentMixin(ExperimentMixin, DBWriter):

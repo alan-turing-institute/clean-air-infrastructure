@@ -149,6 +149,7 @@ InputDir = typer.Argument(
 
 ExperimentDir = typer.Option(
     EXPERIMENT_CACHE,
+    help="Directory to save experiment data",
     dir_okay=True,
     file_okay=False,
     writable=True,
