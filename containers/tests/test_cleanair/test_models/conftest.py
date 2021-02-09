@@ -1,7 +1,6 @@
 """Fixtures for modelling."""
 
 from datetime import timedelta
-
 import numpy as np
 from nptyping import NDArray, Float
 import pytest
