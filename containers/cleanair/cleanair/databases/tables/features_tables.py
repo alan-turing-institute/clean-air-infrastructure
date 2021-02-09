@@ -64,9 +64,8 @@ class DynamicFeature(Base):
 
     __tablename__ = "dynamic_feature"
     __table_args__ = (
-        Index("dynamic_feature_id_idx2", "point_id"),
         Index(
-            "dynamic_feature_id_time_name_idx2",
+            "dynamic_feature_id_time_name_idx",
             "point_id",
             "measurement_start_utc",
             "feature_name",
@@ -79,8 +78,11 @@ class DynamicFeature(Base):
         ForeignKey("interest_points.meta_point.id"),
         primary_key=True,
         nullable=False,
+        index=True,
     )
-    measurement_start_utc = Column(TIMESTAMP, primary_key=True, nullable=False)
+    measurement_start_utc = Column(
+        TIMESTAMP, primary_key=True, nullable=False, index=True
+    )
     feature_name = Column(String(50), primary_key=True, nullable=False)
     value_1000 = Column(Float, nullable=False)
     value_500 = Column(Float, nullable=False)

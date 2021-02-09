@@ -1,12 +1,14 @@
 """Types for the cleanair package."""
 
 from .enum_types import (
+    ScootProcessType,
     Borough,
     ClusterId,
     Tag,
     Species,
     Source,
-    FeatureNames,
+    StaticFeatureNames,
+    DynamicFeatureNames,
     FeatureBufferSize,
     KernelType,
     ModelName,
@@ -53,4 +55,5 @@ __all__ = [
     "TargetDict",
     "Source",
     "Species",
+    "ScootProcessType",
 ]

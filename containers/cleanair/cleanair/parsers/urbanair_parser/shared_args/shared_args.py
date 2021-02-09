@@ -5,15 +5,18 @@ import json
 from enum import Enum
 import typer
 from ..state import DATA_CACHE, EXPERIMENT_CACHE
-from ....features import FEATURE_CONFIG
+from ....features import FEATURE_CONFIG, FEATURE_CONFIG_DYNAMIC
 from ....timestamps import as_datetime, TIMESTRINGS
 from ....types import Source as ValidSources
 
 
 # pylint: disable=C0103
 zip_features: Dict = dict(zip(FEATURE_CONFIG.keys(), FEATURE_CONFIG.keys()))
+zip_features_dynamic: Dict = dict(
+    zip(FEATURE_CONFIG_DYNAMIC.keys(), FEATURE_CONFIG_DYNAMIC.keys())
+)
 ValidFeatureSources = Enum("ValidFeatureSources", zip_features)
-
+ValidDynamicFeatureSources = Enum("ValidDynamicFeatureSources", zip_features_dynamic)
 
 DEFAULT_SOURCES = [ValidSources.laqn, ValidSources.aqe]
 
@@ -37,6 +40,13 @@ def UpTo_callback(value: str) -> str:
 def NDays_callback(value: int) -> int:
     "convert days to hours"
     return value * 24
+
+
+def NWorkers_callback(value: int) -> int:
+    "cap workers"
+    if value > 2:
+        raise ValueError("nworkers must be less than 3")
+    return value
 
 
 def CommaSeparate_callback(values: str) -> List[str]:
@@ -171,3 +181,10 @@ ScootDetectors = typer.Option(
 Sources = typer.Option(..., help="List sources to process")
 
 Species = typer.Option(..., help="Species of pollutant")
+
+NWorkers = typer.Option(
+    1,
+    show_default=True,
+    help="Number of threads and database cores to use",
+    callback=NWorkers_callback,
+)
