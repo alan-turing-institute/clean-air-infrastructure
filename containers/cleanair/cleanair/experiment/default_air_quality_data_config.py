@@ -20,7 +20,7 @@ def default_laqn_data_config() -> DataConfig:
         species=[Species.NO2],
         static_features=[],
         dynamic_features=[],
-        buffer_sizes=[FeatureBufferSize.one_hundred, FeatureBufferSize.five_hundred],
+        buffer_sizes=[FeatureBufferSize.one_hundred],
         norm_by=Source.laqn,
     )
 
@@ -36,6 +36,6 @@ def default_sat_data_config() -> DataConfig:
         species=[Species.NO2],
         static_features=[],
         dynamic_features=[],
-        buffer_sizes=[FeatureBufferSize.one_hundred, FeatureBufferSize.five_hundred],
+        buffer_sizes=[FeatureBufferSize.one_hundred],
         norm_by=Source.laqn,
     )
