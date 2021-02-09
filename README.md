@@ -105,11 +105,40 @@ Install it using on your own preferred environment with `pip install azure-cli`
 Download and install [Docker Desktop](https://www.docker.com/products/docker-desktop)
 
 ### PostgreSQL
+
 [PostgreSQL](https://www.postgresql.org/download) and [PostGIS](https://postgis.net/install).
+
+Setting up a local Postgres intance with PostGIS can be troublesome, so we recommend using a docker image.
+
+```bash
+docker run --name database -e POSTGRES_HOST_AUTH_METHOD=trust -p 5432:5432 cleanairdocker.azurecr.io/database
+```
+
+<details>
+<summary>If you aren't logged in with access to the cleanairdocker registry, you can build the image yourself and run it with:</summary>
+
+```bash
+docker build -t database:latest -f ./containers/dockerfiles/test_database.dockerfile .
+docker run --name database -e POSTGRES_HOST_AUTH_METHOD=trust -p 5432:5432 database
+```
+
+</details>
+
+! If you have another Postgres install running, it will likely be using port 5432. In this case, use a different port number, for example to 5000 (Remember to change your local secrets file to match). Run instead with:
+
+```bash
+docker run --name database -e POSTGRES_HOST_AUTH_METHOD=trust -p 5000:5432 database
+```
+
+
+<details>
+<summary>Alternatively, you can install Postgres with your package manager, such as Homebrew:</summary>
 
 ```bash
 brew install postgresql postgis
 ```
+</details>
+
 
 ### GDAL
 [GDAL](https://gdal.org/) can be installed using `brew` on OSX.

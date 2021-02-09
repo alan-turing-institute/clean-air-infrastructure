@@ -55,6 +55,7 @@ docs_dir: 'docs_src/'
 nav:
   - Cleanair: index.md
   - Minikube: minikube.md
+  - Cluster: managing_cluster.md
   - Models:
     - fitting_model.md
 

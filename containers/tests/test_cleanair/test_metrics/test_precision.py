@@ -1,7 +1,6 @@
 """Test precision metrics."""
 
 import numpy as np
-from nptyping import NDArray, Float64
 from cleanair.metrics import (
     confidence_interval,
     confidence_interval_50,
@@ -9,6 +8,7 @@ from cleanair.metrics import (
     confidence_interval_95,
     probable_error,
 )
+from nptyping import NDArray, Float64
 
 
 def test_confidence_interval(

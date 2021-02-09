@@ -1,30 +1,33 @@
 """Vizualise available sensor data for a model fit"""
 from __future__ import annotations
-from typing import List
+
 from datetime import datetime, timedelta
+from typing import List
 from sqlalchemy import func, text, cast, String
-from ..databases.tables import StaticFeature, MetaPoint
-from ..databases.materialised_views import LondonBoundaryView
+
+from cleanair.types.enum_types import DynamicFeatureNames
+
 from ..databases import DBReader
+from ..databases.materialised_views import LondonBoundaryView
+from ..databases.tables import StaticFeature, MetaPoint
+from ..decorators import db_query
+from ..exceptions import MissingFeatureError, MissingSourceError
+from ..loggers import get_logger, green
 from ..mixins.availability_mixins import (
     LAQNAvailabilityMixin,
     AQEAvailabilityMixin,
     SatelliteAvailabilityMixin,
 )
-from ..loggers import get_logger, green
 from ..timestamps import as_datetime
-from ..decorators import db_query
-from ..exceptions import MissingFeatureError, MissingSourceError
 from ..types import (
     Source,
     Species,
-    FeatureNames,
+    StaticFeatureNames,
     DataConfig,
     FullDataConfig,
     FeatureBufferSize,
     InterestPointDict,
 )
-
 
 ONE_HOUR_INTERVAL = text("interval '1 hour'")
 ONE_DAY_INTERVAL = text("interval '1 day'")
@@ -54,7 +57,8 @@ class ModelConfig(
         train_sources: List[Source],
         pred_sources: List[Source],
         species: List[Species],
-        features: List[FeatureNames],
+        static_features: List[StaticFeatureNames],
+        dynamic_features: List[DynamicFeatureNames],
         buffer_sizes: List[FeatureBufferSize],
         norm_by: str,
     ) -> DataConfig:
@@ -75,7 +79,8 @@ class ModelConfig(
             train_interest_points={src: "all" for src in train_sources},
             pred_interest_points={src: "all" for src in pred_sources},
             species=species,
-            features=features,
+            static_features=static_features,
+            dynamic_features=dynamic_features,
             buffer_sizes=buffer_sizes,
             norm_by=norm_by,
             include_prediction_y=False,
@@ -92,8 +97,8 @@ class ModelConfig(
 
         self.logger.info("Validating config")
 
-        self.check_features_available(
-            config.features, config.train_start_date, config.pred_end_date
+        self.check_static_features_available(
+            config.static_features, config.train_start_date, config.pred_end_date
         )
         self.logger.info(green("Requested features are available"))
 
@@ -121,24 +126,42 @@ class ModelConfig(
         )
 
         # Create feature names from features and buffer sizes
-        feature_names = [
+        static_feature_names = [
             f"value_{buff.value}_{feature.name}"
             for buff in config.buffer_sizes
-            for feature in config.features
+            for feature in config.static_features
+        ]
+
+        dynamic_feature_names = [
+            f"value_{buff.value}_{feature.name}"
+            for buff in config.buffer_sizes
+            for feature in config.dynamic_features
         ]
 
         # Add epoch, lat and lon
-        x_names = ["epoch", "lat", "lon"] + feature_names
+        x_names = ["epoch", "lat", "lon"] + (
+            static_feature_names + dynamic_feature_names
+            if dynamic_feature_names
+            else static_feature_names
+        )
 
         # Create full config and validate
         config_dict = config.dict()
-        config_dict["feature_names"] = feature_names
+        config_dict["feature_names"] = (
+            static_feature_names + dynamic_feature_names
+            if dynamic_feature_names
+            else static_feature_names
+        )
+
         config_dict["x_names"] = x_names
 
         return FullDataConfig(**config_dict)
 
-    def check_features_available(
-        self, features: List[FeatureNames], start_date: datetime, end_date: datetime
+    def check_static_features_available(  # TODO make a check for availability of dynamic features too
+        self,
+        features: List[StaticFeatureNames],
+        start_date: datetime,
+        end_date: datetime,
     ) -> None:
         """Check that all requested features exist in the database"""
 
