@@ -10,7 +10,7 @@ sudo systemctl restart postgresql@11-main
 mkdir -p .secrets
 echo '{
     "username": "postgres",
-    "password": "''",
+    "password": "'\'\''",
     "host": "localhost",
     "port": 5433,
     "db_name": "cleanair_test_db",
