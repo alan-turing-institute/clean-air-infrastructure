@@ -10,7 +10,9 @@ from ..databases.tables import MetaPoint
 from ..loggers import get_logger, green
 
 
-def create_ogr2ogr_connection_string(connection_info) -> str:  #pylint: disable=invalid-name
+def create_ogr2ogr_connection_string(
+    connection_info,
+) -> str:  # pylint: disable=invalid-name
     """Creates a ogr2ogr connection string that works for Docker"""
 
     # raise error if empty string is passed - must contain ''
@@ -19,7 +21,7 @@ def create_ogr2ogr_connection_string(connection_info) -> str:  #pylint: disable=
         error_message += (
             " Set password to be empty single quotations in your secretfile:"
         )
-        error_message += "\n \n \"password\": \"''\"\n"
+        error_message += '\n \n "password": "\'\'"\n'
         raise ValueError(error_message)
 
     return " ".join(
