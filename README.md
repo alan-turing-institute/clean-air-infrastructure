@@ -327,7 +327,7 @@ We store database credentials in json files. **For production databases you shou
 mkdir -p .secrets
 echo '{
     "username": "postgres",
-    "password": "''",
+    "password": "'\'\''",
     "host": "localhost",
     "port": 5432,
     "db_name": "cleanair_test_db",
