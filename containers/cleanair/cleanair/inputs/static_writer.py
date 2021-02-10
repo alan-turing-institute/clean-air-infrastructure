@@ -9,10 +9,8 @@ from ..databases import DBWriter
 from ..databases.tables import MetaPoint
 from ..loggers import get_logger, green
 
-
-def create_ogr2ogr_connection_string(
-    connection_info,
-) -> str:  # pylint: disable=invalid-name
+# pylint: disable=invalid-name
+def create_ogr2ogr_connection_string(connection_info) -> str:
     """Creates a ogr2ogr connection string that works for Docker"""
 
     # raise error if empty string is passed - must contain ''
