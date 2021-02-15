@@ -2,27 +2,26 @@
 PydanticModels for serialising database query results
 """
 from datetime import datetime
-from typing import Optional
 from enum import Enum
+from typing import Optional
 from uuid import UUID
+
 from pydantic import BaseModel, validator, ValidationError
-from ..types import FeatureNames, Source, Species
+
+from ..types import StaticFeatureNames, DynamicFeatureNames, Source, Species
+
 
 # pylint: disable=R0201,C0115,E0213
 
 
-class StaticFeatureSchema(BaseModel):
-    """Static Feartures Schema"""
+class BaseFeatures(BaseModel):
 
     point_id: UUID
-    feature_name: FeatureNames
-    source: Source
     value_1000: float
     value_500: float
     value_200: float
     value_100: float
     value_10: float
-    in_london: bool
 
     class Config:
         orm_mode = True
@@ -38,6 +37,58 @@ class StaticFeatureSchema(BaseModel):
             else:
                 dict_entries.append((field_name, value))
         return dict(dict_entries)
+
+
+class DynamicFeatureSchema(BaseFeatures):
+    "Dynamic feature schema"
+
+    feature_name: DynamicFeatureNames
+    measurement_start_utc: datetime
+    epoch: Optional[int]
+
+    @validator("epoch", always=True)
+    def gen_measurement_end_time(cls, v, values):
+        "Generate end time one hour after start time"
+        if v:
+            raise ValidationError(
+                "Dont pass a value for epoch. It is generated automatically"
+            )
+        return values["measurement_start_utc"].timestamp()
+
+    class Config:
+        orm_mode = True
+
+    def dict_flatten(self, *args, **kwargs):
+        """Same as self.dict_enums except values and feature name
+        are replaced with 'value_1000_{feature_name}
+        """
+
+        item = self.dict_enums(*args, **kwargs)
+
+        new_dict = {}
+        for key, value in item.items():
+            if key in ("value", "feature_name"):
+                continue
+            if "value_" in key:
+                new_key = f"{key}_{self.feature_name.value}"
+                new_value = value
+            else:
+                new_key = key
+                new_value = value
+
+            new_dict[new_key] = new_value
+        return new_dict
+
+
+class StaticFeatureSchema(BaseFeatures):
+    """Static Features Schema"""
+
+    feature_name: StaticFeatureNames
+    source: Source
+    in_london: bool
+
+    class Config:
+        orm_mode = True
 
     def dict_flatten(self, *args, **kwargs):
         """Same as self.dict_enums except values and feature name

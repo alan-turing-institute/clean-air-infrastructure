@@ -14,6 +14,8 @@ class Settings(BaseSettings):
     mount_docs: bool = False
     sentry_dsn: Optional[str]
     root_path: str = ""
+    tomtom_api_key: str = ""
+
     htpasswdfile: Optional[Path] = None
 
     @validator("htpasswdfile")
