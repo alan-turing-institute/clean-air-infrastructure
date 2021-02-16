@@ -76,7 +76,7 @@ resource "azurerm_postgresql_server" "this" {
   administrator_login          = "${azurerm_key_vault_secret.db_admin_username.value}"
   administrator_login_password = "${azurerm_key_vault_secret.db_admin_password.value}"
   version                      = "11"
-  ssl_enforcement              = "Enabled"
+  ssl_enforcement_enabled      = true
 
   tags = {
     environment = "Terraform Clean Air"
