@@ -1,6 +1,11 @@
+import os
 import tensorflow as tf
+
+# turn off tensorflow warnings for gpflow
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
+tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
+# pylint: disable=wrong-import-position,wrong-import-order
 import gpflow
-from gpflow import settings
 
 # pylint: disable=protected-access
 
@@ -25,12 +30,15 @@ def reparameterize(mean, var, z, full_cov=False):
         return mean
 
     if not full_cov:
-        return mean + z * (var + settings.jitter) ** 0.5
+        return mean + z * (var + gpflow.settings.jitter) ** 0.5
 
     _, N, _ = tf.shape(mean)[0], tf.shape(mean)[1], tf.shape(mean)[2]  # var is SNND
     mean = tf.transpose(mean, (0, 2, 1))  # SND -> SDN
     var = tf.transpose(var, (0, 3, 1, 2))  # SNND -> SDNN
-    I = settings.jitter * tf.eye(N, dtype=settings.float_type)[None, None, :, :]  # 11NN
+    I = (
+        gpflow.settings.jitter
+        * tf.eye(N, dtype=gpflow.settings.float_type)[None, None, :, :]
+    )  # 11NN
     chol = tf.cholesky(var + I)  # SDNN
     z_SDN1 = tf.transpose(z, [0, 2, 1])[:, :, :, None]  # SND->SDN1
     f = mean + tf.matmul(chol, z_SDN1)[:, :, :, 0]  # SDN(1)

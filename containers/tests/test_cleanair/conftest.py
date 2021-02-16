@@ -8,6 +8,7 @@ import pytest
 from dateutil import rrule
 from dateutil.parser import isoparse
 import numpy as np
+import tensorflow as tf
 import pandas as pd
 from nptyping import NDArray
 from cleanair.databases import DBWriter
@@ -34,7 +35,7 @@ from cleanair.databases.tables.fakes import (
     SatelliteGridSchema,
     SatelliteForecastSchema,
 )
-from cleanair.instance import AirQualityInstance
+from cleanair.experiment import AirQualityInstance
 from cleanair.models import ModelConfig, ModelData
 from cleanair.types import (
     BaseModelParams,
@@ -728,23 +729,83 @@ def model_config(secretfile, connection_class):
     return ModelConfig(secretfile=secretfile, connection=connection_class)
 
 
-@pytest.fixture(scope="class")
+@pytest.fixture(scope="function")
 def model_data(secretfile, connection_class):
     "Return a ModelData instance"
     return ModelData(secretfile=secretfile, connection=connection_class)
 
 
+@pytest.fixture(scope="function")
+def sat_config(dataset_start_date):
+    """Satellite dataset with no feature."""
+    return DataConfig(
+        train_start_date=dataset_start_date,
+        train_end_date=dataset_start_date + timedelta(days=1),
+        pred_start_date=dataset_start_date + timedelta(days=1),
+        pred_end_date=dataset_start_date + timedelta(days=2),
+        include_prediction_y=False,
+        train_sources=[Source.laqn, Source.satellite],
+        pred_sources=[Source.laqn],
+        train_interest_points={Source.laqn.value: "all", Source.satellite.value: "all"},
+        pred_interest_points={Source.laqn.value: "all", Source.satellite.value: "all"},
+        species=[Species.NO2],
+        static_features=[StaticFeatureNames.total_a_road_length],
+        dynamic_features=[],
+        buffer_sizes=[FeatureBufferSize.two_hundred],
+        norm_by=Source.laqn,
+        model_type=ModelName.mrdgp,
+    )
+
+
+@pytest.fixture(scope="function")
+def sat_full_config(sat_config, model_config):
+    """Generate full config for laqn + sat."""
+    model_config.validate_config(sat_config)
+    return model_config.generate_full_config(sat_config)
+
+
+@pytest.fixture(scope="function")
+def tf_session():
+    """A tensorflow session that lasts for only the scope of a function.
+
+    Yields:
+        Tensorflow session.
+    """
+    with tf.Session() as sess:
+        sess.run(tf.global_variables_initializer())
+        yield sess
+
+
+@pytest.fixture(autouse=True, scope="function")
+def init_graph():
+    """Initialise a tensorflow graph."""
+    with tf.Graph().as_default():
+        yield
+
+
 @pytest.fixture(scope="class")
-def fake_laqn_svgp_instance(
-    secretfile, connection_class, svgp_model_params, laqn_full_config, model_config
+def laqn_svgp_instance(
+    secretfile, connection_class, laqn_full_config, svgp_model_params
 ):
-    """Write an instance to the database. Return the instance."""
-    instance = AirQualityInstance(
-        laqn_full_config,
-        ModelName.svgp,
-        svgp_model_params,
+    """LAQN data and a SVGP model params inside an instance"""
+    return AirQualityInstance(
+        data_config=laqn_full_config,
+        model_name=ModelName.svgp,
+        model_params=svgp_model_params,
         secretfile=secretfile,
         connection=connection_class,
     )
-    instance.update_remote_tables()
-    return instance
+
+
+@pytest.fixture(scope="function")
+def sat_mrdgp_instance(
+    secretfile, connection_class, mrdgp_model_params, sat_full_config
+):
+    """Satellite + LAQN data with MRDGP model params"""
+    return AirQualityInstance(
+        data_config=sat_full_config,
+        model_name=ModelName.mrdgp,
+        model_params=mrdgp_model_params,
+        secretfile=secretfile,
+        connection=connection_class,
+    )
