@@ -22,7 +22,7 @@ stages:
     - task: AzureKeyVault@1
       displayName: 'Read KeyVault secrets'
       inputs:
-        azureSubscription: 'cleanair-scn'
+        azureSubscription: 'urbanair-scn'
         KeyVaultName: 'cleanair-secrets'
         SecretsFilter: 'container-registry-admin-password,container-registry-admin-username,container-registry-login-server'
     # Login to ACR
@@ -99,7 +99,7 @@ stages:
     - task: AzureCLI@1
       displayName: 'Connect to Azure'
       inputs:
-        azureSubscription: 'cleanair-scn'
+        azureSubscription: 'urbanair-scn'
         scriptLocation: 'inlineScript'
         inlineScript: |
           az aks get-credentials -n $(KUBERNETES_CLUSTER_NAME) -g $(KUBERNETES_CLUSTER_RESOURCE_GROUP)
@@ -109,7 +109,7 @@ stages:
     - task: AzureKeyVault@1
       displayName: 'Read KeyVault secrets'
       inputs:
-        azureSubscription: 'cleanair-scn'
+        azureSubscription: 'urbanair-scn'
         KeyVaultName: 'cleanair-secrets'
         SecretsFilter: 'scoot-aws-key,scoot-aws-key-id,satellite-copernicus-key,cleanair-inputs-db-name,cleanair-inputs-db-cluster-password,cleanair-inputs-db-cluster-username,cleanair-inputs-db-server-name, container-registry-admin-password,container-registry-admin-username,container-registry-login-server,sentry-dsn,tomtom-api-key'
     # Install matching Kubectl version
@@ -181,7 +181,7 @@ stages:
       displayName: 'Install/upgrade Helm chart'
       inputs:
         connectionType: Azure Resource Manager
-        azureSubscriptionEndpoint: 'cleanair-scn'
+        azureSubscriptionEndpoint: 'urbanair-scn'
         azureResourceGroup: $(KUBERNETES_CLUSTER_RESOURCE_GROUP)
         kubernetesCluster: $(KUBERNETES_CLUSTER_NAME)
         namespace: $(NAMESPACE)

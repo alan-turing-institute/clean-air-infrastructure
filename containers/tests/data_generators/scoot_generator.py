@@ -1,7 +1,7 @@
 """Generating fake data for scoot."""
 
 from __future__ import annotations
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, List
 import string
 import random
 import numpy as np
@@ -24,7 +24,7 @@ class ScootGenerator(ScootQueryMixin, DBWriter):
         upto: str,
         offset: Optional[int] = None,
         limit: Optional[int] = None,
-        detectors: Optional[str] = None,
+        detectors: Optional[List[str]] = None,
         borough: Optional[Borough] = None,
         **kwargs
     ) -> None:
@@ -52,7 +52,6 @@ class ScootGenerator(ScootQueryMixin, DBWriter):
         start = pd.date_range(self.start, self.upto, freq="H", closed="left")
         end = start + pd.DateOffset(hours=1)
         nreadings = len(start)  # number of readings for each detector
-
         # Detectors are already in the database as static data
         detectors = self.scoot_detectors(
             offset=self.offset,
