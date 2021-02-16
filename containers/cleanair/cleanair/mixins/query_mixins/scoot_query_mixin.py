@@ -79,6 +79,7 @@ class ScootQueryMixin:
         offset: Optional[int] = None,
         limit: Optional[int] = None,
         borough: Optional[Borough] = None,
+        drop_null: bool = True,
     ):
         """Get scoot data with lat and long positions.
 
@@ -90,6 +91,7 @@ class ScootQueryMixin:
             detectors: Subset of detectors to get readings for.
             with_location: If true return the lat, lon and geom columns for the location of the scoot detectors.
             day_of_week: Day of the week. 0=Mon, 1=Tue, etc.
+            drop_null: Drop rows with null readings
 
         See also:
             `scoot_detectors` for docs on the other parameters.
@@ -164,6 +166,13 @@ class ScootQueryMixin:
                         )
                     )
                 scoot_readings = scoot_readings.filter(or_(*or_statements))
+
+            # Drop null rows (i.e. requested from S3 bucket but no data found)
+            if drop_null:
+                scoot_readings = scoot_readings.filter(
+                    ScootReading.n_vehicles_in_interval.isnot(None)
+                )
+
             return scoot_readings
 
     @staticmethod

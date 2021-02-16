@@ -33,9 +33,10 @@ maintainers:
 
 dependencies:
   # https://github.com/helm/charts/tree/master/stable/nginx-ingress
-  - name: nginx-ingress
-    version: "1.30.0"
-    repository: "https://kubernetes-charts.storage.googleapis.com"
+  # 2021-01-05 OG: Migrated to https://github.com/kubernetes/ingress-nginx/ 
+  - name: "ingress-nginx"
+    version: "v3.19.0"
+    repository: "https://kubernetes.github.io/ingress-nginx"
   - name: cert-manager
     version: "v0.13.0"
     repository: "https://charts.jetstack.io"

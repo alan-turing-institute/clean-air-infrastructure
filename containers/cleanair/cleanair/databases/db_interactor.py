@@ -11,7 +11,12 @@ class DBInteractor:
     """
 
     def __init__(
-        self, secretfile, initialise_tables=True, connection=None, secret_dict=None
+        self,
+        secretfile,
+        initialise_tables=True,
+        connection=None,
+        secret_dict=None,
+        threadsafe=False,
     ):
         """
         Init method for connecting to database
@@ -34,7 +39,10 @@ class DBInteractor:
         # Ensure that connector exists
         if not hasattr(self, "dbcnxn"):
             self.dbcnxn = Connector(
-                secretfile, connection=connection, secret_dict=secret_dict
+                secretfile,
+                connection=connection,
+                secret_dict=secret_dict,
+                threadsafe=threadsafe,
             )
 
         # Ensure that tables are initialised
