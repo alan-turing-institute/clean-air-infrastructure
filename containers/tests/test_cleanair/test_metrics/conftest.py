@@ -3,20 +3,22 @@
 from datetime import datetime
 from typing import List
 from uuid import UUID
-import pytest
+
 import numpy as np
 import pandas as pd
-from nptyping import NDArray, Float64
+import pytest
 from cleanair.metrics import AirQualityMetrics
 from cleanair.types import Source, Species
+from nptyping import NDArray, Float64
+
 
 # pylint: disable=redefined-outer-name
 
 
 @pytest.fixture(scope="class")
-def point_ids(fake_laqn_svgp_instance) -> List[UUID]:
+def point_ids(laqn_svgp_instance) -> List[UUID]:
     """Get a list of point ids."""
-    return fake_laqn_svgp_instance.data_config.train_interest_points[Source.laqn]
+    return laqn_svgp_instance.data_config.train_interest_points[Source.laqn]
 
 
 @pytest.fixture(scope="function")
@@ -68,7 +70,7 @@ def result_df(
     num_training_data_points,
     point_ids: List[UUID],
     timestamps: List,
-    fake_laqn_svgp_instance,
+    laqn_svgp_instance,
 ) -> pd.DataFrame:
     """A dataframe of predictions for the mean and variance."""
     point_array = []
@@ -82,8 +84,8 @@ def result_df(
     dframe["NO2_var"] = np.ones(num_training_data_points)
     dframe["source"] = Source.laqn
     dframe["pollutant"] = Species.NO2
-    dframe["instance_id"] = fake_laqn_svgp_instance.instance_id
-    dframe["data_id"] = fake_laqn_svgp_instance.data_id
+    dframe["instance_id"] = laqn_svgp_instance.instance_id
+    dframe["data_id"] = laqn_svgp_instance.data_id
     return dframe
 
 
@@ -101,10 +103,11 @@ def nans_df() -> pd.DataFrame:
 
 
 @pytest.fixture(scope="function")
-def metrics_calculator(fake_laqn_svgp_instance, secretfile, connection_class):
+def metrics_calculator(laqn_svgp_instance, secretfile, connection_class):
     """Test the init function of the air quality metrics class."""
+    laqn_svgp_instance.update_remote_tables()
     return AirQualityMetrics(
-        fake_laqn_svgp_instance.instance_id,
+        laqn_svgp_instance.instance_id,
         secretfile=secretfile,
         connection=connection_class,
     )

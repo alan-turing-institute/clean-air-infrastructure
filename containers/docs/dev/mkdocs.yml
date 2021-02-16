@@ -1,7 +1,7 @@
 # Project information
 site_name: CleanAir Development Docs
 site_description: Documentation for the CleanAir project
-site_author: Oscar Giles, James Robinson, Patrick O'Hara, Christy Nakou, David Pérez-Suárez, Tim Spain
+site_author: Oscar Giles, James Robinson, Patrick O'Hara, Ollie Hamelijnck, Christy Nakou, David Pérez-Suárez, Tim Spain
 site_url: https://urbanair.turing.ac.uk/dev/package/docs
 
 # Repository
@@ -28,7 +28,6 @@ extra:
     - icon: fontawesome/brands/github-alt
       link: https://github.com/alan-turing-institute/clean-air-infrastructure
 
-
 # Extensions
 markdown_extensions:
   - admonition
@@ -36,6 +35,10 @@ markdown_extensions:
       guess_lang: false
   - toc:
       permalink: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:materialx.emoji.twemoji
+  - pymdownx.highlight
+  - pymdownx.superfences
 
 plugins:
   - search
@@ -51,7 +54,11 @@ plugins:
 docs_dir: 'docs_src/'
 nav:
   - Cleanair: index.md
+  - Experiment: experiment.md
   - Minikube: minikube.md
+  - Cluster: managing_cluster.md
+  - Models:
+    - fitting_model.md
 
 # ToDo: Add API docs
 # - API: 
