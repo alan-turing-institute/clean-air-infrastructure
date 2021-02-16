@@ -9,7 +9,7 @@ from datetime import datetime, date, timedelta
 from pydantic import BaseModel, validator
 from scipy.stats import uniform, norm
 import numpy as np
-from ....types import Source, FeatureNames
+from ....types import Source, StaticFeatureNames
 from ....databases.tables import SatelliteBox
 
 # pylint: disable=E0213,R0201
@@ -188,7 +188,7 @@ class SatelliteForecastSchema(BaseModel):
 class StaticFeaturesSchema(BaseModel):
     "Static features schema"
     point_id: uuid.UUID
-    feature_name: FeatureNames
+    feature_name: StaticFeatureNames
     feature_source: Source
     value_1000: Optional[float]
     value_500: Optional[float]
