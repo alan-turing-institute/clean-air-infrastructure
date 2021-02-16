@@ -15,7 +15,8 @@ from ....models import ModelConfig, ModelData
 from ....types import (
     Species,
     Source,
-    FeatureNames,
+    StaticFeatureNames,
+    DynamicFeatureNames,
     FeatureBufferSize,
 )
 from ....loggers import red, green
@@ -89,20 +90,26 @@ def generate_config(
         help="Pollutants to train and predict on",
         show_default=True,
     ),
-    features: List[FeatureNames] = typer.Option(
+    static_features: List[StaticFeatureNames] = typer.Option(
         [
-            FeatureNames.total_road_length.value,
-            FeatureNames.total_a_road_length.value,
-            FeatureNames.total_a_road_primary_length.value,
-            FeatureNames.total_b_road_length.value,
-            FeatureNames.grass.value,
-            FeatureNames.building_height.value,
-            FeatureNames.water.value,
-            FeatureNames.park.value,
-            FeatureNames.max_canyon_narrowest.value,
-            FeatureNames.max_canyon_ratio.value,
+            StaticFeatureNames.total_road_length.value,
+            StaticFeatureNames.total_a_road_length.value,
+            StaticFeatureNames.total_a_road_primary_length.value,
+            StaticFeatureNames.total_b_road_length.value,
+            StaticFeatureNames.grass.value,
+            StaticFeatureNames.building_height.value,
+            StaticFeatureNames.water.value,
+            StaticFeatureNames.park.value,
+            StaticFeatureNames.max_canyon_narrowest.value,
+            StaticFeatureNames.max_canyon_ratio.value,
         ],
         help="Features to predict on",
+    ),
+    dynamic_features: List[DynamicFeatureNames] = typer.Option(
+        [
+            DynamicFeatureNames.max_n_vehicles.value,
+            DynamicFeatureNames.avg_n_vehicles.value,
+        ]
     ),
     feature_buffer: List[FeatureBufferSize] = typer.Option(
         ["1000", "500"], help="Size of buffer for features", show_default=True
@@ -130,7 +137,8 @@ def generate_config(
         pred_sources=pred_source,
         species=species,
         norm_by=norm_by,
-        features=features,
+        static_features=static_features,
+        dynamic_features=dynamic_features,
         buffer_sizes=feature_buffer,
     )
     file_manager = FileManager(input_dir)
@@ -177,7 +185,7 @@ def download(
         False, "--prediction-data", help="Download prediction data",
     ),
     output_csv: bool = typer.Option(
-        True, "--output-csv", help="Output dataframes as csv", show_default=True
+        False, "--output-csv", help="Output dataframes as csv", show_default=True
     ),
 ):
     """Download data from the database

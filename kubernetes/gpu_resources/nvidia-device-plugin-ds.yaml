@@ -33,7 +33,11 @@ spec:
         effect: NoSchedule
       - key: group
         operator: Equal
-        value: cleangpu
+        value: cleangpu2
+        effect: NoSchedule
+      - key: group
+        operator: Equal
+        value: gpuBackFill
         effect: NoSchedule
       containers:
       - image: nvidia/k8s-device-plugin:latest

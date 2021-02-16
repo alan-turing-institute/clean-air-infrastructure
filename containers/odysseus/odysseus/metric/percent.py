@@ -38,6 +38,11 @@ def percent_of_baseline(
     finally:
         detector_set = normal_set.intersection(comparison_set)
 
+    # Cast to float
+    baseline_df["n_vehicles_in_interval"] = baseline_df[
+        "n_vehicles_in_interval"
+    ].astype(float)
+
     # groupby detectorid and hour
     if not groupby_cols:
         groupby_cols = ["detector_id"]
