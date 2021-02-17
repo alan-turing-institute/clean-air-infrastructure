@@ -20,11 +20,13 @@ ssh -T -i $CLUSTER_KEY $CLUSTER_USER@$CLUSTER_ADDR  << HERE
 
 HERE
 
+#TODO: make an urbanair command to return the number of instances
 NUM_INSTANCES=1
-
 
 echo 'Moving datafiles to cluster'
 
+#for every instance create an sbatch file
+#seq generates numbers from 1 to n, and urbanair batch counts from 0 hence we -1
 for i in $(seq $NUM_INSTANCES);
 do
 
@@ -70,7 +72,7 @@ echo 'Moving cache dir to cluster'
 #move cache dir to cluster
 scp -i $CLUSTER_KEY -C -r $CACHE_FOLDER $CLUSTER_USER@$CLUSTER_ADDR:cleanair/ 
 
-echo 'Runnign experiments'
+echo 'Run every instance'
 for i in $(seq $NUM_INSTANCES);
 do
 
