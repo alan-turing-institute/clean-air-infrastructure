@@ -27,7 +27,6 @@ if [ $# -ne 0 ]; then
 fi
 
 #Download data for experiment and setup mrdgp 
-
 urbanair init production
 
 urbanair model data generate-config \
@@ -39,7 +38,6 @@ urbanair model data generate-config \
     --pred-source hexgrid \
     --species NO2 \
     --overwrite
-    
     
 urbanair model data generate-full-config
 
