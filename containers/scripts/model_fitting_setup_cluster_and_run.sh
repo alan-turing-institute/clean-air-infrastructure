@@ -3,17 +3,23 @@ source ../../.secrets/model_fitting_settings.sh
 
 #does not assume that the cluster is clean. if cleanair already exists it will delete and reset
 #setup folder structure on cluster and pull most recent docker file
+#we run singularity pull inside a cluster node because pearl sometimes fails on the login node
+echo 'Setting up cluster and pulling docker image'
 ssh -T -i $CLUSTER_KEY $CLUSTER_USER@$CLUSTER_ADDR  << HERE
     rm -rf cleanair
-    mkdir logs
     mkdir cleanair
+    mkdir cleanair/logs
     cd cleanair
     mkdir containers    
     cd containers
-    #singularity pull --docker-login docker://cleanairdocker.azurecr.io/model_fitting:latest 
-    SINGULARITY_DOCKER_USERNAME=$DOCKER_USERNAME SINGULARITY_DOCKER_PASSWORD=$DOCKER_PASSWORD singularity pull docker://cleanairdocker.azurecr.io/model_fitting:latest
+    SINGULARITY_DOCKER_USERNAME=$DOCKER_USERNAME SINGULARITY_DOCKER_PASSWORD=$DOCKER_PASSWORD bash -c 'srun -n 1 --gres=gpu:0 --export=ALL singularity pull -F docker://cleanairdocker.azurecr.io/model_fitting:latest'
 
 HERE
+
+NUM_INSTANCES=1
+
+
+echo 'Moving datafiles to cluster'
 
 for i in $(seq $NUM_INSTANCES);
 do
@@ -52,9 +58,11 @@ HERE
 done
 
 
+echo 'Moving cache dir to cluster'
 #move cache dir to cluster
 scp -i $CLUSTER_KEY -C -r $CACHE_FOLDER $CLUSTER_USER@$CLUSTER_ADDR:cleanair/ 
 
+echo 'Runnign experiments'
 for i in $(seq $NUM_INSTANCES);
 do
 
