@@ -15,7 +15,7 @@ ssh -T -i $CLUSTER_KEY $CLUSTER_USER@$CLUSTER_ADDR  << HERE
 
 HERE
 
-for i in {1..$NUM_INSTANCES}
+for i in $(seq $NUM_INSTANCES);
 do
 
 ssh -T -i $CLUSTER_KEY $CLUSTER_USER@$CLUSTER_ADDR  << HERE
@@ -55,7 +55,7 @@ done
 #move cache dir to cluster
 scp -i $CLUSTER_KEY -C -r $CACHE_FOLDER $CLUSTER_USER@$CLUSTER_ADDR:cleanair/ 
 
-for i in {1..$NUM_INSTANCES}
+for i in $(seq $NUM_INSTANCES);
 do
 
 #setup folder structure on cluster and pull most recent docker file
