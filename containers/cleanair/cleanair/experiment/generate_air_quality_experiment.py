@@ -16,9 +16,8 @@ STATIC_FEATURES_LIST = [
     [StaticFeatureNames.total_a_road_length, StaticFeatureNames.water, StaticFeatureNames.park],
 ]
 STATIC_FEATURES_LIST = [
-    []
+    [StaticFeatureNames.total_a_road_length, StaticFeatureNames.water, StaticFeatureNames.park],
 ]
-
 
 def svgp_vary_static_features(secretfile: str) -> List[InstanceMixin]:
     """Default SVGP with changing static features"""

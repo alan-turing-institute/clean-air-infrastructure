@@ -1,13 +1,20 @@
 #!/bin/bash
 
+# exit when any command fails
+set -e
+
 # set the secretfile filepath
-urbanair init local --secretfile "$DB_SECRET_FILE"
+#TODO: this throws line errors but doesnt seem to be needed?
+#urbanair init local --secretfile "$DB_SECRET_FILE"
 
 # generate the data config
 urbanair model data generate-config \
     --trainupto yesterday \
     --traindays 5 \
     --preddays 2 \
+    --static-features total_road_length \
+    --static-features flat \
+    --feature-buffer 500 \
     --train-source laqn \
     --train-source satellite \
     --pred-source laqn \
