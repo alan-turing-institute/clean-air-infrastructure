@@ -14,6 +14,8 @@ class KernelParams(BaseModel):
     lengthscales: Optional[Union[float, List[float]]]
     variance: Optional[Union[float, List[float]]]
     ARD: Optional[bool]
+    active_dims: Optional[List[int]]
+    input_dim: Optional[int]
 
 
 class BaseModelParams(BaseModel):

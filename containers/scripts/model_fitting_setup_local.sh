@@ -33,7 +33,6 @@ urbanair model data generate-config \
     --trainupto yesterday \
     --traindays 5 \
     --preddays 1 \
-    --static-features flat --static-features total_length \
     --train-source laqn \
     --pred-source laqn \
     --pred-source hexgrid \
@@ -42,9 +41,15 @@ urbanair model data generate-config \
     
 urbanair model data generate-full-config
 
+#urbanair experiment setup --experiment-root $CACHE_FOLDER svgp_vary_static_features
+
+
+
 # download the data using the config
 urbanair model data download --training-data --prediction-data --output-csv
 
 urbanair model setup $MODEL --maxiter 10 --num-inducing-points 100
 
 urbanair model data save-cache $CACHE_FOLDER
+
+exit()
