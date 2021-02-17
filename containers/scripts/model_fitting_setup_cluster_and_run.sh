@@ -1,12 +1,16 @@
 #load required variables
 source ../../.secrets/model_fitting_settings.sh
 
+echo $CACHE_DIR
+exit()
+
 #does not assume that the cluster is clean. if cleanair already exists it will delete and reset
 #setup folder structure on cluster and pull most recent docker file
 #we run singularity pull inside a cluster node because pearl sometimes fails on the login node
 echo 'Setting up cluster and pulling docker image'
 ssh -T -i $CLUSTER_KEY $CLUSTER_USER@$CLUSTER_ADDR  << HERE
     rm -rf cleanair
+    mkdir -p logs
     mkdir cleanair
     mkdir cleanair/logs
     cd cleanair
@@ -50,7 +54,9 @@ ssh -T -i $CLUSTER_KEY $CLUSTER_USER@$CLUSTER_ADDR  << HERE
 ##### Run Command
 cd ~/cleanair
 # run script with arguments
-singularity exec containers/model_fitting_latest.sif urbanair model fit $MODEL $CACHE_DIR/
+#singularity exec containers/model_fitting_latest.sif urbanair model fit $MODEL $CACHE_DIR/
+singularity exec containers/model_fitting_latest.sif urbanair experiment batch dgp_vary_static_feature $i 1 --experiment-root $CACHE_DIR/
+
 END
     
 HERE
