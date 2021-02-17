@@ -11,9 +11,10 @@ fi
 cd ../../
 
 
+#To build docker use --build tag
 if [ $# -ne 0 ]; then
 
-    if [ "$1" != '--no_build' ]; then
+    if [ "$1" == '--build' ]; then
 
         if [ -d "$CACHE_FOLDER" ]; then
 
@@ -29,27 +30,5 @@ fi
 #Download data for experiment and setup mrdgp 
 urbanair init production
 
-urbanair model data generate-config \
-    --trainupto yesterday \
-    --traindays 5 \
-    --preddays 1 \
-    --train-source laqn \
-    --pred-source laqn \
-    --pred-source hexgrid \
-    --species NO2 \
-    --overwrite
-    
-urbanair model data generate-full-config
-
-#urbanair experiment setup --experiment-root $CACHE_FOLDER svgp_vary_static_features
-
-
-
-# download the data using the config
-urbanair model data download --training-data --prediction-data --output-csv
-
-urbanair model setup $MODEL --maxiter 10 --num-inducing-points 100
-
-urbanair model data save-cache $CACHE_FOLDER
-
-exit()
+#TOOD: add a flag to pick which experiments
+urbanair experiment setup --experiment-root $CACHE_FOLDER dgp_vary_static_features
