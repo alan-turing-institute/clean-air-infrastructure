@@ -616,6 +616,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
                 isouter=True,
             )
 
+
     @db_query()
     def __expand_time_species(
         self,
