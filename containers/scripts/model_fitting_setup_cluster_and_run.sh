@@ -13,10 +13,16 @@ ssh -T -i $CLUSTER_KEY $CLUSTER_USER@$CLUSTER_ADDR  << HERE
     #singularity pull --docker-login docker://cleanairdocker.azurecr.io/model_fitting:latest 
     SINGULARITY_DOCKER_USERNAME=$DOCKER_USERNAME SINGULARITY_DOCKER_PASSWORD=$DOCKER_PASSWORD singularity pull docker://cleanairdocker.azurecr.io/model_fitting:latest
 
-    cd ../
-    touch sbatch.sh
+HERE
 
-    tee sbatch.sh << END
+for i in {1..$NUM_INSTANCES}
+do
+
+ssh -T -i $CLUSTER_KEY $CLUSTER_USER@$CLUSTER_ADDR  << HERE
+    cd cleanair
+    touch sbatch_$i.sh
+
+    tee sbatch_$i.sh << END
 #!/bin/bash
 #SBATCH --job-name=mrdgp
 #SBATCH --nodes=1
@@ -29,7 +35,7 @@ ssh -T -i $CLUSTER_KEY $CLUSTER_USER@$CLUSTER_ADDR  << HERE
 
 #########################
 #
-# Job: m_shallow_models,order_id-0
+# Job: m_shallow_models,order_id-$i
 #
 #########################
 
@@ -43,15 +49,22 @@ END
     
 HERE
 
+done
+
+
 #move cache dir to cluster
 scp -i $CLUSTER_KEY -C -r $CACHE_FOLDER $CLUSTER_USER@$CLUSTER_ADDR:cleanair/ 
 
+for i in {1..$NUM_INSTANCES}
+do
 
 #setup folder structure on cluster and pull most recent docker file
 ssh -T -i $CLUSTER_KEY $CLUSTER_USER@$CLUSTER_ADDR  << HERE
     cd cleanair
-    sbatch sbatch.sh
+    sbatch sbatch_$i.sh
 HERE
+
+done
 
 
 
