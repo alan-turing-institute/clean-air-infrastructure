@@ -16,7 +16,7 @@ STATIC_FEATURES_LIST = [
     [StaticFeatureNames.total_a_road_length, StaticFeatureNames.water, StaticFeatureNames.park],
 ]
 STATIC_FEATURES_LIST = [
-    [],   
+    []
 ]
 
 
@@ -84,18 +84,18 @@ def dgp_vary_static_features(secretfile: str) -> List[InstanceMixin]:
     data_config = default_sat_data_config()
 
     for static_features in STATIC_FEATURES_LIST:
+        n_features = len(static_features) 
         # default model parameters for every model
         if len(static_features) == 0:
             static_features = [StaticFeatureNames.park] #tempory feature which wont be used by model
         #add 3 for epoch, lat, lon
-        #the minus 1 is needed to because all the counting starts at 0 in the model classes
-        n_features = 3+len(static_features) -1
+        n_features = 3+n_features 
+        model_params = default_mrdgp_model_params(n_features=n_features)
 
         # create a data config from static_features
         data_config.static_features = static_features
         full_data_config = model_config.generate_full_config(data_config)
 
-        model_params = default_mrdgp_model_params(n_features=n_features)
 
         # create instance and add to list
         instance = InstanceMixin(
