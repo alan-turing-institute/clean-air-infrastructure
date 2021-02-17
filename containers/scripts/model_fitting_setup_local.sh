@@ -33,6 +33,7 @@ urbanair model data generate-config \
     --trainupto yesterday \
     --traindays 5 \
     --preddays 1 \
+    --static-features flat --static-features total_length \
     --train-source laqn \
     --pred-source laqn \
     --pred-source hexgrid \
