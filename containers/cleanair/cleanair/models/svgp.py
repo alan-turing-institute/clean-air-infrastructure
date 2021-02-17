@@ -52,7 +52,11 @@ class SVGP(ModelMixin):
         ), gpflow.session_manager.get_session().as_default():
             kernel_dict = self.model_params.kernel.dict()
             kernel_type = kernel_dict.pop("type")
-            kernel_dict["input_dim"] = num_input_dimensions
+
+            #if kernel_dict["input_dim"] is None:
+            #    kernel_dict["input_dim"] = num_input_dimensions
+
+            print(kernel_dict)
             kernel = SVGP.KERNELS[kernel_type](**kernel_dict)
 
             self.model = gpflow.models.SVGP(

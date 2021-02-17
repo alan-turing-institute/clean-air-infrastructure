@@ -16,7 +16,7 @@ SVGP_NUM_INDUCING_POINTS = 2000
 
 def default_svgp_kernel(
     ard: bool = True,
-    input_dim: int = None,
+    input_dim: Optional[int] = None,
     kernel: KernelType = KernelType.matern32,
     lengthscales: float = LENGTHSCALES,
     variance: float = KERNEL_VARIANCE,
@@ -46,7 +46,7 @@ def default_svgp_model_params(
     minibatch_size: int = MINIBATCH_SIZE,
     variance: float = KERNEL_VARIANCE,
     active_dims: Optional[List[int]] = None,
-    input_dim: int = None,
+    input_dim: Optional[int] = None,
 ) -> SVGPParams:
     """Default SVGP model params"""
     model_params = SVGPParams(
