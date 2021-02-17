@@ -13,7 +13,11 @@ STATIC_FEATURES_LIST = [
     [StaticFeatureNames.total_a_road_length],
     [StaticFeatureNames.water],
     [StaticFeatureNames.park],
-    [StaticFeatureNames.total_a_road_length, StaticFeatureNames.water, StaticFeatureNames.park],
+    [
+        StaticFeatureNames.total_a_road_length,
+        StaticFeatureNames.water,
+        StaticFeatureNames.park,
+    ],
 ]
 
 
@@ -21,7 +25,7 @@ def svgp_vary_static_features(secretfile: str) -> List[InstanceMixin]:
     """Default SVGP with changing static features"""
     # default model parameters for every model
     model_params = default_svgp_model_params()
-    model_params.num_inducing_points = 10   # TODO REMOVE THIS!!!
+    model_params.num_inducing_points = 10  # TODO REMOVE THIS!!!
     model_params.maxiter = 100  # TODO REMOVE THIS!!!
     instance_list: List[InstanceMixin] = []
 
