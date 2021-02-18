@@ -4,7 +4,8 @@
 set -e
 
 # set the secretfile filepath (if on own machine: init production)
-urbanair init local --secretfile "$DB_SECRET_FILE"
+#urbanair init local --secretfile "$DB_SECRET_FILE"
+urbanair init production
 
 # Check what scoot data is available (should be 100% - if it isn't scoot data collection isnt working)
 urbanair inputs scoot check --upto today --ndays 5 --nhours 0 
