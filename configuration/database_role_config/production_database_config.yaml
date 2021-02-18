@@ -17,6 +17,7 @@ schema:
   - static_features
   - traffic_modelling
   - jamcam
+  - logging
 
 roles:
   - role: readonly
