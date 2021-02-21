@@ -12,7 +12,8 @@ from .model_options import (
     KernelVariance,
     MaxIter,
     MinibatchSize,
-    NumInducingPoints,
+    MRDGPNumInducingPoints,
+    SVGPNumInducingPoints,
 )
 from .shared_args import (
     AWSId,
@@ -56,10 +57,11 @@ __all__ = [
     "NHours",
     "MaxIter",
     "MinibatchSize",
-    "NumInducingPoints",
+    "MRDGPNumInducingPoints",
     "ScootDetectors",
     "Sources",
     "Species",
+    "SVGPNumInducingPoints",
     "UpTo_callback",
     "UpTo",
     "TagOption",

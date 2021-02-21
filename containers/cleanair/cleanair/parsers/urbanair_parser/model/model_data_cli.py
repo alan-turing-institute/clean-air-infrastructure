@@ -89,25 +89,12 @@ def generate_config(
         show_default=True,
     ),
     static_features: List[StaticFeatureNames] = typer.Option(
-        [
-            StaticFeatureNames.total_road_length.value,
-            StaticFeatureNames.total_a_road_length.value,
-            StaticFeatureNames.total_a_road_primary_length.value,
-            StaticFeatureNames.total_b_road_length.value,
-            StaticFeatureNames.grass.value,
-            StaticFeatureNames.building_height.value,
-            StaticFeatureNames.water.value,
-            StaticFeatureNames.park.value,
-            StaticFeatureNames.max_canyon_narrowest.value,
-            StaticFeatureNames.max_canyon_ratio.value,
-        ],
-        help="Features to predict on",
+        [], help="Spatial features that do not change over time", show_default=True,
     ),
     dynamic_features: List[DynamicFeatureNames] = typer.Option(
-        [
-            DynamicFeatureNames.max_n_vehicles.value,
-            DynamicFeatureNames.avg_n_vehicles.value,
-        ]
+        [],
+        help="Features that change over time such as average number of vehicles. Default is no dynamic features.",
+        show_default=True,
     ),
     feature_buffer: List[FeatureBufferSize] = typer.Option(
         ["1000", "500"], help="Size of buffer for features", show_default=True

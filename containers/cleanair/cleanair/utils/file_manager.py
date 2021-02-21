@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 from pathlib import Path
-from typing import Any, Callable, Dict, Optional, Union, TYPE_CHECKING
+from typing import Any, Callable, Dict, List, Optional, Union, TYPE_CHECKING
 import json
 import pickle
 import pandas as pd
@@ -36,6 +36,7 @@ class FileManager:
     # model filepaths
     MODEL = Path("model")
     MODEL_PARAMS = MODEL / "model_params.json"
+    MODEL_ELBO_JSON = MODEL / "elbo.json"
 
     # forecasts / results / predictions
     RESULT = Path("result")
@@ -312,3 +313,17 @@ class FileManager:
             "Loading the prediction on the training set for %s from csv.", source
         )
         return self.__load_result_from_csv(source, "pred_training")
+
+    def save_elbo(self, elbo: List[float]) -> None:
+        """Save a list of floats that record the ELBO"""
+        self.logger.info("Saving the ELBO to file")
+        elbo_fp = self.input_dir / FileManager.MODEL_ELBO_JSON
+        with open(elbo_fp, "w") as elbo_file:
+            json.dump(elbo, elbo_file)
+
+    def load_elbo(self) -> List[float]:
+        """Load the list of ELBO floats from json file"""
+        self.logger.info("Reading the ELBO from json file")
+        elbo_fp = self.input_dir / FileManager.MODEL_ELBO_JSON
+        with open(elbo_fp, "r") as elbo_file:
+            return json.load(elbo_file)

@@ -8,6 +8,7 @@ import pytest
 from dateutil import rrule
 from dateutil.parser import isoparse
 import numpy as np
+import tensorflow as tf
 import pandas as pd
 from nptyping import NDArray
 from cleanair.databases import DBWriter
@@ -732,6 +733,25 @@ def model_config(secretfile, connection_class):
 def model_data(secretfile, connection_class):
     "Return a ModelData instance"
     return ModelData(secretfile=secretfile, connection=connection_class)
+
+
+@pytest.fixture(scope="function")
+def tf_session():
+    """A tensorflow session that lasts for only the scope of a function.
+
+    Yields:
+        Tensorflow session.
+    """
+    with tf.Session() as sess:
+        sess.run(tf.global_variables_initializer())
+        yield sess
+
+
+@pytest.fixture(autouse=True, scope="function")
+def init_graph():
+    """Initialise a tensorflow graph."""
+    with tf.Graph().as_default():
+        yield
 
 
 @pytest.fixture(scope="class")
