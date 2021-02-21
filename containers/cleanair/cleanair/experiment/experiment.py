@@ -80,6 +80,10 @@ class ExperimentMixin:
         """Get the file manager for the given instance"""
         return self._file_managers[instance_id]
 
+    def get_num_instances(self) -> int:
+        """Get the number of instances in the experiment"""
+        return len(self._instances)
+
     def create_file_manager_from_instance_id(self, instance_id: str) -> FileManager:
         """Create a file manager from an instance id"""
         return FileManager(self.experiment_root / self.name.value / instance_id)
