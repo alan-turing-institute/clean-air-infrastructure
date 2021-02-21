@@ -4,7 +4,9 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Dict, Optional, TYPE_CHECKING
 import pandas as pd
-from .experiment import RunnableExperimentMixin, SetupExperimentMixin
+from .air_quality_result import AirQualityResult
+from ..databases.tables import AirQualityDataTable, AirQualityInstanceTable, AirQualityModelTable, AirQualityResultTable
+from .experiment import RunnableExperimentMixin, SetupExperimentMixin, UpdateExperimentMixin
 from ..models import ModelData, ModelDataExtractor, MRDGP, SVGP
 from ..types import ExperimentName, IndexedDatasetDict, ModelName, Source, TargetDict
 from ..utils import FileManager
@@ -155,3 +157,32 @@ class RunnableAirQualityExperiment(RunnableExperimentMixin):
         y_forecast = self._test_result[instance_id]
         file_manager.save_pred_training_to_pickle(y_training_result)
         file_manager.save_forecast_to_pickle(y_forecast)
+
+
+class UpdateAirQualityExperiment(UpdateExperimentMixin):
+    """Write an experiment to the database"""
+
+    @property
+    def data_table(self) -> AirQualityDataTable:
+        """The data config table."""
+        return AirQualityDataTable
+
+    @property
+    def instance_table(self) -> AirQualityInstanceTable:
+        """The instance table."""
+        return AirQualityInstanceTable
+
+    @property
+    def model_table(self) -> AirQualityModelTable:
+        """The modelling table."""
+        return AirQualityModelTable
+
+    @property
+    def result_table(self) -> AirQualityResultTable:
+        """The result table."""
+        return AirQualityResultTable
+
+    def load_result(self, instance_id) -> AirQualityResult:
+        """Load an air quality result from file"""
+        # iterate over sources - create dict that maps source to result
+

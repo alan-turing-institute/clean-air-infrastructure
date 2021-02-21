@@ -5,6 +5,8 @@ from datetime import datetime
 import json
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
+from cleanair.databases.mixins.instance_tables_mixin import ResultTableMixin
+from cleanair.mixins.instance_mixins.result_mixin import ResultMixin
 import tensorflow as tf
 from ..databases import DBWriter
 from ..databases.mixins import (
@@ -231,6 +233,11 @@ class UpdateExperimentMixin(ExperimentMixin, DBWriter):
     def model_table(self) -> ModelTableMixin:
         """The modelling table."""
 
+    @property
+    @abstractmethod
+    def result_table(self) -> ResultTableMixin:
+        """The modelling table."""
+
     # def update_table_from_frame(self, frame: pd.DataFrame, table) -> None:
     #     """Update a table with the dataframe."""
     #     inst = inspect(table)
@@ -239,6 +246,11 @@ class UpdateExperimentMixin(ExperimentMixin, DBWriter):
     #     self.commit_records(
     #         records, on_conflict="ignore", table=table,
     #     )
+
+    @abstractmethod
+    def load_result(self, instance_id) -> ResultMixin:
+        """Save the result of the instance"""
+
 
     def update_remote_tables(self):
         """Update the instance, data and model tables."""
