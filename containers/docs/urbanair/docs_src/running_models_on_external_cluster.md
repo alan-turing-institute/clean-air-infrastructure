@@ -27,31 +27,10 @@ Make sure you are in the project directory `clean-air-infrastructure/`. We use t
 ```bash
 urbanair init production
 
-urbanair model data generate-config \
-    --trainupto yesterday \
-    --traindays 1 \
-    --preddays 1 \
-    --train-source laqn \
-    --train-source satellite \
-    --pred-source laqn \
-    --species NO2 \
-    --overwrite
-    
-    
-urbanair model data generate-full-config
-# download the data using the config
-urbanair model data download --training-data --prediction-data --output-csv
-
-urbanair model setup mrdgp --maxiter 10 --num-inducing-points 100
+urbanair experiment setup --experiment-root <MODEL_FOLDER> <EXPERIMENT_NAME>
 ```
 
-This saves the experiment data in the `urbanair` cache. To copy this to another folder run
-
-```bash
-urbanair model data save-cache example_dir
-```
-
-replacing `example_dir` with the required directory.
+This downloads and sets up the relevant infrastructure in `<MODEL_FOLDER>`
 
 ## 2) Running on cluster
 
@@ -72,10 +51,10 @@ singularity pull --docker-login docker://cleanairdocker.azurecr.io/model_fitting
 
 This will prompt for a docker username and password. Please contact the `cleanair` owners for access. 
 
-To run the models we will use slurm. Create a batch file:
+To run the models we will use slurm. Each experiment instance requires a separate batch file. For one instance:
 
 ```
-touch sbatch.sh
+touch sbatch_1.sh
 ```
 
 and copy in:
@@ -83,18 +62,19 @@ and copy in:
 ```
 #!/bin/bash
 #SBATCH --job-name=mrdgp
-#SBATCH --nodes=4
-#SBATCH --ntasks-per-node=1
+#SBATCH --nodes=1
+#SBATCH --ntasks=1
 #SBATCH --cpus-per-task=12
-#SBATCH --mem-per-cpu=4571
 #SBATCH --time=24:00:00
 #SBATCH --gres=gpu:0
+#SBATCH --mem-per-cpu=32000
+
 
 #SBATCH --output=logs/slurm_%j__mrdgp,order_id-0.log
 
 #########################
 #
-# Job: m_shallow_models,order_id-0
+# Job: m_shallow_models,order_id-$i
 #
 #########################
 
@@ -103,15 +83,15 @@ and copy in:
 ##### Run Command
 cd ~/cleanair
 # run script with arguments
-singularity exec containers/model_fitting_latest.sif urbanair model fit mrdgp example_dir/
+singularity exec containers/model_fitting_latest.sif urbanair experiment batch <EXPERIMENT_NAME> 0 1 --experiment-root <MODEL_FOLDER>
 ```
 
 ### Moving Data to the cluster
 
-Move the saved cache folder to `cleanair/` on the external cluster, e.g:
+Move the model cache folder to `cleanair/` on the external cluster, e.g:
 
 ```bash
-scp -i $CLUSTER_KEY -C -r example_dir $CLUSTER_USER@$CLUSTER_ADDR:cleanair/
+scp -i $CLUSTER_KEY -C -r <MODEL_FOLDER> $CLUSTER_USER@$CLUSTER_ADDR:cleanair/
 ```
 
 ### Running the models
@@ -119,7 +99,7 @@ scp -i $CLUSTER_KEY -C -r example_dir $CLUSTER_USER@$CLUSTER_ADDR:cleanair/
 To run the model fitting simply execute
 
 ```bash
-sbatch sbatch.sh
+sbatch sbatch_1.sh
 ```
 
 ## 3) Updating Results
@@ -128,7 +108,7 @@ To update the results in the cleanair database we need to move the results from 
 
 ```bash
 #sync folder from cluster to CACHE_FOLDER/results
-scp -i $CLUSTER_KEY -C -r $CLUSTER_USER@$CLUSTER_ADDR:cleanair/example_dir/result/*.pkl example_dir/result/
+rsync -ra --relative --progress --compress -e "ssh -i $CLUSTER_KEY"  $CLUSTER_USER@$CLUSTER_ADDR:cleanair/<MODEL_DIR> <MODEL_DIR>
 
 cd ../../
 
@@ -155,6 +135,7 @@ CLUSTER_KEY='<CLUSTER_KEY>'
 CLUSTER_ADDR='<CLUSTER_IP>'
 MODEL='<MODEL_NAME (mrdgp|svgp)>'
 CLUSTER_NAME='<CLUSTER_NAME_ID_USED_TO_TAG_PREDICTIONS (orac|pearl)>'
+EXPERIMENT_NAME='<dgp_vary_static_features|svgp_vary_static_features>'
 
 DOCKER_PASSWORD='<DOCKER_PASSWORD>'
 DOCKER_USERNAME='<DOCKER_USERNAME>'
@@ -174,5 +155,5 @@ once the model has completed run
 model_fitting_sync_from_cluster.sh
 ```
 
-which will automatically push the results to the server.
+which will download from the cluster and automatically push the results to the server.
 
