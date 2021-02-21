@@ -74,8 +74,6 @@ def svgp_vary_num_inducing_points(
 def dgp_vary_static_features(secretfile: str) -> List[InstanceMixin]:
     """Default DGP with changing static features"""
 
-    #model_params.num_inducing_points = 10   # TODO REMOVE THIS!!!
-    #model_params.maxiter = 100  # TODO REMOVE THIS!!!
     instance_list: List[InstanceMixin] = []
 
 
