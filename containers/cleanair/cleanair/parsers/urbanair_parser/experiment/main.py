@@ -100,7 +100,9 @@ def update(
 ) -> None:
     """Update experiment results to database"""
     secretfile: str = state["secretfile"]
-    update_experiment = UpdateAirQualityExperiment(experiment_name, experiment_root, secretfile=secretfile)
+    update_experiment = UpdateAirQualityExperiment(
+        experiment_name, experiment_root, secretfile=secretfile
+    )
     experiment_config = update_experiment.read_experiment_config_from_json()
     update_experiment.add_instances_from_file(experiment_config.instance_id_list)
     update_experiment.update_remote_tables()

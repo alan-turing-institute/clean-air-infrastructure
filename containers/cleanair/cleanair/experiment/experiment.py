@@ -244,7 +244,6 @@ class UpdateExperimentMixin(ExperimentMixin, DBWriter):
         for instance in self._instances.values():
             instance.update_remove_tables()
 
-
     @abstractmethod
     def update_result_tables(self):
         """Update the result tables"""

@@ -5,8 +5,17 @@ from pathlib import Path
 from typing import Dict, Optional, TYPE_CHECKING
 import pandas as pd
 from .air_quality_result import AirQualityResult
-from ..databases.tables import AirQualityDataTable, AirQualityInstanceTable, AirQualityModelTable, AirQualityResultTable
-from .experiment import RunnableExperimentMixin, SetupExperimentMixin, UpdateExperimentMixin
+from ..databases.tables import (
+    AirQualityDataTable,
+    AirQualityInstanceTable,
+    AirQualityModelTable,
+    AirQualityResultTable,
+)
+from .experiment import (
+    RunnableExperimentMixin,
+    SetupExperimentMixin,
+    UpdateExperimentMixin,
+)
 from ..models import ModelData, ModelDataExtractor, MRDGP, SVGP
 from ..types import ExperimentName, IndexedDatasetDict, ModelName, Source, TargetDict
 from ..utils import FileManager
@@ -192,7 +201,6 @@ class UpdateAirQualityExperiment(UpdateExperimentMixin):
         """The result table."""
         return AirQualityResultTable
 
-
     def update_result_tables(self):
         """Update the result tables"""
         for instance_id, instance in self._instances.items():
@@ -202,11 +210,25 @@ class UpdateAirQualityExperiment(UpdateExperimentMixin):
             train_data = file_manager.load_training_data()
             test_data = file_manager.load_test_data()
             # TODO do we need to write the CSVs to file?
-            update_predictions_on_dataset(train_data, y_pred_training, instance_id, instance.data_id, self.secretfile)
-            update_predictions_on_dataset(test_data, y_forecast, instance_id, instance.data_id, self.secretfile)
+            update_predictions_on_dataset(
+                train_data,
+                y_pred_training,
+                instance_id,
+                instance.data_id,
+                self.secretfile,
+            )
+            update_predictions_on_dataset(
+                test_data, y_forecast, instance_id, instance.data_id, self.secretfile
+            )
 
 
-def update_predictions_on_dataset(dataset: Dict[Source, pd.DataFrame], prediction: TargetDict, instance_id: str, data_id: str, secretfile: str) -> None:
+def update_predictions_on_dataset(
+    dataset: Dict[Source, pd.DataFrame],
+    prediction: TargetDict,
+    instance_id: str,
+    data_id: str,
+    secretfile: str,
+) -> None:
     """For each source (except satellite), join the dataset with prediction
     on space-time columns, then create a Result object which writes to the DB
 
@@ -225,10 +247,5 @@ def update_predictions_on_dataset(dataset: Dict[Source, pd.DataFrame], predictio
             dataframe, prediction[source]
         )
         pred_df["point_id"] = pred_df.point_id.apply(str)
-        result = AirQualityResult(
-            instance_id,
-            data_id,
-            pred_df,
-            secretfile=secretfile,
-        )
+        result = AirQualityResult(instance_id, data_id, pred_df, secretfile=secretfile,)
         result.update_remote_tables()
