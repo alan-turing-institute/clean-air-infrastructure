@@ -11,7 +11,7 @@ fi
 cd ../../
 
 
-#To build docker use --build tag
+#To build docker use --build tag as the first argment
 if [ $# -ne 0 ]; then
 
     if [ "$1" == '--build' ]; then
@@ -30,5 +30,4 @@ fi
 #Download data for experiment and setup mrdgp 
 urbanair init production
 
-#TOOD: add a flag to pick which experiments
-urbanair experiment setup --experiment-root $CACHE_FOLDER dgp_vary_static_features
+urbanair experiment setup --experiment-root $CACHE_FOLDER $EXPERIMENT_NAME
