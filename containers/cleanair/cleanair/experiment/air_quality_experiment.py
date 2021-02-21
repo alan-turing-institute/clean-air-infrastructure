@@ -162,6 +162,16 @@ class RunnableAirQualityExperiment(RunnableExperimentMixin):
 class UpdateAirQualityExperiment(UpdateExperimentMixin):
     """Write an experiment to the database"""
 
+    def __init__(
+        self,
+        name: ExperimentName,
+        experiment_root: Path,
+        secretfile: Optional[str] = None,
+        **kwargs
+    ):
+        super().__init__(name, experiment_root, secretfile=secretfile, **kwargs)
+        self.secretfile = secretfile
+
     @property
     def data_table(self) -> AirQualityDataTable:
         """The data config table."""
@@ -182,7 +192,43 @@ class UpdateAirQualityExperiment(UpdateExperimentMixin):
         """The result table."""
         return AirQualityResultTable
 
-    def load_result(self, instance_id) -> AirQualityResult:
-        """Load an air quality result from file"""
-        # iterate over sources - create dict that maps source to result
 
+    def update_result_tables(self):
+        """Update the result tables"""
+        for instance_id, instance in self._instances.items():
+            file_manager = self._file_managers[instance_id]
+            y_pred_training = file_manager.load_pred_training_from_pickle()
+            y_forecast = file_manager.load_forecast_from_pickle()
+            train_data = file_manager.load_training_data()
+            test_data = file_manager.load_test_data()
+            # TODO do we need to write the CSVs to file?
+            update_predictions_on_dataset(train_data, y_pred_training, instance_id, instance.data_id, self.secretfile)
+            update_predictions_on_dataset(test_data, y_forecast, instance_id, instance.data_id, self.secretfile)
+
+
+def update_predictions_on_dataset(dataset: Dict[Source, pd.DataFrame], prediction: TargetDict, instance_id: str, data_id: str, secretfile: str) -> None:
+    """For each source (except satellite), join the dataset with prediction
+    on space-time columns, then create a Result object which writes to the DB
+
+    Args:
+        dataset: Keys are sources (LAQN, hexgrid) and values are dataframes
+        prediction: For each source and each pollutant is a predicted mean and variance
+        instance_id: The ID of the instance
+        data_id: The ID of the dataset
+        secretfile: The location of your database secrets
+    """
+
+    for source, dataframe in dataset.items():
+        if source == Source.satellite:
+            continue
+        pred_df = ModelDataExtractor.join_forecast_on_dataframe(
+            dataframe, prediction[source]
+        )
+        pred_df["point_id"] = pred_df.point_id.apply(str)
+        result = AirQualityResult(
+            instance_id,
+            data_id,
+            pred_df,
+            secretfile=secretfile,
+        )
+        result.update_remote_tables()

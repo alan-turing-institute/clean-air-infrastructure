@@ -5,10 +5,9 @@ from datetime import datetime
 import json
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
-from cleanair.databases.mixins.instance_tables_mixin import ResultTableMixin
-from cleanair.mixins.instance_mixins.result_mixin import ResultMixin
 import tensorflow as tf
 from ..databases import DBWriter
+from ..databases.mixins import ResultTableMixin
 from ..databases.mixins import (
     DataTableMixin,
     InstanceTableMixin,
@@ -238,23 +237,14 @@ class UpdateExperimentMixin(ExperimentMixin, DBWriter):
     def result_table(self) -> ResultTableMixin:
         """The modelling table."""
 
-    # def update_table_from_frame(self, frame: pd.DataFrame, table) -> None:
-    #     """Update a table with the dataframe."""
-    #     inst = inspect(table)
-    #     cols = [c_attr.key for c_attr in inst.mapper.column_attrs]
-    #     records = frame[cols].to_dict("records")
-    #     self.commit_records(
-    #         records, on_conflict="ignore", table=table,
-    #     )
-
-    @abstractmethod
-    def load_result(self, instance_id) -> ResultMixin:
-        """Save the result of the instance"""
-
-
     def update_remote_tables(self):
         """Update the instance, data and model tables."""
+        # TODO would be nice to have an experiment table too
         # convert pydantic models to dictionaries
+        for instance in self._instances.values():
+            instance.update_remove_tables()
 
+
+    @abstractmethod
     def update_result_tables(self):
         """Update the result tables"""
