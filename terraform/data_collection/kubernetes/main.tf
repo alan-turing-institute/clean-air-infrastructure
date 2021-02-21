@@ -61,17 +61,17 @@ resource "azurerm_kubernetes_cluster" "this" {
   }
 }
 
-resource "azurerm_kubernetes_cluster_node_pool" "jamcam_pool" {
-  name                  = "jamcam"
-  kubernetes_cluster_id = azurerm_kubernetes_cluster.this.id
-  vm_size               = "Standard_NC24_Promo"
-  enable_auto_scaling   = true
-  max_count             = 4
-  min_count             = 0
-  node_count            = 4
-  os_disk_size_gb       = 100
-  node_taints           = ["group=gpu:NoSchedule"]
-}
+# resource "azurerm_kubernetes_cluster_node_pool" "jamcam_pool" {
+#   name                  = "jamcam"
+#   kubernetes_cluster_id = azurerm_kubernetes_cluster.this.id
+#   vm_size               = "Standard_NC24_Promo"
+#   enable_auto_scaling   = true
+#   max_count             = 4
+#   min_count             = 0
+#   node_count            = 4
+#   os_disk_size_gb       = 100
+#   node_taints           = ["group=gpu:NoSchedule"]
+# }
 
 # resource "azurerm_kubernetes_cluster_node_pool" "cleanair_pool" {
 #   name                  = "cleanair"
@@ -85,29 +85,29 @@ resource "azurerm_kubernetes_cluster_node_pool" "jamcam_pool" {
 #   node_taints           = ["group=cleangpu:NoSchedule"]
 # }
 
-# resource "azurerm_kubernetes_cluster_node_pool" "cleanair_pool_gpu" {
-#   name                  = "cleanairgpu"
-#   kubernetes_cluster_id = azurerm_kubernetes_cluster.this.id
-#   vm_size               = "Standard_NC6"
-#   enable_auto_scaling   = true
-#   max_count             = 2
-#   min_count             = 0
-#   node_count            = 1
-#   os_disk_size_gb       = 100
-#   node_taints           = ["group=cleangpu:NoSchedule"]
-# }
-
-resource "azurerm_kubernetes_cluster_node_pool" "jamcambf" {
-  name                  = "jamcambf"
+resource "azurerm_kubernetes_cluster_node_pool" "cleanair_pool_gpu" {
+  name                  = "cleanairgpu"
   kubernetes_cluster_id = azurerm_kubernetes_cluster.this.id
-  vm_size               = "Standard_NC24_Promo"
+  vm_size               = "Standard_NV6"
   enable_auto_scaling   = true
-  max_count             = 8
+  max_count             = 2
   min_count             = 0
-  node_count            = 8
+  node_count            = 1
   os_disk_size_gb       = 100
-  node_taints           = ["group=gpuBackFill:NoSchedule"]
+  node_taints           = ["group=cleangpu:NoSchedule"]
 }
+
+# resource "azurerm_kubernetes_cluster_node_pool" "jamcambf" {
+#   name                  = "jamcambf"
+#   kubernetes_cluster_id = azurerm_kubernetes_cluster.this.id
+#   vm_size               = "Standard_NC24_Promo"
+#   enable_auto_scaling   = true
+#   max_count             = 8
+#   min_count             = 0
+#   node_count            = 8
+#   os_disk_size_gb       = 100
+#   node_taints           = ["group=gpuBackFill:NoSchedule"]
+# }
 
 # resource "azurerm_kubernetes_cluster_node_pool" "jamcambf2" {
 #   name                  = "jamcambf2"
