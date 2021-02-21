@@ -82,7 +82,7 @@ def batch(
 
     end_of_batch_index = min(batch_start + batch_size, num_instances)
     instance_id_batch = experiment_config.instance_id_list[
-        batch_start: end_of_batch_index
+        batch_start:end_of_batch_index
     ]
     runnable_experiment.add_instances_from_file(instance_id_batch)
 
