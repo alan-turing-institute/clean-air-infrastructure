@@ -33,7 +33,7 @@ spec:
         effect: NoSchedule
       - key: group
         operator: Equal
-        value: cleangpu2
+        value: cleangpu
         effect: NoSchedule
       - key: group
         operator: Equal
