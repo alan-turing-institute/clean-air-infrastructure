@@ -223,3 +223,15 @@ def test_save_load_elbo(input_dir: Path, elbo: List[float]) -> None:
     assert (input_dir / FileManager.MODEL_ELBO_JSON).exists()
     loaded_elbo = file_manager.load_elbo()
     assert elbo == loaded_elbo
+
+
+def test_read_write_instance(input_dir: Path, laqn_svgp_instance) -> None:
+    """Test reading and writing instances"""
+    file_manager = FileManager(input_dir)
+    assert not (file_manager.input_dir / file_manager.INSTANCE_JSON).exists()
+    file_manager.write_instance_to_json(laqn_svgp_instance)
+    assert (file_manager.input_dir / file_manager.INSTANCE_JSON).exists()
+    instance = file_manager.read_instance_from_json()
+    assert instance.instance_id == laqn_svgp_instance.instance_id
+    assert instance.data_id == laqn_svgp_instance.data_id
+    assert instance.param_id == laqn_svgp_instance.param_id

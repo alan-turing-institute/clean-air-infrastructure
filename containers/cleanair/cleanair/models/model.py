@@ -10,6 +10,7 @@ from ..loggers import get_logger
 from ..types import (
     FeaturesDict,
     NDArrayTuple,
+    PredictionDict,
     Species,
     TargetDict,
     SVGPParams,
@@ -101,7 +102,7 @@ class ModelMixin:
         """
 
     @abstractmethod
-    def predict(self, x_test: FeaturesDict) -> TargetDict:
+    def predict(self, x_test: FeaturesDict) -> PredictionDict:
         """Predict using the model.
 
         Args:
@@ -266,7 +267,7 @@ class ModelMixin:
         self,
         x_test: FeaturesDict,
         predict_fn: Callable[[NDArray[Float64]], NDArrayTuple],
-    ) -> TargetDict:
+    ) -> PredictionDict:
         """Predict using the model at the laqn sites for NO2.
 
         Args:
