@@ -5,7 +5,7 @@ set -e
 
 # set the secretfile filepath
 #TODO: this throws line errors but doesnt seem to be needed?
-#urbanair init local --secretfile "$DB_SECRET_FILE"
+urbanair init local --secretfile "$DB_SECRET_FILE"
 
 # generate the data config
 urbanair model data generate-config \
