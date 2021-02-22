@@ -22,13 +22,6 @@ STATIC_FEATURES_LIST = [
         StaticFeatureNames.park,
     ],
 ]
-STATIC_FEATURES_LIST = [
-    [
-        StaticFeatureNames.total_a_road_length,
-        StaticFeatureNames.water,
-        StaticFeatureNames.park,
-    ],
-]
 
 
 def svgp_vary_static_features(secretfile: str) -> List[InstanceMixin]:
@@ -38,20 +31,19 @@ def svgp_vary_static_features(secretfile: str) -> List[InstanceMixin]:
 
     model_config = ModelConfig(secretfile=secretfile)
     for static_features in STATIC_FEATURES_LIST:
-        active_dims = None  # use all features
         if len(static_features) == 0:
             active_dims = [0, 1, 2]  # work around so that no features are used
             static_features = [
                 StaticFeatureNames.park
             ]  # tempory feature which wont be used by model
             input_dim = 3
+        else:
+            active_dims = None  # use all features
+            input_dim = len(static_features)
 
         model_params = default_svgp_model_params(
             active_dims=active_dims, input_dim=input_dim
         )
-
-        model_params.num_inducing_points = 10  # TODO REMOVE THIS!!!
-        model_params.maxiter = 100  # TODO REMOVE THIS!!!
 
         # create a data config from static_features
         data_config = default_laqn_data_config()
