@@ -1,5 +1,6 @@
 """Default parameters for the SVGP"""
 
+from typing import List, Optional
 from .shared_params import (
     LENGTHSCALES,
     LIKELIHOOD_VARIANCE,
@@ -8,7 +9,7 @@ from .shared_params import (
     KERNEL_VARIANCE,
 )
 from ..types import KernelParams, KernelType, SVGPParams
-from typing import  List, Optional
+
 
 JITTER: float = 1e-5
 SVGP_NUM_INDUCING_POINTS = 2000
@@ -20,7 +21,7 @@ def default_svgp_kernel(
     kernel: KernelType = KernelType.matern32,
     lengthscales: float = LENGTHSCALES,
     variance: float = KERNEL_VARIANCE,
-    active_dims: Optional[List[int]] = None
+    active_dims: Optional[List[int]] = None,
 ) -> KernelParams:
     """Default kernel parameters for the SVGP"""
     kernel = KernelParams(
@@ -30,7 +31,7 @@ def default_svgp_kernel(
         type=kernel,
         variance=variance,
         active_dims=active_dims,
-        input_dim=input_dim
+        input_dim=input_dim,
     )
     return kernel
 
@@ -52,7 +53,12 @@ def default_svgp_model_params(
     model_params = SVGPParams(
         jitter=jitter,
         kernel=default_svgp_kernel(
-            ard=ard, input_dim=input_dim, kernel=kernel, lengthscales=lengthscales, variance=variance,active_dims=active_dims
+            ard=ard,
+            input_dim=input_dim,
+            kernel=kernel,
+            lengthscales=lengthscales,
+            variance=variance,
+            active_dims=active_dims,
         ),
         likelihood_variance=likelihood_variance,
         num_inducing_points=num_inducing_points,

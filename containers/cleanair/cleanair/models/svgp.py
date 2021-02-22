@@ -33,7 +33,6 @@ class SVGP(ModelMixin):
         x_array: FeaturesDict,
         y_array: TargetDict,
         inducing_locations: NDArray[Float64],
-        num_input_dimensions: int,
     ) -> None:
         """
         Create GPFlow sparse variational Gaussian Processes
@@ -42,7 +41,6 @@ class SVGP(ModelMixin):
             x_array: N x D numpy array - observations input.
             y_array: N x 1 numpy array - observations output.
             inducing_locations: M x D numpy array - inducing locations.
-            num_input_dimensions: Number of input dimensions.
         """
         custom_config = gpflow.settings.get_settings()
         # jitter is added for numerically stability in cholesky operations.
@@ -53,10 +51,6 @@ class SVGP(ModelMixin):
             kernel_dict = self.model_params.kernel.dict()
             kernel_type = kernel_dict.pop("type")
 
-            #if kernel_dict["input_dim"] is None:
-            #    kernel_dict["input_dim"] = num_input_dimensions
-
-            print(kernel_dict)
             kernel = SVGP.KERNELS[kernel_type](**kernel_dict)
 
             self.model = gpflow.models.SVGP(
@@ -91,7 +85,6 @@ class SVGP(ModelMixin):
         x_array = x_train[Source.laqn].copy()
         y_array = y_train[Source.laqn][Species.NO2].copy()
 
-
         x_array, y_array = self.clean_data(x_array, y_array)
 
         # setup inducing points
@@ -101,7 +94,7 @@ class SVGP(ModelMixin):
         z_r = kmeans2(x_array, self.model_params.num_inducing_points, minit="points")[0]
 
         # setup SVGP model
-        self.setup_model(x_array, y_array, z_r, x_array.shape[1])
+        self.setup_model(x_array, y_array, z_r)
         self.model.compile()
 
         # optimize and setup elbo logging
