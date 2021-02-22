@@ -14,7 +14,7 @@ setuptools.setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
-    install_requires=["cleanair", "gpflow>=2.1.3", "tensorflow>=2.3.0",],
+    install_requires=["cleanair"],
     python_requires=">=3.7",
     scripts=["cli/odysseus"],
 )
