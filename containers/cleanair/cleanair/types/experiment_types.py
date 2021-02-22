@@ -9,6 +9,7 @@ class ExperimentName(str, Enum):
     """Valid names of experiments"""
 
     svgp_vary_static_features = "svgp_vary_static_features"
+    dgp_vary_static_features = "dgp_vary_static_features"
 
 
 class ExperimentConfig(BaseModel):
