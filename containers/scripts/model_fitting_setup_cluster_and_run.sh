@@ -71,7 +71,7 @@ ssh -T -i $CLUSTER_KEY $CLUSTER_USER@$CLUSTER_ADDR  << HERE
 
     tee sbatch_${1}_$2.sh << END
 #!/bin/bash
-#SBATCH --job-name=mrdgp
+#SBATCH --job-name=$1
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=12
