@@ -165,7 +165,7 @@ cronjobs:
     image:
         repository: cleanairdocker.azurecr.io/model_fitting_gpu
         imagePullPolicy: IfNotPresent
-    args: ["bash", "/app/scripts/svgp.sh"]
+    args: ["bash", "/app/scripts/svgp-static.sh"]
     env:
       - name: DB_SECRET_FILE
         value: "/secrets/db_secrets.json"

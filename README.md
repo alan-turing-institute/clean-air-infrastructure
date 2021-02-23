@@ -722,7 +722,7 @@ docker pull cleanairdocker.azurecr.io/model_fitting
 To fit and predict using the SVGP you can run:
 
 ```bash
-docker run -it --rm cleanairdocker.azurecr.io/model_fitting:latest sh /app/scripts/svgp.sh
+docker run -it --rm cleanairdocker.azurecr.io/model_fitting:latest sh /app/scripts/svgp-static.sh
 ```
 
 To fit and predict using the MRDGP run:
