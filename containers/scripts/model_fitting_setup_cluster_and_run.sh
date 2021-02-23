@@ -1,6 +1,9 @@
 #load required variables
 source ../../.secrets/model_fitting_settings.sh
 
+# exit when any command fails
+set -e
+
 
 #does not assume that the cluster is clean. if cleanair already exists it will delete and reset
 #setup folder structure on cluster and pull most recent docker file
@@ -8,8 +11,13 @@ source ../../.secrets/model_fitting_settings.sh
 
 echo 'Setting up cluster and pulling docker image'
 
+if [ $USE_GPU == 1 ]; then
+    DOCKER_IMAGE='model_fitting_gpu'
+else
+    DOCKER_IMAGE='model_fitting'
+fi
 
-if [ 1 -ne 0 ]; then
+
 ssh -T -i $CLUSTER_KEY $CLUSTER_USER@$CLUSTER_ADDR  << HERE
     rm -rf cleanair
     mkdir -p logs
@@ -18,10 +26,9 @@ ssh -T -i $CLUSTER_KEY $CLUSTER_USER@$CLUSTER_ADDR  << HERE
     cd cleanair
     mkdir containers    
     cd containers
-    SINGULARITY_DOCKER_USERNAME=$DOCKER_USERNAME SINGULARITY_DOCKER_PASSWORD=$DOCKER_PASSWORD bash -c 'srun --export=ALL singularity pull -F docker://cleanairdocker.azurecr.io/model_fitting:$DOCKER_TAG'
+    SINGULARITY_DOCKER_USERNAME=$DOCKER_USERNAME SINGULARITY_DOCKER_PASSWORD=$DOCKER_PASSWORD bash -c 'srun --export=ALL singularity pull -F docker://cleanairdocker.azurecr.io/$DOCKER_IMAGE:$DOCKER_TAG'
 
 HERE
-fi
 
 
 
@@ -66,8 +73,8 @@ ssh -T -i $CLUSTER_KEY $CLUSTER_USER@$CLUSTER_ADDR  << HERE
 ##### Run Command
 cd ~/cleanair
 # run script with arguments
-#singularity exec containers/model_fitting_$DOCKER_TAG.sif urbanair model fit $MODEL $CACHE_DIR/
-singularity exec containers/model_fitting_$DOCKER_TAG.sif urbanair experiment batch $EXPERIMENT_NAME $(($i-1)) 1 --experiment-root $CACHE_DIR/
+#singularity exec containers/$DOCKER_IMAGE_$DOCKER_TAG.sif urbanair model fit $MODEL $CACHE_DIR/
+singularity exec containers/$DOCKER_IMAGE_$DOCKER_TAG.sif urbanair experiment batch $EXPERIMENT_NAME $(($i-1)) 1 --experiment-root $CACHE_DIR/
 
 END
     
