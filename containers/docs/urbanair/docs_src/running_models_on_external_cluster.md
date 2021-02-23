@@ -137,6 +137,10 @@ MODEL='<MODEL_NAME (mrdgp|svgp)>'
 CLUSTER_NAME='<CLUSTER_NAME_ID_USED_TO_TAG_PREDICTIONS (orac|pearl)>'
 EXPERIMENT_NAME='<dgp_vary_static_features|svgp_vary_static_features>'
 
+DOCKER_TAG='<eg ollie|patrick>'
+EXPERIMENT_NAMES=('dgp_vary_static_features' 'svgp_vary_static_features')
+USE_GPU=<0|1>
+
 DOCKER_PASSWORD='<DOCKER_PASSWORD>'
 DOCKER_USERNAME='<DOCKER_USERNAME>'
 ```

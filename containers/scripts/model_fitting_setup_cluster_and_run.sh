@@ -37,6 +37,15 @@ if [ "$HELP" == '1' ]; then
     exit
 fi
 
+
+if [ $USE_GPU == 1 ]; then
+    DOCKER_IMAGE='model_fitting_gpu'
+    GPU_NUM=1
+else
+    DOCKER_IMAGE='model_fitting'
+    GPU_NUM=0
+fi
+
 #helper functions
 
 function setup_cluster() {
@@ -67,7 +76,7 @@ ssh -T -i $CLUSTER_KEY $CLUSTER_USER@$CLUSTER_ADDR  << HERE
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=12
 #SBATCH --time=24:00:00
-#SBATCH --gres=gpu:0
+#SBATCH --gres=gpu:$GPU_NUM
 #SBATCH --mem-per-cpu=32000
 
 
@@ -84,7 +93,7 @@ ssh -T -i $CLUSTER_KEY $CLUSTER_USER@$CLUSTER_ADDR  << HERE
 ##### Run Command
 cd ~/cleanair
 # run script with arguments
-singularity exec containers/$DOCKER_IMAGE_$DOCKER_TAG.sif urbanair experiment batch $1 $(($2-1)) 1 --experiment-root $CACHE_DIR/
+singularity exec containers/${DOCKER_IMAGE}_$DOCKER_TAG.sif urbanair experiment batch $1 $(($2-1)) 1 --experiment-root $CACHE_DIR/
 
 END
     
@@ -102,12 +111,6 @@ HERE
 if [ "$NO_SETUP" == '0' ]; then 
 
     echo 'Setting up cluster and pulling docker image'
-
-    if [ $USE_GPU == 1 ]; then
-        DOCKER_IMAGE='model_fitting_gpu'
-    else
-        DOCKER_IMAGE='model_fitting'
-    fi
 
     setup_cluster
 
