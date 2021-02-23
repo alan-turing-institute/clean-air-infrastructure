@@ -1,9 +1,6 @@
 #load required variables
 source ../../.secrets/model_fitting_settings.sh
 
-#TODO: make an urbanair command to return the number of instances
-#Work around for now until urbanair command issue is completed
-NUM_INSTANCES=$(find $CACHE_FOLDER/$EXPERIMENT_NAME -mindepth 1 -maxdepth 1 -type d | wc -l)
 
 #does not assume that the cluster is clean. if cleanair already exists it will delete and reset
 #setup folder structure on cluster and pull most recent docker file
@@ -11,6 +8,8 @@ NUM_INSTANCES=$(find $CACHE_FOLDER/$EXPERIMENT_NAME -mindepth 1 -maxdepth 1 -typ
 
 echo 'Setting up cluster and pulling docker image'
 
+
+if [ 1 -ne 0 ]; then
 ssh -T -i $CLUSTER_KEY $CLUSTER_USER@$CLUSTER_ADDR  << HERE
     rm -rf cleanair
     mkdir -p logs
@@ -22,21 +21,28 @@ ssh -T -i $CLUSTER_KEY $CLUSTER_USER@$CLUSTER_ADDR  << HERE
     SINGULARITY_DOCKER_USERNAME=$DOCKER_USERNAME SINGULARITY_DOCKER_PASSWORD=$DOCKER_PASSWORD bash -c 'srun --export=ALL singularity pull -F docker://cleanairdocker.azurecr.io/model_fitting:latest'
 
 HERE
+fi
 
 
 
 echo 'Moving datafiles to cluster'
 
-#for every instance create an sbatch file
-#seq generates numbers from 1 to n, and urbanair batch counts from 0 hence we -1
-for i in $(seq $NUM_INSTANCES);
-do
+
+#for each experiment, get the number of instances and create the relevent sbatch files
+for EXPERIMENT_NAME in ${EXPERIMENT_NAMES[@]}; do
+    #TODO: make an urbanair command to return the number of instances
+    #Work around for now until urbanair command issue is completed
+    NUM_INSTANCES=$(find $CACHE_FOLDER/$EXPERIMENT_NAME -mindepth 1 -maxdepth 1 -type d | wc -l)
+
+    #for every instance create an sbatch file
+    #seq generates numbers from 1 to n, and urbanair batch counts from 0 hence we -1
+    for i in $(seq $NUM_INSTANCES); do
 
 ssh -T -i $CLUSTER_KEY $CLUSTER_USER@$CLUSTER_ADDR  << HERE
     cd cleanair
-    touch sbatch_$i.sh
+    touch sbatch_${EXPERIMENT_NAME}_$i.sh
 
-    tee sbatch_$i.sh << END
+    tee sbatch_${EXPERIMENT_NAME}_$i.sh << END
 #!/bin/bash
 #SBATCH --job-name=mrdgp
 #SBATCH --nodes=1
@@ -67,20 +73,28 @@ END
     
 HERE
 
-done
+    done
 
+done
 
 echo 'Moving cache dir to cluster'
 scp -i $CLUSTER_KEY -C -r $CACHE_FOLDER $CLUSTER_USER@$CLUSTER_ADDR:cleanair/ 
 
-echo 'Run every instance'
-for i in $(seq $NUM_INSTANCES);
-do
+for EXPERIMENT_NAME in ${EXPERIMENT_NAMES[@]}; do
+
+    #TODO: make an urbanair command to return the number of instances
+    #Work around for now until urbanair command issue is completed
+    NUM_INSTANCES=$(find $CACHE_FOLDER/$EXPERIMENT_NAME -mindepth 1 -maxdepth 1 -type d | wc -l)
+
+    echo 'Run every instance'
+    for i in $(seq $NUM_INSTANCES); do
 
 ssh -T -i $CLUSTER_KEY $CLUSTER_USER@$CLUSTER_ADDR  << HERE
     cd cleanair
-    sbatch sbatch_$i.sh
+    sbatch sbatch_${EXPERIMENT_NAME}_$i.sh
 HERE
+
+    done
 
 done
 

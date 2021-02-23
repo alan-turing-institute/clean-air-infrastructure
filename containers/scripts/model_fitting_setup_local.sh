@@ -30,4 +30,7 @@ fi
 #Download data for experiment and setup mrdgp 
 urbanair init production
 
-urbanair experiment setup --experiment-root $CACHE_FOLDER $EXPERIMENT_NAME
+for EXPERIMENT_NAME in ${EXPERIMENT_NAMES[@]}; do
+    echo "Processing $EXPERIMENT_NAME"
+    urbanair experiment setup --experiment-root $CACHE_FOLDER $EXPERIMENT_NAME
+done
