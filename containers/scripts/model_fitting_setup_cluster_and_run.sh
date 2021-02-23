@@ -33,7 +33,7 @@ done
 if [ "$HELP" == '1' ]; then
     echo 'Help:'
     echo '  --dry : Do not run sbatch on cluster'
-    echo '  -no-setup : Do not setup cluster folders and move experiment instances to cluster'
+    echo '  --no-setup : Do not setup cluster folders and move experiment instances to cluster'
     exit
 fi
 
@@ -110,7 +110,7 @@ if [ "$NO_SETUP" == '0' ]; then
         DOCKER_IMAGE='model_fitting'
     fi
 
-    setup_cluster()
+    setup_cluster
 
     echo 'Moving datafiles to cluster'
 

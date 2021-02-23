@@ -145,7 +145,7 @@ And then run the following. To complete step 1 and 2:
 
 ```
 cd scripts
-sh ./model_fitting_setup_local.sh
+sh ./model_fitting_setup_local.sh --build --setup
 sh ./model_fitting_setup_cluster_and_run.sh
 ```
 
@@ -157,3 +157,11 @@ model_fitting_sync_from_cluster.sh
 
 which will download from the cluster and automatically push the results to the server.
 
+
+
+To view options type:
+
+```
+sh ./model_fitting_setup_local.sh --help
+sh ./model_fitting_setup_cluster_and_run.sh --help
+```
