@@ -84,7 +84,6 @@ ssh -T -i $CLUSTER_KEY $CLUSTER_USER@$CLUSTER_ADDR  << HERE
 ##### Run Command
 cd ~/cleanair
 # run script with arguments
-#singularity exec containers/$DOCKER_IMAGE_$DOCKER_TAG.sif urbanair model fit $MODEL $CACHE_DIR/
 singularity exec containers/$DOCKER_IMAGE_$DOCKER_TAG.sif urbanair experiment batch $1 $(($2-1)) 1 --experiment-root $CACHE_DIR/
 
 END
