@@ -25,6 +25,7 @@ def default_base_laqn_kernel(
         active_dims=list(range(n_features)),
         lengthscales=[lengthscales] * n_features,
         variance=[variance] * n_features,
+        input_dim=n_features,
     )
     return base_laqn_kernel
 
@@ -64,6 +65,7 @@ def default_base_sat_kernel(
         active_dims=list(range(n_features)),
         lengthscales=[lengthscales] * n_features,
         variance=[variance] * n_features,
+        input_dim=n_features,
     )
     return base_sat_kernel
 
@@ -106,6 +108,7 @@ def default_dgp_sat_kernel(
             type=KernelType.mr_linear,
             active_dims=[0],  # only active on output of base_sat
             variance=[variance],
+            input_dim=1,
         ),
         # NOTE: the below kernel acts on space + static + dynamic features
         # but not time or the output of base_sat.
@@ -116,6 +119,7 @@ def default_dgp_sat_kernel(
             active_dims=list(range(2, n_features + 1)),  # starts at index 2
             lengthscales=[lengthscales] * (n_features - 1),
             variance=[variance] * (n_features - 1),
+            input_dim=n_features - 1,
         ),
     ]
     return dgp_sat_kernel

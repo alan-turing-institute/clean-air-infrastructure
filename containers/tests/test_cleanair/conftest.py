@@ -664,6 +664,7 @@ def matern32_params() -> KernelParams:
         lengthscales=1.0,
         variance=1.0,
         ARD=True,
+        input_dim=3,
     )
 
 
@@ -695,6 +696,7 @@ def mr_linear_params() -> KernelParams:
         variance=[1.0, 1.0, 1.0],
         ARD=True,
         active_dims=[0, 1, 2],
+        input_dim=3,
     )
 
 
