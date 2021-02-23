@@ -7,6 +7,7 @@ set -e
 #default values
 BUILD=0
 SETUP=0
+HELP=0
 
 #handle input flags
 while [[ $# -gt 0 ]]
@@ -22,8 +23,19 @@ case $key in
     SETUP=1
     shift # past argument
     ;;
+    --help)
+    HELP=1
+    shift # past argument
+    ;;
 esac
 done
+
+if [ "$HELP" == '1' ]; then
+    echo 'Help:'
+    echo '  -b|--build : build and push docker file'
+    echo '  -s|--setup : setup  and download all data for experiment instances'
+    exit
+fi
 
 cd ../../
 
