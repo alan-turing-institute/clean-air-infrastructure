@@ -18,7 +18,7 @@ ssh -T -i $CLUSTER_KEY $CLUSTER_USER@$CLUSTER_ADDR  << HERE
     cd cleanair
     mkdir containers    
     cd containers
-    SINGULARITY_DOCKER_USERNAME=$DOCKER_USERNAME SINGULARITY_DOCKER_PASSWORD=$DOCKER_PASSWORD bash -c 'srun --export=ALL singularity pull -F docker://cleanairdocker.azurecr.io/model_fitting:latest'
+    SINGULARITY_DOCKER_USERNAME=$DOCKER_USERNAME SINGULARITY_DOCKER_PASSWORD=$DOCKER_PASSWORD bash -c 'srun --export=ALL singularity pull -F docker://cleanairdocker.azurecr.io/model_fitting:$DOCKER_TAG'
 
 HERE
 fi
@@ -66,8 +66,8 @@ ssh -T -i $CLUSTER_KEY $CLUSTER_USER@$CLUSTER_ADDR  << HERE
 ##### Run Command
 cd ~/cleanair
 # run script with arguments
-#singularity exec containers/model_fitting_latest.sif urbanair model fit $MODEL $CACHE_DIR/
-singularity exec containers/model_fitting_latest.sif urbanair experiment batch $EXPERIMENT_NAME $(($i-1)) 1 --experiment-root $CACHE_DIR/
+#singularity exec containers/model_fitting_$DOCKER_TAG.sif urbanair model fit $MODEL $CACHE_DIR/
+singularity exec containers/model_fitting_$DOCKER_TAG.sif urbanair experiment batch $EXPERIMENT_NAME $(($i-1)) 1 --experiment-root $CACHE_DIR/
 
 END
     

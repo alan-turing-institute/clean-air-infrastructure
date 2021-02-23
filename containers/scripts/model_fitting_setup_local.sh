@@ -19,9 +19,9 @@ if [ $# -ne 0 ]; then
         if [ -d "$CACHE_FOLDER" ]; then
 
             #Build and push current model fitting docker image
-            docker build --build-arg git_hash=$(git show -s --format=%H) -t cleanairdocker.azurecr.io/model_fitting:latest -f containers/dockerfiles/model_fitting.Dockerfile containers
+            docker build --build-arg git_hash=$(git show -s --format=%H) -t cleanairdocker.azurecr.io/model_fitting:$DOCKER_TAG -f containers/dockerfiles/model_fitting.Dockerfile containers
 
-            docker push cleanairdocker.azurecr.io/model_fitting:latest
+            docker push cleanairdocker.azurecr.io/model_fitting:$DOCKER_TAG
 
         fi
     fi
