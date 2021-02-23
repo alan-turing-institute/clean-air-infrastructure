@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 from pathlib import Path
-from typing import Any, Callable, Dict, Optional, Union, TYPE_CHECKING
+from typing import Any, Callable, Dict, List, Optional, Union, TYPE_CHECKING
 import json
 import pickle
 import pandas as pd
 from ..loggers import get_logger
+from ..mixins import InstanceMixin
 from ..types import (
     DataConfig,
     FullDataConfig,
@@ -18,13 +19,21 @@ from ..types import (
 )
 
 if TYPE_CHECKING:
-    import gpflow
+    # turn off tensorflow warnings for gpflow
+    import os
     import tensorflow as tf
+
+    os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
+    tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
+    import gpflow  # pylint: disable=wrong-import-position,wrong-import-order
     from pydantic import BaseModel
 
 # pylint: disable=R0904
 class FileManager:
     """Class for managing files for the urbanair project"""
+
+    # instance filepaths
+    INSTANCE_JSON = Path("instance.json")
 
     # data config / train test data
     DATASET = Path("dataset")
@@ -36,6 +45,7 @@ class FileManager:
     # model filepaths
     MODEL = Path("model")
     MODEL_PARAMS = MODEL / "model_params.json"
+    MODEL_ELBO_JSON = MODEL / "elbo.json"
 
     # forecasts / results / predictions
     RESULT = Path("result")
@@ -228,11 +238,7 @@ class FileManager:
         params_fp = self.input_dir / FileManager.MODEL_PARAMS
         with open(params_fp, "r") as params_file:
             params_dict = json.load(params_file)
-        if model_name == ModelName.svgp:
-            return SVGPParams(**params_dict)
-        if model_name == ModelName.mrdgp:
-            return MRDGPParams(**params_dict)
-        raise ValueError("Must pass a valid model name")
+        return model_params_from_dict(model_name, params_dict)
 
     def save_model_params(self, model_params: BaseModel) -> None:
         """Load the model params from a json file"""
@@ -312,3 +318,55 @@ class FileManager:
             "Loading the prediction on the training set for %s from csv.", source
         )
         return self.__load_result_from_csv(source, "pred_training")
+
+    def save_elbo(self, elbo: List[float]) -> None:
+        """Save a list of floats that record the ELBO"""
+        self.logger.info("Saving the ELBO to file")
+        elbo_fp = self.input_dir / FileManager.MODEL_ELBO_JSON
+        with open(elbo_fp, "w") as elbo_file:
+            json.dump(elbo, elbo_file)
+
+    def load_elbo(self) -> List[float]:
+        """Load the list of ELBO floats from json file"""
+        self.logger.info("Reading the ELBO from json file")
+        elbo_fp = self.input_dir / FileManager.MODEL_ELBO_JSON
+        with open(elbo_fp, "r") as elbo_file:
+            return json.load(elbo_file)
+
+    def write_instance_to_json(self, instance: InstanceMixin) -> None:
+        """Writes an instance to a json file"""
+        with open(self.input_dir / self.INSTANCE_JSON, "w") as json_file:
+            json.dump(instance.dict(), json_file)
+
+    def read_instance_from_json(self) -> InstanceMixin:
+        """Reads a dictionary containing the instance from a json file"""
+        with open(self.input_dir / self.INSTANCE_JSON, "r") as json_file:
+            instance_dict: Dict = json.load(json_file)
+            model_name = instance_dict.get("model_name")
+            model_params = model_params_from_dict(
+                model_name, instance_dict.get("model_params")
+            )
+            data_config_dict = instance_dict.get("data_config")
+            data_config = FullDataConfig(**data_config_dict)
+            instance = InstanceMixin(
+                data_config=data_config,
+                model_name=model_name,
+                model_params=model_params,
+                cluster_id=instance_dict.get("cluster_id"),
+                fit_start_time=instance_dict.get("fit_start_time"),
+                git_hash=instance_dict.get("git_hash"),
+                preprocessing=instance_dict.get("preprocessing"),
+                tag=instance_dict.get("tag"),
+            )
+            return instance
+
+
+def model_params_from_dict(
+    model_name: ModelName, params_dict: Dict
+) -> Union[SVGPParams, MRDGPParams]:
+    """Use the model name to return the right type of model params"""
+    if model_name == ModelName.svgp:
+        return SVGPParams(**params_dict)
+    if model_name == ModelName.mrdgp:
+        return MRDGPParams(**params_dict)
+    raise ValueError(f"{model_name} is not a valid model name")
