@@ -51,7 +51,6 @@ if [ "$BUILD" == '1' ]; then
     #Build and push current model fitting docker image
     docker build --build-arg git_hash=$(git show -s --format=%H) -t cleanairdocker.azurecr.io/$DOCKER_IMAGE:$DOCKER_TAG -f containers/dockerfiles/$DOCKER_IMAGE.Dockerfile containers
     docker push cleanairdocker.azurecr.io/$DOCKER_IMAGE:$DOCKER_TAG
-
 fi
 
 
