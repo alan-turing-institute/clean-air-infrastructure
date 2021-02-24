@@ -8,6 +8,8 @@ ENV GIT_HASH=${git_hash}
 # Stop git python errors
 ENV GIT_PYTHON_REFRESH=quiet
 
+RUN apt-get -y install gcc g++
+
 # Set the working directory to /app
 WORKDIR /app
 
@@ -16,9 +18,5 @@ COPY cleanair /app/cleanair
 COPY scripts/ /app/scripts
 
 # Install cleanair
-RUN pip install '/app/cleanair'
-RUN pip install holidays==0.10.2
-RUN pip install LunarCalendar
-RUN pip install pystan
-RUN pip install pathos
-RUN pip install fbprophet
+
+RUN pip install '/app/cleanair[models, traffic]'
