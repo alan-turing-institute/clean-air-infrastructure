@@ -23,6 +23,7 @@ STATIC_FEATURES_LIST = [
     ],
 ]
 
+
 def svgp_vary_static_features(secretfile: str) -> List[InstanceMixin]:
     """Default SVGP with changing static features"""
     # default model parameters for every model
@@ -76,6 +77,7 @@ def svgp_vary_num_inducing_points(
         )
         instance_list.append(instance)
     return instance_list
+
 
 def dgp_vary_static_features(secretfile: str) -> List[InstanceMixin]:
     """Default DGP with changing static features"""
