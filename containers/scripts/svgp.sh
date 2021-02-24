@@ -34,7 +34,7 @@ urbanair model data generate-config \
     --pred-source laqn \
     --pred-source hexgrid \
     --species NO2 \
-    --static_features total_a_road_length \
+    --static-features total_a_road_length \
     --dynamic-features max_n_vehicles \
     --dynamic-features avg_n_vehicles \
     --feature-buffer 500 \
