@@ -39,7 +39,6 @@ fi
 
 cd ../../
 
-#To build docker use --build tag as the first argment
 if [ "$BUILD" == '1' ]; then
     if [ $USE_GPU == 1 ]; then
         DOCKER_IMAGE='model_fitting_gpu'

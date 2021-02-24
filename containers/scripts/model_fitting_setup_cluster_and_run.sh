@@ -40,7 +40,7 @@ fi
 
 if [ $USE_GPU == 1 ]; then
     DOCKER_IMAGE='model_fitting_gpu'
-    GPU_NUM=1
+    GPU_NUM=$NUM_GPUS
 else
     DOCKER_IMAGE='model_fitting'
     GPU_NUM=0
@@ -96,12 +96,12 @@ cd ~/cleanair
 singularity exec containers/${DOCKER_IMAGE}_$DOCKER_TAG.sif urbanair experiment batch $1 $(($2-1)) 1 --experiment-root $CACHE_DIR/
 
 END
-    
+
 HERE
 }
 
 function run_sbatch() {
-ssh -T -i $CLUSTER_KEY $CLUSTER_USER@$CLUSTER_ADDR  << HERE
+    ssh -T -i $CLUSTER_KEY $CLUSTER_USER@$CLUSTER_ADDR  << HERE
     cd cleanair
     sbatch sbatch_${1}_$2.sh
 HERE
