@@ -96,7 +96,7 @@ cronjobs:
     image:
         repository: cleanairdocker.azurecr.io/cleanair
         imagePullPolicy: IfNotPresent
-    args: [ "bash", "/app/scripts/svgp.sh" ]
+    args: [ "bash", "/app/scripts/forecast_scoot.sh" ]
     env:
       - name: DB_SECRET_FILE
         value: "/secrets/db_secrets.json"
