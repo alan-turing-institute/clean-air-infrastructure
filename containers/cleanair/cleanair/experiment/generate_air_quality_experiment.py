@@ -24,8 +24,11 @@ STATIC_FEATURES_LIST = [
     ],
 ]
 
-#list used in varying inducing points experiments
-STANDARD_FEATURES_LIST = [StaticFeatureNames.total_a_road_length, StaticFeatureNames.flat]
+# list used in varying inducing points experiments
+STANDARD_FEATURES_LIST = [
+    StaticFeatureNames.total_a_road_length,
+    StaticFeatureNames.flat,
+]
 
 
 def svgp_vary_static_features(secretfile: str) -> List[InstanceMixin]:
@@ -114,9 +117,10 @@ def dgp_vary_static_features(secretfile: str) -> List[InstanceMixin]:
 
     return instance_list
 
+
 def dgp_vary_inducing_and_maxiter(secretfile: str) -> List[InstanceMixin]:
     """MRDGP with various combinations of number of inducing points and max iterations"""
-    INDUCING_POINT_SIZES=[100, 200, 500]
+    INDUCING_POINT_SIZES = [100, 200, 500]
     ITERS = [1000, 5000, 10000]
 
     instance_list: List[InstanceMixin] = []
@@ -142,9 +146,7 @@ def dgp_vary_inducing_and_maxiter(secretfile: str) -> List[InstanceMixin]:
 
     for num_z, maxiter in itertools.product(INDUCING_POINT_SIZES, ITERS):
         model_params = default_mrdgp_model_params(
-            n_features=n_features,
-            num_inducing_points = num_z,
-            maxiter=maxiter
+            n_features=n_features, num_inducing_points=num_z, maxiter=maxiter
         )
 
         # create instance and add to list
