@@ -85,7 +85,6 @@ class SVGP(ModelMixin):
         x_array = x_train[Source.laqn].copy()
         y_array = y_train[Source.laqn][Species.NO2].copy()
 
-
         x_array, y_array = self.clean_data(x_array, y_array)
 
         # setup inducing points
