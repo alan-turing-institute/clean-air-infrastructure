@@ -42,6 +42,10 @@ def svgp(
     variance: float = KernelVariance,
 ):
     """Create model parameters for a Sparse Variational Gaussian Process."""
+
+    file_manager = FileManager(input_dir)
+    data_config: FullDataConfig = file_manager.load_data_config(full=True)
+
     # Create model
     model_params = SVGPParams(
         jitter=jitter,
@@ -51,6 +55,7 @@ def svgp(
             name=kernel.value,
             type=kernel,
             variance=variance,
+            input_dim=total_num_features(data_config)+3,
         ),
         likelihood_variance=likelihood_variance,
         num_inducing_points=num_inducing_points,
@@ -59,7 +64,6 @@ def svgp(
     )
 
     # Save model parameters
-    file_manager = FileManager(input_dir)
     file_manager.save_model_params(model_params)
 
 
@@ -78,6 +82,7 @@ def mrdgp(
     file_manager = FileManager(input_dir)
     data_config: FullDataConfig = file_manager.load_data_config(full=True)
     n_features = total_num_features(data_config)
+    input_dim = n_features + 3
 
     base_laqn_kernel = KernelParams(
         name="MR_SE_LAQN_BASE",
@@ -85,6 +90,7 @@ def mrdgp(
         active_dims=list(range(n_features)),
         lengthscales=[lengthscales] * n_features,
         variance=[variance] * n_features,
+        input_dim=input_dim,
     )
     base_laqn = BaseModelParams(
         kernel=base_laqn_kernel,
@@ -99,6 +105,7 @@ def mrdgp(
         active_dims=list(range(n_features)),
         lengthscales=[lengthscales] * n_features,
         variance=[variance] * n_features,
+        input_dim=input_dim,
     )
     base_sat = BaseModelParams(
         kernel=base_sat_kernel,
@@ -116,6 +123,7 @@ def mrdgp(
             type=KernelType.mr_linear,
             active_dims=[0],  # only active on output of base_sat
             variance=[variance],
+            input_dim=input_dim,
         ),
         # NOTE: the below kernel acts on space + static + dynamic features
         # but not time or the output of base_sat.
@@ -126,6 +134,7 @@ def mrdgp(
             active_dims=list(range(2, n_features + 1)),  # starts at index 2
             lengthscales=[lengthscales] * (n_features - 1),
             variance=[variance] * (n_features - 1),
+            input_dim=input_dim,
         ),
     ]
     dgp_sat = BaseModelParams(
