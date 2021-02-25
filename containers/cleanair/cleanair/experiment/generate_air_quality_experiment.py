@@ -120,8 +120,8 @@ def dgp_vary_static_features(secretfile: str) -> List[InstanceMixin]:
 
 def dgp_vary_inducing_and_maxiter(secretfile: str) -> List[InstanceMixin]:
     """MRDGP with various combinations of number of inducing points and max iterations"""
-    INDUCING_POINT_SIZES = [100, 200, 500]
-    ITERS = [1000, 5000, 10000]
+    inducing_point_sizes = [100, 200, 500]
+    iters = [1000, 5000, 10000]
 
     instance_list: List[InstanceMixin] = []
 
@@ -144,7 +144,7 @@ def dgp_vary_inducing_and_maxiter(secretfile: str) -> List[InstanceMixin]:
     data_config.static_features = static_features
     full_data_config = model_config.generate_full_config(data_config)
 
-    for num_z, maxiter in itertools.product(INDUCING_POINT_SIZES, ITERS):
+    for num_z, maxiter in itertools.product(inducing_point_sizes, iters):
         model_params = default_mrdgp_model_params(
             n_features=n_features, num_inducing_points=num_z, maxiter=maxiter
         )
