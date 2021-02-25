@@ -82,9 +82,8 @@ def mrdgp(
     file_manager = FileManager(input_dir)
     data_config: FullDataConfig = file_manager.load_data_config(full=True)
 
-    #input_dim is the number of columsn of X: ie [time, lat, lon, features...]
+    # input_dim is the number of columsn of X: ie [time, lat, lon, features...]
     input_dim = total_num_features(data_config)
-
 
     base_laqn_kernel = KernelParams(
         name="MR_SE_LAQN_BASE",
@@ -136,7 +135,7 @@ def mrdgp(
             active_dims=list(range(2, input_dim + 1)),  # starts at index 2
             lengthscales=[lengthscales] * (input_dim - 1),
             variance=[variance] * (input_dim - 1),
-            input_dim=input_dim-1, #minus 1 because we dont include time
+            input_dim=input_dim - 1,  # minus 1 because we dont include time
         ),
     ]
     dgp_sat = BaseModelParams(
