@@ -1,5 +1,7 @@
 """Generate air quality experiments"""
 
+import itertools
+
 from typing import List, Optional
 from ..mixins import InstanceMixin
 from ..models import ModelConfig
@@ -9,7 +11,6 @@ from .default_air_quality_data_config import (
     default_laqn_data_config,
     default_sat_data_config,
 )
-import itertools
 
 # list of static features to iterate through
 STATIC_FEATURES_LIST = [
