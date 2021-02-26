@@ -56,18 +56,19 @@ fi
 
 if [ "$SETUP" == '1' ]; then
     echo 'Setting up experiment'
-    #saving cache in urbanair requires an empty folder
-    if [ -d "$CACHE_FOLDER" ]; then
-      # Take action if $DIR exists. #
-      echo "OUTPUT_DIR $CACHE_FOLDER should not already exist"
-      exit
-    fi
+
 
     #Download data for experiment and setup mrdgp 
     urbanair init production
 
     for EXPERIMENT_NAME in ${EXPERIMENT_NAMES[@]}; do
-        echo "Processing $EXPERIMENT_NAME"
-        urbanair experiment setup --experiment-root $CACHE_FOLDER $EXPERIMENT_NAME
+        #saving cache in urbanair requires an empty folder
+        if [ -d "$CACHE_FOLDER/$EXPERIMENT_NAME" ]; then
+          # Take action if $DIR exists. #
+          echo "OUTPUT_DIR $CACHE_FOLDER/$EXPERIMENT_NAME should not already exist. ignoring this experiment."
+        else
+            echo "Processing $EXPERIMENT_NAME"
+            urbanair experiment setup --experiment-root $CACHE_FOLDER $EXPERIMENT_NAME
+        fi
     done
 fi
