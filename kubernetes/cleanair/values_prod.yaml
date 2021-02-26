@@ -159,6 +159,11 @@ cronjobs:
         secretName: secrets
     imagePullSecrets:
         - name: regcred
+    resources:
+      limits:
+        cpu: "6"
+      requests:
+        cpu: "3"
 
   - name: air-forecast-svgp-gpu
     schedule: "30 0 * * *"
