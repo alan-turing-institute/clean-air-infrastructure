@@ -80,7 +80,7 @@ ssh -T -i $CLUSTER_KEY $CLUSTER_USER@$CLUSTER_ADDR  << HERE
 #SBATCH --mem-per-cpu=32000
 
 
-#SBATCH --output=logs/slurm_%j__mrdgp,order_id-0.log
+#SBATCH --output=logs/slurm_%j__$1,order_id-$2.log
 
 #########################
 #
