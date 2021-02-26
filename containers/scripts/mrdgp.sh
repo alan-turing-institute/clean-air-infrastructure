@@ -17,7 +17,7 @@ urbanair model data generate-config \
     --train-source laqn \
     --train-source satellite \
     --pred-source laqn \
-    --pred-source hexgrid \
+    --pred-source satellite \
     --species NO2 \
     --overwrite
 
