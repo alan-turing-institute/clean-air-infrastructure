@@ -12,6 +12,7 @@ from ....mixins import InstanceMixin
 from ..shared_args import ExperimentDir
 from ..state import state
 from ....types import ExperimentName
+from ....utils import FileManager
 
 app = typer.Typer(help="Experiment CLI")
 
@@ -106,14 +107,23 @@ def update(
 
 
 @local_app.command()
-def vis(experiment_name: ExperimentName, experiment_root: Path = ExperimentDir) -> None:
+def vis(experiment_name: ExperimentName, instance_id: str, experiment_root: Path = ExperimentDir) -> None:
     """Visualise experiment results and predictions locally"""
     raise NotImplementedError("Coming soon")
 
 
 @local_app.command()
 def metrics(
-    experiment_name: ExperimentName, experiment_root: Path = ExperimentDir
+    experiment_name: ExperimentName, instance_id: str, experiment_root: Path = ExperimentDir
 ) -> None:
     """Print local experiment metrics"""
-    raise NotImplementedError("Coming soon")
+
+    instance_path = f'{experiment_root}/{experiment_name}/{instance_id}'
+    file_manager = FileManager(instance_path)
+    y_forecast = file_manager.load_forecast_from_pickle()
+    y_pred_training = file_manager.load_pred_training_from_pickle()
+
+    print(y_forecast)
+    print(y_pred_training)
+
+
