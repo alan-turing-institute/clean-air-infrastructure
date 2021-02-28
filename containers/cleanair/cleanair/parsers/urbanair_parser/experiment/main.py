@@ -15,6 +15,10 @@ from ....types import ExperimentName
 
 app = typer.Typer(help="Experiment CLI")
 
+# Add local experiment cli to main experiment cli
+local_app = typer.Typer(help="Experiment Local CLI")
+app.add_typer(local_app, name="local")
+
 
 @app.command()
 def setup(
@@ -98,4 +102,18 @@ def update(
     experiment_name: ExperimentName, experiment_root: Path = ExperimentDir
 ) -> None:
     """Update experiment results to database"""
+    raise NotImplementedError("Coming soon")
+
+
+@local_app.command()
+def vis(experiment_name: ExperimentName, experiment_root: Path = ExperimentDir) -> None:
+    """Visualise experiment results and predictions locally"""
+    raise NotImplementedError("Coming soon")
+
+
+@local_app.command()
+def metrics(
+    experiment_name: ExperimentName, experiment_root: Path = ExperimentDir
+) -> None:
+    """Print local experiment metrics"""
     raise NotImplementedError("Coming soon")
