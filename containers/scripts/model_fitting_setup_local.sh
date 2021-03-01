@@ -65,12 +65,12 @@ if [ "$SETUP" == '1' ]; then
 
     for EXPERIMENT_NAME in ${EXPERIMENT_NAMES[@]}; do
         #saving cache in urbanair requires an empty folder
-        if [ -d "$CACHE_FOLDER/$EXPERIMENT_NAME" ]; then
+        if [ -d "$LOCAL_EXPERIMENT_FOLDER_PATH/$EXPERIMENT_NAME" ]; then
           # Take action if $DIR exists. #
-          echo "OUTPUT_DIR $CACHE_FOLDER/$EXPERIMENT_NAME should not already exist. ignoring this experiment."
+          echo "OUTPUT_DIR $LOCAL_EXPERIMENT_FOLDER_PATH/$EXPERIMENT_NAME should not already exist. ignoring this experiment."
         else
             echo "Processing $EXPERIMENT_NAME"
-            urbanair experiment setup --experiment-root $CACHE_FOLDER $EXPERIMENT_NAME
+            urbanair experiment setup --experiment-root $LOCAL_EXPERIMENT_FOLDER_PATH $EXPERIMENT_NAME
         fi
     done
 fi
