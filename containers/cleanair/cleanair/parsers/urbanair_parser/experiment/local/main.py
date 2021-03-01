@@ -144,7 +144,7 @@ def get_hexgrid_forecast(file_manager, hexgrid_file):
     return hexgrid_df
 
 
-def plot_hexgrid(file_manager, hexgrid_file):
+def check_if_can_plot_hexgrid(file_manager, hexgrid_file):
     """Rudimentary check to see if hexgrid should be plotted or not."""
     return (
         "hexgrid" in file_manager.load_forecast_from_pickle().keys()
@@ -167,7 +167,7 @@ def vis(
     secretfile = state["secretfile"]
     model_data = ModelData(secretfile=secretfile)
 
-    plot_hexgrid_flag = plot_hexgrid(file_manager, hexgrid)
+    plot_hexgrid_flag = check_if_can_plot_hexgrid(file_manager, hexgrid)
 
     _columns = ["point_id", "epoch", "lat", "lon", "measurement_start_utc"]
 
