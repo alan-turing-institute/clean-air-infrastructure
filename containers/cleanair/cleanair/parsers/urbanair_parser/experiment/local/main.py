@@ -15,7 +15,7 @@ from .....visualisers import SpaceTimeVisualise
 app = typer.Typer(help="Experiment Local CLI")
 
 
-def _load_hexgrid_polygons(hexgrid_df, hexgrid_path):
+def load_hexgrid_polygons(hexgrid_df, hexgrid_path):
     # load hexgrid file
     hexgrid_file = pd.read_csv(hexgrid_path)
     hexgrid_file["geom"] = hexgrid_file["geom"].apply(wkt.loads)
@@ -81,7 +81,7 @@ def vis(
 
     hexgrid_test_df = X_forecast["hexgrid"][_columns]
     hexgrid_test_df = swap_lat_lon(hexgrid_test_df)
-    hexgrid_test_df = _load_hexgrid_polygons(hexgrid_test_df, hexgrid)
+    hexgrid_test_df = load_hexgrid_polygons(hexgrid_test_df, hexgrid)
     hexgrid_test_df["observed"] = np.NaN
     hexgrid_test_df["pred"] = y_forecast["hexgrid"]["NO2"]["mean"]
     hexgrid_test_df["var"] = y_forecast["hexgrid"]["NO2"]["var"]
