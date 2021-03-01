@@ -84,7 +84,7 @@ def svgp_test(secretfile: str) -> List[InstanceMixin]:
             input_dim = 3
 
         model_params = default_svgp_model_params(
-            active_dims=active_dims, input_dim=input_dim, maxiter=100
+            active_dims=active_dims, input_dim=input_dim, maxiter=500
         )
 
         # create a data config from static_features
