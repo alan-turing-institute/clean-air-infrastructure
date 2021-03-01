@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import geopandas as gpd
+from shapely.geometry import Point
 from shapely import wkt
 import uuid
 import sklearn
@@ -84,12 +85,78 @@ def swap_lat_lon(df):
     return df.drop("_lat", axis=1)
 
 
+def get_laqn_forecast_with_observations(instance, file_manager, model_data):
+    X_forecast = file_manager.load_test_data()["laqn"]
+
+    # download forecast observations
+    laqn_forecast_true = model_data.download_forecast_data_for_source(
+        full_config=instance.data_config, source=Source.laqn
+    )
+    laqn_forecast_true = laqn_forecast_true[
+        ["point_id", "measurement_start_utc", "NO2"]
+    ]
+
+    # load forecast predictions
+    y_forecast = file_manager.load_forecast_from_pickle()["laqn"]["NO2"]
+    X_forecast["NO2_mean"] = y_forecast["mean"]
+    X_forecast["NO2_var"] = y_forecast["var"]
+
+    # combine true and predictions
+    laqn_forecast = X_forecast.merge(
+        laqn_forecast_true, on=["point_id", "measurement_start_utc"], how="inner"
+    )
+
+    laqn_forecast["pred"] = laqn_forecast["NO2_mean"]
+    laqn_forecast["var"] = laqn_forecast["NO2_var"]
+    laqn_forecast["observed"] = laqn_forecast["NO2"]
+
+    return laqn_forecast
+
+
+def get_laqn_train_with_observations(file_manager):
+    # already has NO2
+    X = file_manager.load_training_data()["laqn"]
+
+    # load forecast predictions
+    y = file_manager.load_pred_training_from_pickle()["laqn"]["NO2"]
+    X["NO2_mean"] = y["mean"]
+    X["NO2_var"] = y["var"]
+
+    X["observed"] = X["NO2"]
+    X["pred"] = X["NO2_mean"]
+    X["var"] = X["NO2_var"]
+
+    return X
+
+
+def get_hexgrid_forecast(file_manager, hexgrid_file):
+    hexgrid_df = file_manager.load_test_data()["hexgrid"]
+    y = file_manager.load_forecast_from_pickle()["hexgrid"]
+
+    hexgrid_df = swap_lat_lon(hexgrid_df)
+
+    hexgrid_df = load_hexgrid_polygons(hexgrid_df, hexgrid_file)
+
+    hexgrid_df["observed"] = np.NaN
+    hexgrid_df["pred"] = y["NO2"]["mean"]
+    hexgrid_df["var"] = y["NO2"]["var"]
+
+    return hexgrid_df
+
+
+def plot_hexgrid(file_manager, hexgrid_file):
+    """Rudenmenary check to see if hexgrid should be plotted or not."""
+    return (
+        "hexgrid" in file_manager.load_forecast_from_pickle().keys()
+    ) and hexgrid_file is not None
+
+
 @app.command()
 def vis(
     experiment_name: ExperimentName,
     instance_id: str,
     experiment_root: Path,
-    hexgrid: Path,
+    hexgrid: Optional[Path] = None,
 ) -> None:
     """Visualise experiment results and predictions locally"""
 
@@ -100,61 +167,30 @@ def vis(
     secretfile = state["secretfile"]
     model_data = ModelData(secretfile=secretfile)
 
-    # download forecast observations
-    laqn_forecast_true = model_data.download_forecast_data_for_source(
-        full_config=instance.data_config, source=Source.laqn
-    )
-    laqn_forecast_true = laqn_forecast_true[
-        ["point_id", "measurement_start_utc", "NO2"]
-    ]
-
-    # load forecasts
-    y_forecast = file_manager.load_forecast_from_pickle()
-    y_train_forecast = file_manager.load_pred_training_from_pickle()
-
-    # load input data
-    X_forecast = file_manager.load_test_data()
-    X_train_forecast = file_manager.load_training_data()
-
-    laqn_forecast = file_manager.load_forecast_from_csv("laqn")
-    laqn_forecast["point_id"] = laqn_forecast["point_id"].apply(uuid.UUID)
-    laqn_forecast["measurement_start_utc"] = pd.to_datetime(
-        laqn_forecast["measurement_start_utc"]
-    )
-
-    laqn_forecast = laqn_forecast.merge(
-        laqn_forecast_true, on=["point_id", "measurement_start_utc"], how="inner"
-    )
+    plot_hexgrid_flag = plot_hexgrid(file_manager, hexgrid)
 
     _columns = ["point_id", "epoch", "lat", "lon", "measurement_start_utc"]
 
-    # prep training data
-    laqn_train_df = X_train_forecast["laqn"][_columns]
-    laqn_train_df["observed"] = X_train_forecast["laqn"]["NO2"]
-    laqn_train_df["pred"] = y_train_forecast["laqn"]["NO2"]["mean"]
-    laqn_train_df["var"] = y_train_forecast["laqn"]["NO2"]["var"]
+    # load LAQN data
+    laqn_train_df = get_laqn_train_with_observations(file_manager)
 
-    # prep test data
-    laqn_test_df = laqn_forecast[_columns]
-    laqn_test_df["observed"] = laqn_forecast["NO2"]
-    laqn_test_df["pred"] = laqn_forecast["NO2_mean"]
-    laqn_test_df["var"] = laqn_forecast["NO2_var"]
+    laqn_test_df = get_laqn_forecast_with_observations(
+        instance, file_manager, model_data
+    )
 
-    hexgrid_test_df = X_forecast["hexgrid"][_columns]
-    hexgrid_test_df = swap_lat_lon(hexgrid_test_df)
-    hexgrid_test_df = load_hexgrid_polygons(hexgrid_test_df, hexgrid)
-    hexgrid_test_df["observed"] = np.NaN
-    hexgrid_test_df["pred"] = y_forecast["hexgrid"]["NO2"]["mean"]
-    hexgrid_test_df["var"] = y_forecast["hexgrid"]["NO2"]["var"]
+    laqn_train_df = laqn_train_df[_columns + ["observed", "pred", "var"]]
+    laqn_test_df = laqn_test_df[_columns + ["observed", "pred", "var"]]
 
-    print("hexgrid_test_df: ", hexgrid_test_df.columns)
-    hexgrid_test_df = hexgrid_test_df[_columns + ["geom", "observed", "pred", "var"]]
+    # load hexgrid if in test data
+    if plot_hexgrid_flag:
+        hexgrid_df = get_hexgrid_forecast(file_manager, hexgrid)
+        hexgrid_df = hexgrid_df[_columns + ["geom", "observed", "pred", "var"]]
+    else:
+        hexgrid_df = None
 
     laqn_df = pd.concat([laqn_train_df, laqn_test_df])
     # laqn_df = laqn_test_df
     laqn_df = swap_lat_lon(laqn_df)
-
-    hexgrid_df = hexgrid_test_df
 
     # rename columns for spacetime.py
     laqn_df.columns = [
@@ -167,20 +203,18 @@ def vis(
         "pred",
         "var",
     ]
-    hexgrid_df.columns = [
-        "id",
-        "epoch",
-        "lon",
-        "lat",
-        "datetime",
-        "geom",
-        "observed",
-        "pred",
-        "var",
-    ]
-
-    print(laqn_df["epoch"])
-    print(hexgrid_df["epoch"])
+    if plot_hexgrid_flag:
+        hexgrid_df.columns = [
+            "id",
+            "epoch",
+            "lon",
+            "lat",
+            "datetime",
+            "geom",
+            "observed",
+            "pred",
+            "var",
+        ]
 
     vis = SpaceTimeVisualise(
         laqn_df,
@@ -221,24 +255,12 @@ def metrics(
         secretfile = state["secretfile"]
         model_data = ModelData(secretfile=secretfile)
 
-        # download forecast observations
-        laqn_forecast_true = model_data.download_forecast_data_for_source(
-            full_config=instance.data_config, source=Source.laqn
-        )
-        laqn_forecast_true = laqn_forecast_true[
-            ["point_id", "measurement_start_utc", "NO2"]
-        ]
-
-        laqn_forecast = file_manager.load_forecast_from_csv("laqn")
-        laqn_forecast["point_id"] = laqn_forecast["point_id"].apply(uuid.UUID)
-        laqn_forecast["measurement_start_utc"] = pd.to_datetime(
-            laqn_forecast["measurement_start_utc"]
+        # get predictions and true data
+        laqn_forecast = get_laqn_forecast_with_observations(
+            instance, file_manager, model_data
         )
 
-        laqn_forecast = laqn_forecast.merge(
-            laqn_forecast_true, on=["point_id", "measurement_start_utc"], how="inner"
-        )
-
+        # compute metrics
         true_y = np.array(laqn_forecast["NO2"])
         pred_y = np.array(laqn_forecast["NO2_mean"])
 

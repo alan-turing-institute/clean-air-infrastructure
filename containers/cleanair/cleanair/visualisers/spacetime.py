@@ -26,7 +26,6 @@ def plot_polygon_collection(
     patches = []
 
     for poly in geoms:
-
         a = np.asarray(poly.geoms[0].exterior)
 
         if poly.has_z:
