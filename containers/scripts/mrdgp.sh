@@ -3,8 +3,7 @@
 # exit when any command fails
 set -e
 
-# set the secretfile filepath
-#TODO: this throws line errors but doesnt seem to be needed?
+# set the secretfile filepath (if on own machine, use 'init production' to write to the production database)
 urbanair init local --secretfile "$DB_SECRET_FILE"
 
 # generate the data config
