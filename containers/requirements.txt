@@ -14,3 +14,5 @@ azure-storage-blob==12.3.0
 azure-mgmt-storage==9.0.0
 azure-common==1.1.25
 mypy==0.780
+geopandas==0.8.2
+rtree==0.9.7
