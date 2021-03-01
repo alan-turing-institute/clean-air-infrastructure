@@ -114,8 +114,14 @@ class ModelDataExtractor:
         self, full_config: FullDataConfig, data_frames: Dict[str, pd.DateFrame]
     ) -> Dict[str, pd.DateFrame]:
         """Normalise the x columns"""
+        return self.normalize_data_wrt(full_config, data_frames, data_frames)
 
-        norm_mean, norm_std = self.__norm_stats(full_config, data_frames)
+    def normalize_data_wrt(
+        self, full_config: FullDataConfig, data_frames: Dict[str, pd.DateFrame], wrt_data_frames: Dict[str, pd.DateFrame]
+    ) -> Dict[str, pd.DateFrame]:
+        """Normalise the x columns wrt wrt_data_frames"""
+
+        norm_mean, norm_std = self.__norm_stats(full_config, wrt_data_frames)
 
         x_names_norm = self.__x_names_norm(full_config.x_names)
 
