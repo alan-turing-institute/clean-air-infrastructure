@@ -175,7 +175,7 @@ if [ "$LOCAL" == '1' ]; then
             #for every instance create an sbatch file
             #seq generates numbers from 1 to n, and urbanair batch counts from 0 hence we -1
             for i in $(seq $NUM_INSTANCES); do
-                urbanair experiment batch $EXPERIMENT_NAME $(($i-1)) 1 --experiment-root $EXPERIMENT_FOLDER_NAME/ 
+                urbanair experiment batch $EXPERIMENT_NAME $(($i-1)) 1 --experiment-root $LOCAL_EXPERIMENT_FOLDER_PATH/$EXPERIMENT_NAME/ 
             done
         fi
     
