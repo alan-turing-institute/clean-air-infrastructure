@@ -15,9 +15,7 @@ urbanair model data generate-config \
     --static-features flat \
     --feature-buffer 500 \
     --train-source laqn \
-    --train-source satellite \
     --pred-source laqn \
-    --pred-source satellite \
     --species NO2 \
     --overwrite
 
