@@ -326,6 +326,22 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
             )
         return data_output
 
+    def download_forecast_data_for_source(
+        self, full_config: FullDataConfig, source: Source
+    ) -> pd.DataFrame:
+        """Download the readings in a forecast period for a specific source."""
+        data_output = self.__download_config_data(
+            with_sensor_readings=True,
+            start_date=full_config.pred_start_date,
+            end_date=full_config.pred_end_date,
+            species=full_config.species,
+            point_ids=full_config.pred_interest_points[source],
+            static_features=full_config.static_features,
+            dynamic_features=full_config.dynamic_features,
+            source=source,
+        )
+        return data_output
+
     def download_forecast_data(
         self, full_config: FullDataConfig
     ) -> Dict[Source, pd.DateFrame]:
@@ -333,16 +349,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
         data_output: Dict[Source, pd.DataFrame] = {}
         for source in full_config.pred_sources:
             self.logger.info("Downloading source %s forecast data.", source.value)
-            data_output[source] = self.__download_config_data(
-                with_sensor_readings=True,
-                start_date=full_config.pred_start_date,
-                end_date=full_config.pred_end_date,
-                species=full_config.species,
-                point_ids=full_config.pred_interest_points[source],
-                static_features=full_config.static_features,
-                dynamic_features=full_config.dynamic_features,
-                source=source,
-            )
+            data_output[source] = self.download_forecast_data_for_source(full_config, source)
         return data_output
 
     # pylint: disable=R0913
