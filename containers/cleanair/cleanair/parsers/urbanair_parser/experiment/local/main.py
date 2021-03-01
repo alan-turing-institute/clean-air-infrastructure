@@ -4,10 +4,10 @@ import geopandas as gpd
 from shapely import wkt
 import uuid
 import sklearn
-
+import tabulate
 from pathlib import Path
 import typer
-from ...shared_args import ExperimentDir
+from typing import Optional
 from .....types import ExperimentName, Source
 from .....utils import FileManager
 from .....visualisers import SpaceTimeVisualise
@@ -16,6 +16,46 @@ from ...state import state
 
 
 app = typer.Typer(help="Experiment Local CLI")
+
+
+def get_instance_ids(experiment_path):
+    """Return all instance ids for a given experiment."""
+    all_instance_ids = []
+
+    for child in experiment_path.iterdir():
+        if child.is_dir():
+            all_instance_ids.append(child.name)
+
+    return all_instance_ids
+
+
+def compute_metrics(true_y, pred_y):
+    """Compute multiple metrics.
+
+    @TODO: should use air_quality_metrics_class for this
+    """
+    metrics = {
+        "mse": sklearn.metrics.mean_squared_error,
+        "rmse": lambda a, b: np.sqrt(sklearn.metrics.mean_squared_error(a, b)),
+    }
+
+    # ensure correct shape
+    true_y = np.squeeze(true_y)
+    pred_y = np.squeeze(pred_y)
+
+    assert true_y.shape == pred_y.shape
+
+    # remove nans
+    non_nan_index = np.logical_not(np.isnan(true_y))
+
+    true_y = true_y[non_nan_index]
+    pred_y = pred_y[non_nan_index]
+
+    results = {}
+    for metric, metric_fn in metrics.items():
+        results[metric] = metric_fn(true_y, pred_y)
+
+    return results
 
 
 def load_hexgrid_polygons(hexgrid_df, hexgrid_path):
@@ -60,12 +100,13 @@ def vis(
     secretfile = state["secretfile"]
     model_data = ModelData(secretfile=secretfile)
 
-    #download forecast observations
+    # download forecast observations
     laqn_forecast_true = model_data.download_forecast_data_for_source(
-        full_config=instance.data_config,
-        source=Source.laqn
+        full_config=instance.data_config, source=Source.laqn
     )
-    laqn_forecast_true = laqn_forecast_true[['point_id', 'measurement_start_utc', 'NO2']]
+    laqn_forecast_true = laqn_forecast_true[
+        ["point_id", "measurement_start_utc", "NO2"]
+    ]
 
     # load forecasts
     y_forecast = file_manager.load_forecast_from_pickle()
@@ -75,12 +116,15 @@ def vis(
     X_forecast = file_manager.load_test_data()
     X_train_forecast = file_manager.load_training_data()
 
-
     laqn_forecast = file_manager.load_forecast_from_csv("laqn")
     laqn_forecast["point_id"] = laqn_forecast["point_id"].apply(uuid.UUID)
-    laqn_forecast["measurement_start_utc"] = pd.to_datetime(laqn_forecast["measurement_start_utc"])
+    laqn_forecast["measurement_start_utc"] = pd.to_datetime(
+        laqn_forecast["measurement_start_utc"]
+    )
 
-    laqn_forecast = laqn_forecast.merge(laqn_forecast_true, on=['point_id', 'measurement_start_utc'], how='inner')
+    laqn_forecast = laqn_forecast.merge(
+        laqn_forecast_true, on=["point_id", "measurement_start_utc"], how="inner"
+    )
 
     _columns = ["point_id", "epoch", "lat", "lon", "measurement_start_utc"]
 
@@ -92,7 +136,7 @@ def vis(
 
     # prep test data
     laqn_test_df = laqn_forecast[_columns]
-    laqn_test_df["observed"] = laqn_forecast['NO2']
+    laqn_test_df["observed"] = laqn_forecast["NO2"]
     laqn_test_df["pred"] = laqn_forecast["NO2_mean"]
     laqn_test_df["var"] = laqn_forecast["NO2_var"]
 
@@ -107,7 +151,7 @@ def vis(
     hexgrid_test_df = hexgrid_test_df[_columns + ["geom", "observed", "pred", "var"]]
 
     laqn_df = pd.concat([laqn_train_df, laqn_test_df])
-    #laqn_df = laqn_test_df
+    # laqn_df = laqn_test_df
     laqn_df = swap_lat_lon(laqn_df)
 
     hexgrid_df = hexgrid_test_df
@@ -138,48 +182,70 @@ def vis(
     print(laqn_df["epoch"])
     print(hexgrid_df["epoch"])
 
-    vis = SpaceTimeVisualise(laqn_df, hexgrid_df, geopandas_flag=True, test_start=np.min(laqn_test_df['epoch']))
+    vis = SpaceTimeVisualise(
+        laqn_df,
+        hexgrid_df,
+        geopandas_flag=True,
+        test_start=np.min(laqn_test_df["epoch"]),
+    )
     vis.show()
 
 
 @app.command()
 def metrics(
     experiment_name: ExperimentName,
-    instance_id: str,
-    experiment_root: Path
+    experiment_root: Path,
+    instance_id: Optional[str] = None,
 ) -> None:
-    """Print local experiment metrics"""
+    """Print local experiment metrics.
+    If instance_id is supplied then will print metrics for that specific instance.
+    Otherwise it will print metrics across all instances.
+    """
+    experiment_path = Path(f"{experiment_root}/{experiment_name}/")
 
-    # load specific instance
-    instance_path = Path(f"{experiment_root}/{experiment_name}/{instance_id}")
-    file_manager = FileManager(instance_path)
-    instance = file_manager.read_instance_from_json()
-    secretfile = state["secretfile"]
-    model_data = ModelData(secretfile=secretfile)
+    # If instance_id is not passes load all instance ids for experiment
+    all_instance_ids = []
 
-    #download forecast observations
-    laqn_forecast_true = model_data.download_forecast_data_for_source(
-        full_config=instance.data_config,
-        source=Source.laqn
-    )
-    laqn_forecast_true = laqn_forecast_true[['point_id', 'measurement_start_utc', 'NO2']]
+    if instance_id is None:
+        all_instance_ids = get_instance_ids(experiment_path)
+    else:
+        # load specific instance
+        all_instance_ids.append(instance_id)
 
-    laqn_forecast = file_manager.load_forecast_from_csv("laqn")
-    laqn_forecast["point_id"] = laqn_forecast["point_id"].apply(uuid.UUID)
-    laqn_forecast["measurement_start_utc"] = pd.to_datetime(laqn_forecast["measurement_start_utc"])
+    results = {}
+    for instance_id in all_instance_ids:
 
-    laqn_forecast = laqn_forecast.merge(laqn_forecast_true, on=['point_id', 'measurement_start_utc'], how='inner')
+        instance_path = Path(f"{experiment_root}/{experiment_name}/{instance_id}")
+        file_manager = FileManager(instance_path)
+        instance = file_manager.read_instance_from_json()
+        secretfile = state["secretfile"]
+        model_data = ModelData(secretfile=secretfile)
 
-    #remove nans
-    laqn_forecast = laqn_forecast[~pd.isnull(laqn_forecast['NO2'])]
+        # download forecast observations
+        laqn_forecast_true = model_data.download_forecast_data_for_source(
+            full_config=instance.data_config, source=Source.laqn
+        )
+        laqn_forecast_true = laqn_forecast_true[
+            ["point_id", "measurement_start_utc", "NO2"]
+        ]
 
-    true_y = np.squeeze(np.array(laqn_forecast['NO2']))
-    pred_y =  np.squeeze(np.array(laqn_forecast['NO2_mean']))
+        laqn_forecast = file_manager.load_forecast_from_csv("laqn")
+        laqn_forecast["point_id"] = laqn_forecast["point_id"].apply(uuid.UUID)
+        laqn_forecast["measurement_start_utc"] = pd.to_datetime(
+            laqn_forecast["measurement_start_utc"]
+        )
 
-    mse = sklearn.metrics.mean_squared_error(true_y, pred_y)
-    rmse = np.sqrt(mse)
+        laqn_forecast = laqn_forecast.merge(
+            laqn_forecast_true, on=["point_id", "measurement_start_utc"], how="inner"
+        )
 
-    print(mse, rmse)
+        true_y = np.array(laqn_forecast["NO2"])
+        pred_y = np.array(laqn_forecast["NO2_mean"])
 
+        results[instance_id] = compute_metrics(true_y, pred_y)
 
+    # Print Table of Results
+    results_df = pd.DataFrame(results).T
+    metrics = list(results_df.columns)
 
+    print(tabulate.tabulate(results_df, headers=["Instance Id"] + metrics))
