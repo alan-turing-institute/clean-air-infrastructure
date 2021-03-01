@@ -3,6 +3,7 @@ import pandas as pd
 import geopandas as gpd
 from shapely import wkt
 import uuid
+import sklearn
 
 from pathlib import Path
 import typer
@@ -137,7 +138,7 @@ def vis(
     print(laqn_df["epoch"])
     print(hexgrid_df["epoch"])
 
-    vis = SpaceTimeVisualise(laqn_df, hexgrid_df, geopandas_flag=True)
+    vis = SpaceTimeVisualise(laqn_df, hexgrid_df, geopandas_flag=True, test_start=np.min(laqn_test_df['epoch']))
     vis.show()
 
 
@@ -145,7 +146,40 @@ def vis(
 def metrics(
     experiment_name: ExperimentName,
     instance_id: str,
-    experiment_root: Path = ExperimentDir,
+    experiment_root: Path
 ) -> None:
     """Print local experiment metrics"""
-    raise NotImplementedError()
+
+    # load specific instance
+    instance_path = Path(f"{experiment_root}/{experiment_name}/{instance_id}")
+    file_manager = FileManager(instance_path)
+    instance = file_manager.read_instance_from_json()
+    secretfile = state["secretfile"]
+    model_data = ModelData(secretfile=secretfile)
+
+    #download forecast observations
+    laqn_forecast_true = model_data.download_forecast_data_for_source(
+        full_config=instance.data_config,
+        source=Source.laqn
+    )
+    laqn_forecast_true = laqn_forecast_true[['point_id', 'measurement_start_utc', 'NO2']]
+
+    laqn_forecast = file_manager.load_forecast_from_csv("laqn")
+    laqn_forecast["point_id"] = laqn_forecast["point_id"].apply(uuid.UUID)
+    laqn_forecast["measurement_start_utc"] = pd.to_datetime(laqn_forecast["measurement_start_utc"])
+
+    laqn_forecast = laqn_forecast.merge(laqn_forecast_true, on=['point_id', 'measurement_start_utc'], how='inner')
+
+    #remove nans
+    laqn_forecast = laqn_forecast[~pd.isnull(laqn_forecast['NO2'])]
+
+    true_y = np.squeeze(np.array(laqn_forecast['NO2']))
+    pred_y =  np.squeeze(np.array(laqn_forecast['NO2_mean']))
+
+    mse = sklearn.metrics.mean_squared_error(true_y, pred_y)
+    rmse = np.sqrt(mse)
+
+    print(mse, rmse)
+
+
+

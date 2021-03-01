@@ -364,7 +364,7 @@ class ST_ScatterPlot(object):
 
 
 class SpaceTimeVisualise(object):
-    def __init__(self, train_df, test_df, geopandas_flag=True):
+    def __init__(self, train_df, test_df, geopandas_flag=True, test_start=None):
         columns = {
             "id": "id",
             "epoch": "epoch",
@@ -385,7 +385,11 @@ class SpaceTimeVisualise(object):
 
         self.min_time = np.min(self.train_df[columns["epoch"]])
         self.max_time = np.max(self.train_df[columns["epoch"]])
-        self.test_start = self.min_time
+
+        if test_start:
+            self.test_start = test_start
+        else:
+            self.test_start = self.min_time
 
         self.unique_epochs = np.unique(self.train_df[columns["epoch"]])
         self.unique_ids = np.unique(self.train_df[columns["id"]])
