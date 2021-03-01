@@ -20,6 +20,7 @@ NDArrayTuple = Tuple[NDArray[Float64], NDArray[Float64]]
 DatasetDict = Dict[str, Union[FeaturesDict, TargetDict]]
 IndexedDatasetDict = Tuple[FeaturesDict, TargetDict, IndexDict]
 InterestPointDict = Dict[Source, Union[str, List[str]]]
+PredictionDict = Dict[Source, Dict[Species, Dict[str, NDArray[Float64]]]]
 
 
 class DataConfig(BaseModel):

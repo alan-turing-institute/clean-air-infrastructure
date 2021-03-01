@@ -14,6 +14,7 @@ WORKDIR /app
 
 # Copy the cleanair directory contents into the container
 COPY cleanair /app/cleanair
+COPY scripts/ /app/scripts
 
 # Install any needed packages specified in requirements.txt
 RUN pip install '/app/cleanair[models,traffic]' pyopenssl
