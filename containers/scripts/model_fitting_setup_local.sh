@@ -61,8 +61,6 @@ if [ "$SETUP" == '1' ]; then
     #Download data for experiment and setup mrdgp 
     urbanair init production
 
-    echo $EXPERIMENT_NAMES 
-
     for EXPERIMENT_NAME in ${EXPERIMENT_NAMES[@]}; do
         #saving cache in urbanair requires an empty folder
         if [ -d "$LOCAL_EXPERIMENT_FOLDER_PATH/$EXPERIMENT_NAME" ]; then
