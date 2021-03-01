@@ -66,6 +66,42 @@ def svgp_vary_static_features(secretfile: str) -> List[InstanceMixin]:
         instance_list.append(instance)
     return instance_list
 
+def svgp_test(secretfile: str) -> List[InstanceMixin]:
+    """Default SVGP with changing static features"""
+    # default model parameters for every model
+    instance_list: List[InstanceMixin] = []
+
+    model_config = ModelConfig(secretfile=secretfile)
+    for static_features in STATIC_FEATURES_LIST:
+        if len(static_features) == 0:
+            active_dims = [0, 1, 2]  # work around so that no features are used
+            static_features = [
+                StaticFeatureNames.park
+            ]  # tempory feature which wont be used by model
+            input_dim = 3
+        else:
+            active_dims = None  # use all features
+            input_dim = 3
+
+        model_params = default_svgp_model_params(
+            active_dims=active_dims, input_dim=input_dim, maxiter=maxiter
+        )
+
+        # create a data config from static_features
+        data_config = default_laqn_data_config()
+        data_config.static_features = static_features
+        model_config.validate_config(data_config)
+        full_data_config = model_config.generate_full_config(data_config)
+
+        # create instance and add to list
+        instance = InstanceMixin(
+            full_data_config, ModelName.svgp, model_params, tag=Tag.validation
+        )
+        instance_list.append(instance)
+        break
+    return instance_list
+
+
 
 def svgp_vary_num_inducing_points(
     num_inducing_points_list: Optional[List[int]] = None,

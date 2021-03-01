@@ -92,6 +92,8 @@ def get_laqn_forecast_with_observations(instance, file_manager, model_data):
     laqn_forecast_true = model_data.download_forecast_data_for_source(
         full_config=instance.data_config, source=Source.laqn
     )
+
+
     laqn_forecast_true = laqn_forecast_true[
         ["point_id", "measurement_start_utc", "NO2"]
     ]
