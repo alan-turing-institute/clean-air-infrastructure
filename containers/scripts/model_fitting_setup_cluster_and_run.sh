@@ -8,6 +8,7 @@ set -e
 DRY=0
 NO_SETUP=0
 HELP=0
+LOCAL=0
 
 #handle input flags
 while [[ $# -gt 0 ]]
@@ -23,6 +24,10 @@ case $key in
     NO_SETUP=1
     shift # past argument
     ;;
+    --local)
+    LOCAL=1
+    shift # past argument
+    ;;
     --help)
     HELP=1
     shift # past argument
@@ -34,6 +39,7 @@ if [ "$HELP" == '1' ]; then
     echo 'Help:'
     echo '  --dry : Do not run sbatch on cluster'
     echo '  --no-setup : Do not setup cluster folders and move experiment instances to cluster'
+    echo '  --local : Run locally'
     exit
 fi
 
@@ -152,6 +158,27 @@ if [ "$DRY" == '0' ]; then
             done
         fi
 
+    done
+fi
+
+
+if [ "$LOCAL" == '1' ]; then 
+
+    for EXPERIMENT_NAME in ${EXPERIMENT_NAMES[@]}; do
+        #TODO: make an urbanair command to return the number of instances
+        #Work around for now until urbanair command issue is completed
+        NUM_INSTANCES=$(find $LOCAL_EXPERIMENT_FOLDER_PATH/$EXPERIMENT_NAME -mindepth 1 -maxdepth 1 -type d | wc -l)
+
+        if [ $NUM_INSTANCES == 0 ]; then
+            echo "No instances found in $LOCAL_EXPERIMENT_FOLDER_PATH/$EXPERIMENT_NAME"
+        else
+            #for every instance create an sbatch file
+            #seq generates numbers from 1 to n, and urbanair batch counts from 0 hence we -1
+            for i in $(seq $NUM_INSTANCES); do
+                urbanair experiment batch $EXPERIMENT_NAME $(($i-1)) 1 --experiment-root $EXPERIMENT_FOLDER_NAME/ 
+            done
+        fi
+    
     done
 fi
 
