@@ -145,7 +145,7 @@ def get_hexgrid_forecast(file_manager, hexgrid_file):
 
 
 def plot_hexgrid(file_manager, hexgrid_file):
-    """Rudenmenary check to see if hexgrid should be plotted or not."""
+    """Rudimentary check to see if hexgrid should be plotted or not."""
     return (
         "hexgrid" in file_manager.load_forecast_from_pickle().keys()
     ) and hexgrid_file is not None
