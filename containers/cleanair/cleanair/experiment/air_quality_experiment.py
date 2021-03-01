@@ -33,14 +33,20 @@ class SetupAirQualityExperiment(SetupExperimentMixin):
         super().__init__(name, experiment_root)
         self.model_data = ModelData(secretfile=secretfile, **kwargs)
 
-    def load_unnormalised_training_dataset(self, data_id: str) -> Dict[Source, pd.DataFrame]:
+    def load_unnormalised_training_dataset(
+        self, data_id: str
+    ) -> Dict[Source, pd.DataFrame]:
+        """Load unnormalised training dataset."""
         data_config = self._data_config_lookup[data_id]
         training_data: Dict[
             Source, pd.DateFrame
         ] = self.model_data.download_config_data(data_config, training_data=True)
         return training_data
 
-    def load_normalised_training_dataset(self, data_id:str, training_data: Dict[Source, pd.DataFrame]) -> Dict[Source, pd.DataFrame]:
+    def load_normalised_training_dataset(
+        self, data_id: str, training_data: Dict[Source, pd.DataFrame]
+    ) -> Dict[Source, pd.DataFrame]:
+        """Normalise training dataset."""
         data_config = self._data_config_lookup[data_id]
         training_data_norm: Dict[Source, pd.DateFrame] = self.model_data.normalize_data(
             data_config, training_data
@@ -53,39 +59,51 @@ class SetupAirQualityExperiment(SetupExperimentMixin):
         training_data: Dict[
             Source, pd.DateFrame
         ] = self.model_data.download_config_data(data_config, training_data=True)
-        print('train: ', training_data['laqn']['epoch'])
         training_data_norm: Dict[Source, pd.DateFrame] = self.model_data.normalize_data(
             data_config, training_data
         )
-        print('train: ', training_data_norm['laqn']['epoch_norm'])
         return training_data_norm
 
     def load_datasets(self) -> None:
-        """Load the datasets"""
+        """Load the datasets."""
         # TODO check uniqueness of data id
         data_id_list: List[str] = [
             instance.data_id for _, instance in self._instances.items()
         ]
         for data_id in data_id_list:
-            unnormalised_training_dataset = self.load_unnormalised_training_dataset(data_id)
-            training_dataset = self.load_normalised_training_dataset(data_id, unnormalised_training_dataset)
+            # the unnormalised training dataset must first be loaded so that the testing data
+            # can be normalised wrt to it.
 
-            test_dataset = self.load_test_dataset(data_id, unnormalised_training_dataset)
+            unnormalised_training_dataset = self.load_unnormalised_training_dataset(
+                data_id
+            )
+            training_dataset = self.load_normalised_training_dataset(
+                data_id, unnormalised_training_dataset
+            )
+
+            # normalise the test data wrt the training data
+            test_dataset = self.load_test_dataset(
+                data_id, unnormalised_training_dataset
+            )
 
             self.add_training_dataset(data_id, training_dataset)
             self.add_test_dataset(data_id, test_dataset)
 
-    def load_test_dataset(self, data_id: str, training_data: Dict[Source, pd.DataFrame]) -> Dict[Source, pd.DataFrame]:
+    def load_test_dataset(
+        self, data_id: str, training_data: Dict[Source, pd.DataFrame]
+    ) -> Dict[Source, pd.DataFrame]:
         """Load a test dataset from the database"""
         data_config = self._data_config_lookup[data_id]
         prediction_data: Dict[
             Source, pd.DateFrame
         ] = self.model_data.download_config_data(data_config, training_data=False)
-        print('test: ', prediction_data['laqn']['epoch'])
+        print("test: ", prediction_data["laqn"]["epoch"])
         prediction_data_norm: Dict[
             Source, pd.DateFrame
-        ] = self.model_data.normalize_data_wrt(data_config, prediction_data, training_data)
-        print('test: ', prediction_data_norm['laqn']['epoch_norm'])
+        ] = self.model_data.normalize_data_wrt(
+            data_config, prediction_data, training_data
+        )
+        print("test: ", prediction_data_norm["laqn"]["epoch_norm"])
         return prediction_data_norm
 
     def write_instance_to_file(self, instance_id: str) -> None:

@@ -117,7 +117,10 @@ class ModelDataExtractor:
         return self.normalize_data_wrt(full_config, data_frames, data_frames)
 
     def normalize_data_wrt(
-        self, full_config: FullDataConfig, data_frames: Dict[str, pd.DateFrame], wrt_data_frames: Dict[str, pd.DateFrame]
+        self,
+        full_config: FullDataConfig,
+        data_frames: Dict[str, pd.DateFrame],
+        wrt_data_frames: Dict[str, pd.DateFrame],
     ) -> Dict[str, pd.DateFrame]:
         """Normalise the x columns wrt wrt_data_frames"""
 
@@ -355,7 +358,9 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
         data_output: Dict[Source, pd.DataFrame] = {}
         for source in full_config.pred_sources:
             self.logger.info("Downloading source %s forecast data.", source.value)
-            data_output[source] = self.download_forecast_data_for_source(full_config, source)
+            data_output[source] = self.download_forecast_data_for_source(
+                full_config, source
+            )
         return data_output
 
     # pylint: disable=R0913
