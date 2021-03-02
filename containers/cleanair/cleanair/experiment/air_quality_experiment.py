@@ -33,8 +33,8 @@ class SetupAirQualityExperiment(SetupExperimentMixin):
         super().__init__(name, experiment_root)
         self.model_data = ModelData(secretfile=secretfile, **kwargs)
 
-    def unnormalised_training_dataset(self, data_id: str) -> Dict[Source, pd.DataFrame]:
-        """Load unnormalised training dataset."""
+    def load_training_dataset(self, data_id: str) -> Dict[Source, pd.DataFrame]:
+        """Load unnormalised training dataset from the database."""
         data_config = self._data_config_lookup[data_id]
         training_data: Dict[
             Source, pd.DateFrame
@@ -51,20 +51,14 @@ class SetupAirQualityExperiment(SetupExperimentMixin):
         )
         return training_data_norm
 
-    def load_training_dataset(self, data_id: str) -> Dict[Source, pd.DataFrame]:
-        """Load a training dataset from the database"""
+    def load_test_dataset(self, data_id: str) -> Dict[Source, pd.DataFrame]:
+        """Load unnormalised test dataset from the dataset"""
         data_config = self._data_config_lookup[data_id]
-        training_data: Dict[
+        prediction_data: Dict[
             Source, pd.DateFrame
-        ] = self.model_data.download_config_data(data_config, training_data=True)
-        training_data_norm: Dict[Source, pd.DateFrame] = self.model_data.normalize_data(
-            data_config, training_data
-        )
-        return training_data_norm
+        ] = self.model_data.download_config_data(data_config, training_data=False)
+        return prediction_data
 
-    def load_test_dataset(self, data_id: str) -> Any:
-        """Needed because load_test_dataset is an abstract method but is unsed by this class."""
-        raise RuntimeError()
 
     def load_datasets(self) -> None:
         """Load the datasets.
@@ -79,7 +73,7 @@ class SetupAirQualityExperiment(SetupExperimentMixin):
             # the unnormalised training dataset must first be loaded so that the testing data
             # can be normalised wrt to it.
 
-            unnormalised_training_dataset = self.unnormalised_training_dataset(data_id)
+            unnormalised_training_dataset = self.load_training_dataset(data_id)
             training_dataset = self.normalised_training_dataset(
                 data_id, unnormalised_training_dataset
             )
@@ -95,16 +89,14 @@ class SetupAirQualityExperiment(SetupExperimentMixin):
     def normalised_test_dataset(
         self, data_id: str, training_data: Optional[Dict[Source, pd.DataFrame]] = None
     ) -> Dict[Source, pd.DataFrame]:
-        """Load a test dataset from the database.
+        """Load a normalised test dataset from the database.
+
         Args:
             data_id: index into data_config
             training_data: Optional data. if passed then test_dataset will be normalised to training_data.
         """
+        prediction_data = self.load_test_dataset(data_id)
         data_config = self._data_config_lookup[data_id]
-        prediction_data: Dict[
-            Source, pd.DateFrame
-        ] = self.model_data.download_config_data(data_config, training_data=False)
-
         if training_data is None:
             # do not normalize wrt the training dat
             norm_wrt_data = prediction_data
