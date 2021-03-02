@@ -156,21 +156,23 @@ class LAQNWriter(DateRangeMixin, APIRequestMixin, LAQNAvailabilityMixin, DBWrite
             for site_reading in site_readings
         ]
 
-
         delete_indices = []
-        for i in range(0, len(site_records)-1):
-            for j in range(i+1, len(site_records)):
-                if (site_records[i]['site_code'] == site_records[j]['site_code']
-                    and site_records[i]['species_code'] == site_records[j]['species_code']
-                    and site_records[i]['measurement_start_utc'] == site_records[j]['measurement_start_utc']
-                    and site_records[i]['measurement_end_utc'] == site_records[j]['measurement_end_utc']
+        for i in range(0, len(site_records) - 1):
+            for j in range(i + 1, len(site_records)):
+                if (
+                    site_records[i]["site_code"] == site_records[j]["site_code"]
+                    and site_records[i]["species_code"]
+                    == site_records[j]["species_code"]
+                    and site_records[i]["measurement_start_utc"]
+                    == site_records[j]["measurement_start_utc"]
+                    and site_records[i]["measurement_end_utc"]
+                    == site_records[j]["measurement_end_utc"]
                 ):
                     delete_indices.append(i)
 
         delete_indices.sort(reverse=True)
         for index in delete_indices:
             del site_records[index]
-
 
         # Open a DB session
 
