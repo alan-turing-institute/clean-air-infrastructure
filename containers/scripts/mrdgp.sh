@@ -35,3 +35,4 @@ urbanair model fit mrdgp --refresh 10
 
 # push the results to the database
 urbanair model update results mrdgp --tag production --cluster-id kubernetes
+

@@ -10,7 +10,7 @@ from .shared_params import (
 )
 from ..types import BaseModelParams, KernelParams, KernelType, MRDGPParams
 
-MRDGP_NUM_INDUCING_POINTS = 1000
+MRDGP_NUM_INDUCING_POINTS = 500
 
 
 def default_base_laqn_kernel(
