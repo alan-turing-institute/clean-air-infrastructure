@@ -63,7 +63,7 @@ class SetupAirQualityExperiment(SetupExperimentMixin):
         return training_data_norm
 
     def load_test_dataset(self, data_id: str) -> Any:
-        """Use the data id to load a test dataset"""
+        """Needed because load_test_dataset is an abstract method but is unsed by this class."""
         raise RuntimeError()
 
     def load_datasets(self) -> None:
