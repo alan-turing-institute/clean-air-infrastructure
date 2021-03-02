@@ -6,7 +6,8 @@ import json
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 import tensorflow as tf
-from ..databases import DBWriter
+
+from ..databases import get_columns_of_table
 from ..databases.mixins import ResultTableMixin
 from ..databases.mixins import (
     DataTableMixin,
@@ -206,7 +207,7 @@ class RunnableExperimentMixin(SetupExperimentMixin):
         # make sure to load the datasets first
         for instance_id, instance in self._instances.items():
             instance.fit_start_time = datetime.now()
-            tf.compat.v1.reset_default_graph()
+            # tf.compat.v1.reset_default_graph()
             with tf.compat.v1.Graph().as_default():
                 with tf.compat.v1.Session().as_default() as session:
                     # session.reset(graph)
@@ -218,7 +219,7 @@ class RunnableExperimentMixin(SetupExperimentMixin):
                     session.close()
 
 
-class UpdateExperimentMixin(ExperimentMixin, DBWriter):
+class UpdateExperimentMixin(ExperimentMixin):
     """An experiment that can write to databases"""
 
     @property
@@ -245,8 +246,36 @@ class UpdateExperimentMixin(ExperimentMixin, DBWriter):
         """Update the instance, data and model tables."""
         # TODO would be nice to have an experiment table too
         # convert pydantic models to dictionaries
+
+        # get column names for each table
+        data_config_cols = get_columns_of_table(self.data_table)
+        instance_cols = get_columns_of_table(self.instance_table)
+        model_cols = get_columns_of_table(self.model_table)
+
+        # keep list or records to insert into DB
+        data_config_records = list()
+        instance_records = list()
+        model_records = list()
+
+        # add records to list
         for instance in self._instances.values():
-            instance.update_remove_tables()
+            instance_dict = instance.dict()
+            data_config_records.append(
+                {key: instance_dict[key] for key in data_config_cols}
+            )
+            model_records.append({key: instance_dict[key] for key in model_cols})
+            instance_records.append({key: instance_dict[key] for key in instance_cols})
+
+        # write records to the database
+        self.commit_records(
+            data_config_records, on_conflict="overwrite", table=self.data_table,
+        )
+        self.commit_records(
+            model_records, on_conflict="overwrite", table=self.model_table,
+        )
+        self.commit_records(
+            instance_records, on_conflict="overwrite", table=self.instance_table,
+        )
 
     @abstractmethod
     def update_result_tables(self):

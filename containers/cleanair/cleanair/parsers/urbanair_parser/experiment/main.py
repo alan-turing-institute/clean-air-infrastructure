@@ -23,7 +23,7 @@ app = typer.Typer(help="Experiment CLI")
 @app.command()
 def size(experiment_name: ExperimentName, experiment_root: Path = ExperimentDir) -> int:
     """Number of instances in experiment is the size"""
-    logging.disable(logging.CRITICAL)   # turn off logging
+    logging.disable(logging.CRITICAL)  # turn off logging
     size_experiment = ExperimentMixin(experiment_name, experiment_root)
     experiment_config = size_experiment.read_experiment_config_from_json()
     size_experiment.add_instances_from_file(experiment_config.instance_id_list)

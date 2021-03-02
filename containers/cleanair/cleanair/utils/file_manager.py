@@ -1,6 +1,7 @@
 """Functions for saving and loading models"""
 
 from __future__ import annotations
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Union, TYPE_CHECKING
 import json
@@ -346,6 +347,7 @@ class FileManager:
             model_params = model_params_from_dict(
                 model_name, instance_dict.get("model_params")
             )
+            fit_start_time = datetime.fromisoformat(instance_dict.get("fit_start_time"))
             data_config_dict = instance_dict.get("data_config")
             data_config = FullDataConfig(**data_config_dict)
             instance = InstanceMixin(
@@ -353,7 +355,7 @@ class FileManager:
                 model_name=model_name,
                 model_params=model_params,
                 cluster_id=instance_dict.get("cluster_id"),
-                fit_start_time=instance_dict.get("fit_start_time"),
+                fit_start_time=fit_start_time,
                 git_hash=instance_dict.get("git_hash"),
                 preprocessing=instance_dict.get("preprocessing"),
                 tag=instance_dict.get("tag"),

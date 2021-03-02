@@ -57,6 +57,7 @@ def experiment_dir(tmp_path_factory) -> Path:
     """Temporary experiment directory."""
     return tmp_path_factory.mktemp(".experiment")
 
+
 @pytest.fixture(scope="class")
 def experiment_dir_for_class(tmp_path_factory) -> Path:
     """Temporary experiment directory that lasts for a class"""
@@ -145,16 +146,22 @@ def runnable_aq_experiment(
     # add the instances to a runnable instance
     experiment = RunnableAirQualityExperiment(experiment_name, experiment_dir)
     experiment.add_instance(laqn_svgp_instance)
-    experiment.add_instance(sat_mrdgp_instance)
+    # experiment.add_instance(sat_mrdgp_instance)
     return experiment
 
-@pytest.fixture(scope="class")
+
+@pytest.fixture(scope="function")
 def update_aq_experiment(
-    runnable_aq_experiment,
-    experiment_dir_for_class,
-    secretfile,
+    runnable_aq_experiment, experiment_dir, secretfile, connection,
 ) -> UpdateAirQualityExperiment:
     """Fixture for updating experiment"""
+    runnable_aq_experiment.load_datasets()
     runnable_aq_experiment.run_experiment()
-    return UpdateAirQualityExperiment(runnable_aq_experiment.name, experiment_dir_for_class, secretfile=secretfile)
-    
+    update_experiment = UpdateAirQualityExperiment(
+        runnable_aq_experiment.name,
+        experiment_dir,
+        secretfile=secretfile,
+        connection=connection,
+    )
+    update_experiment.add_instances_from_file(runnable_aq_experiment.get_instance_ids())
+    return update_experiment

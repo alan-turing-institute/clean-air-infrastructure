@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Dict, Optional, TYPE_CHECKING
 import pandas as pd
 from .air_quality_result import AirQualityResult
+from ..databases import DBWriter
 from ..databases.tables import (
     AirQualityDataTable,
     AirQualityInstanceTable,
@@ -168,7 +169,7 @@ class RunnableAirQualityExperiment(RunnableExperimentMixin):
         file_manager.save_forecast_to_pickle(y_forecast)
 
 
-class UpdateAirQualityExperiment(UpdateExperimentMixin):
+class UpdateAirQualityExperiment(DBWriter, UpdateExperimentMixin):
     """Write an experiment to the database"""
 
     def __init__(
@@ -178,7 +179,8 @@ class UpdateAirQualityExperiment(UpdateExperimentMixin):
         secretfile: Optional[str] = None,
         **kwargs
     ):
-        super().__init__(name, experiment_root, secretfile=secretfile, **kwargs)
+        DBWriter.__init__(self, secretfile=secretfile, **kwargs)
+        UpdateExperimentMixin.__init__(self, name, experiment_root)
         self.secretfile = secretfile
 
     @property
@@ -220,6 +222,10 @@ class UpdateAirQualityExperiment(UpdateExperimentMixin):
             update_predictions_on_dataset(
                 test_data, y_forecast, instance_id, instance.data_id, self.secretfile
             )
+
+    def update_remote_tables(self):
+        """Write instances to air quality tables"""
+        return UpdateExperimentMixin.update_remote_tables(self)
 
 
 def update_predictions_on_dataset(

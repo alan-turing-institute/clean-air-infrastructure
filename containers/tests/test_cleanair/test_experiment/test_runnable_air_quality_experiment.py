@@ -1,6 +1,6 @@
 """Test runnable AQ experiment"""
 
-from cleanair.parsers.urbanair_parser.experiment.main import update
+
 import pytest
 from cleanair.types import PredictionDict, Source
 from cleanair.utils import FileManager
@@ -121,21 +121,3 @@ class TestRunnableAirQualityExperiment:
             ).input_dir
             assert (instance_dir / FileManager.PRED_FORECAST_PICKLE).exists()
             assert (instance_dir / FileManager.PRED_TRAINING_PICKLE).exists()
-
-class TestUpdateAirQualityExperiment:
-    """The runnable experiment depends upon the setup experiment"""
-
-    def test_setup(self, fake_cleanair_dataset, update_experiment):
-        """Add the fake dataset to the DB"""
-        experiment_config = update_experiment.read_experiment_config_from_json()
-        assert len(experiment_config.instance_id_list) == 2
-        update_experiment.add_instances_from_file(experiment_config.instance_id_list)
-
-
-    def test_update_remote_tables(self, update_aq_experiment):
-        """Test the instances are written to the DB"""
-        assert update_aq_experiment.get_num_instances()
-
-    def test_update_result_tables(self, update_aq_experiment):
-        """Test the results are written to the DB"""
-
