@@ -62,6 +62,11 @@ class SetupAirQualityExperiment(SetupExperimentMixin):
         )
         return training_data_norm
 
+    @abstractmethod
+    def load_test_dataset(self, data_id: str) -> Any:
+        """Use the data id to load a test dataset"""
+        raise RuntimeError()
+
     def load_datasets(self) -> None:
         """Load the datasets.
         When setting up the dataset we need to normalise the testing data w.r.t to the training

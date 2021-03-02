@@ -337,7 +337,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
             )
         return data_output
 
-    def download_forecast_data_for_source(
+    def download_forecast_source_data(
         self, full_config: FullDataConfig, source: Source
     ) -> pd.DataFrame:
         """Download the readings in a forecast period for a specific source."""
@@ -360,7 +360,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
         data_output: Dict[Source, pd.DataFrame] = {}
         for source in full_config.pred_sources:
             self.logger.info("Downloading source %s forecast data.", source.value)
-            data_output[source] = self.download_forecast_data_for_source(
+            data_output[source] = self.download_forecast_source_data(
                 full_config, source
             )
         return data_output
