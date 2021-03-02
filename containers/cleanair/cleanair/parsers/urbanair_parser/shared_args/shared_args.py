@@ -44,8 +44,8 @@ def NDays_callback(value: int) -> int:
 
 def NWorkers_callback(value: int) -> int:
     "cap workers"
-    if value > 2:
-        raise ValueError("nworkers must be less than 3")
+    if value > 6:
+        raise ValueError("nworkers must be less than 7")
     return value
 
 
