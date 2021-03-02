@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 from pathlib import Path
-from typing import Dict, Optional, TYPE_CHECKING
+from typing import Dict, Optional, TYPE_CHECKING, List
 import pandas as pd
 from .experiment import RunnableExperimentMixin, SetupExperimentMixin
 from ..models import ModelData, ModelDataExtractor, MRDGP, SVGP
@@ -90,20 +90,29 @@ class SetupAirQualityExperiment(SetupExperimentMixin):
             self.add_test_dataset(data_id, test_dataset)
 
     def load_test_dataset(
-        self, data_id: str, training_data: Dict[Source, pd.DataFrame]
+        self, data_id: str, training_data: Optional[Dict[Source, pd.DataFrame]] = None
     ) -> Dict[Source, pd.DataFrame]:
-        """Load a test dataset from the database"""
+        """Load a test dataset from the database.
+        Args:
+            data_id: index into data_config
+            training_data: Optional data. if passed then test_dataset will be normalised to training_data.
+        """
         data_config = self._data_config_lookup[data_id]
         prediction_data: Dict[
             Source, pd.DateFrame
         ] = self.model_data.download_config_data(data_config, training_data=False)
-        print("test: ", prediction_data["laqn"]["epoch"])
+
+        if training_data is None:
+            # do not normalize wrt the training dat
+            norm_wrt_data = prediction_data
+        else:
+            norm_wrt_data = training_data
+
         prediction_data_norm: Dict[
             Source, pd.DateFrame
         ] = self.model_data.normalize_data_wrt(
-            data_config, prediction_data, training_data
+            data_config, prediction_data, norm_wrt_data
         )
-        print("test: ", prediction_data_norm["laqn"]["epoch_norm"])
         return prediction_data_norm
 
     def write_instance_to_file(self, instance_id: str) -> None:
