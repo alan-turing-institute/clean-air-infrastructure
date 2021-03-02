@@ -8,6 +8,7 @@ set -e
 DRY=0
 NO_SETUP=0
 HELP=0
+LOCAL=0
 
 #handle input flags
 while [[ $# -gt 0 ]]
@@ -23,6 +24,10 @@ case $key in
     NO_SETUP=1
     shift # past argument
     ;;
+    --local)
+    LOCAL=1
+    shift # past argument
+    ;;
     --help)
     HELP=1
     shift # past argument
@@ -34,6 +39,7 @@ if [ "$HELP" == '1' ]; then
     echo 'Help:'
     echo '  --dry : Do not run sbatch on cluster'
     echo '  --no-setup : Do not setup cluster folders and move experiment instances to cluster'
+    echo '  --local : Run locally'
     exit
 fi
 
@@ -92,7 +98,7 @@ ssh -T -i $CLUSTER_KEY $CLUSTER_USER@$CLUSTER_ADDR  << HERE
 ##### Run Command
 cd ~/cleanair
 # run script with arguments
-singularity exec containers/${DOCKER_IMAGE}_$DOCKER_TAG.sif urbanair experiment batch $1 $(($2-1)) 1 --experiment-root $CACHE_DIR/
+singularity exec containers/${DOCKER_IMAGE}_$DOCKER_TAG.sif urbanair experiment batch $1 $(($2-1)) 1 --experiment-root $EXPERIMENT_FOLDER_NAME/
 
 END
 
@@ -119,10 +125,10 @@ if [ "$NO_SETUP" == '0' ]; then
     for EXPERIMENT_NAME in ${EXPERIMENT_NAMES[@]}; do
         #TODO: make an urbanair command to return the number of instances
         #Work around for now until urbanair command issue is completed
-        NUM_INSTANCES=$(find $CACHE_FOLDER/$EXPERIMENT_NAME -mindepth 1 -maxdepth 1 -type d | wc -l)
+        NUM_INSTANCES=$(find $LOCAL_EXPERIMENT_FOLDER_PATH/$EXPERIMENT_NAME -mindepth 1 -maxdepth 1 -type d | wc -l)
 
         if [ $NUM_INSTANCES == 0 ]; then
-            echo "No instances found in $CACHE_FOLDER/$EXPERIMENT_NAME"
+            echo "No instances found in $LOCAL_EXPERIMENT_FOLDER_PATH/$EXPERIMENT_NAME"
         else
             #for every instance create an sbatch file
             #seq generates numbers from 1 to n, and urbanair batch counts from 0 hence we -1
@@ -136,22 +142,43 @@ fi
 
 if [ "$DRY" == '0' ]; then 
     echo 'Moving cache dir to cluster'
-    scp -i $CLUSTER_KEY -C -r $CACHE_FOLDER $CLUSTER_USER@$CLUSTER_ADDR:cleanair/ 
+    scp -i $CLUSTER_KEY -C -r $LOCAL_EXPERIMENT_FOLDER_PATH $CLUSTER_USER@$CLUSTER_ADDR:cleanair/ 
 
     for EXPERIMENT_NAME in ${EXPERIMENT_NAMES[@]}; do
         #TODO: make an urbanair command to return the number of instances
         #Work around for now until urbanair command issue is completed
-        NUM_INSTANCES=$(find $CACHE_FOLDER/$EXPERIMENT_NAME -mindepth 1 -maxdepth 1 -type d | wc -l)
+        NUM_INSTANCES=$(find $LOCAL_EXPERIMENT_FOLDER_PATH/$EXPERIMENT_NAME -mindepth 1 -maxdepth 1 -type d | wc -l)
 
         if [ $NUM_INSTANCES == 0 ]; then
-            echo "No instances found in $CACHE_FOLDER/$EXPERIMENT_NAME"
+            echo "No instances found in $LOCAL_EXPERIMENT_FOLDER_PATH/$EXPERIMENT_NAME"
         else
-            echo "Run every instance in $CACHE_FOLDER/$EXPERIMENT_NAME"
+            echo "Run every instance in $LOCAL_EXPERIMENT_FOLDER_PATH/$EXPERIMENT_NAME"
             for i in $(seq $NUM_INSTANCES); do
                 run_sbatch $EXPERIMENT_NAME $i
             done
         fi
 
+    done
+fi
+
+
+if [ "$LOCAL" == '1' ]; then 
+
+    for EXPERIMENT_NAME in ${EXPERIMENT_NAMES[@]}; do
+        #TODO: make an urbanair command to return the number of instances
+        #Work around for now until urbanair command issue is completed
+        NUM_INSTANCES=$(find $LOCAL_EXPERIMENT_FOLDER_PATH/$EXPERIMENT_NAME -mindepth 1 -maxdepth 1 -type d | wc -l)
+
+        if [ $NUM_INSTANCES == 0 ]; then
+            echo "No instances found in $LOCAL_EXPERIMENT_FOLDER_PATH/$EXPERIMENT_NAME"
+        else
+            #for every instance create an sbatch file
+            #seq generates numbers from 1 to n, and urbanair batch counts from 0 hence we -1
+            for i in $(seq $NUM_INSTANCES); do
+                urbanair experiment batch $EXPERIMENT_NAME $(($i-1)) 1 --experiment-root $LOCAL_EXPERIMENT_FOLDER_PATH/
+            done
+        fi
+    
     done
 fi
 

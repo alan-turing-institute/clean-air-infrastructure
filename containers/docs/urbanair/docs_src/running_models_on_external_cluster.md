@@ -14,8 +14,8 @@ Before running create a file called `.secrets/model_fitting_settings.sh` and pla
 
 ```bash
 #setup variables
-CACHE_DIR='<CACHE_DIR>'
-CACHE_FOLDER="<FULL_PATH_TO_FOLDER>/$CACHE_DIR"
+EXPERIMENT_FOLDER_NAME='example_dir'
+LOCAL_EXPERIMENT_FOLDER_PATH="/Users/ohamelijnck/Documents/$EXPERIMENT_FOLDER_NAME"
 CLUSTER_USER='<CLUSTER_USERNAME>'
 CLUSTER_KEY='<CLUSTER_KEY>'
 CLUSTER_ADDR='<CLUSTER_IP>'
@@ -41,7 +41,7 @@ cd scripts
 
 ### 1 ) Local Setup
 
-To build and push the model run docker file and setup all experiment instances into <CACHE_FOLDER> run:
+To build and push the model run docker file and setup all experiment instances into <LOCAL_EXPERIMENT_FOLDER_PATH> run:
 
 ```bash
 sh ./model_fitting_setup_local.sh --build --setup
@@ -93,10 +93,10 @@ Make sure you are in the project directory `clean-air-infrastructure/`. We use t
 ```bash
 urbanair init production
 
-urbanair experiment setup --experiment-root $CACHE_FOLDER $EXPERIMENT_NAME
+urbanair experiment setup --experiment-root $LOCAL_EXPERIMENT_FOLDER_PATH $EXPERIMENT_NAME
 ```
 
-Where `$EXPERIMENT_NAME` is a value from `$EXPERIMENT_NAMES`. This downloads and sets up the relevant infrastructure in `$CACHE_FOLDER`.
+Where `$EXPERIMENT_NAME` is a value from `$EXPERIMENT_NAMES`. This downloads and sets up the relevant infrastructure in `$LOCAL_EXPERIMENT_FOLDER_PATH`.
 
 ### 2) Running on cluster
 
@@ -149,17 +149,17 @@ and copy in:
 ##### Run Command
 cd ~/cleanair
 # run script with arguments
-singularity exec containers/model_fitting_$DOCKER_TAG.sif urbanair experiment batch $EXPERIMENT_NAME 0 1 --experiment-root <MODEL_FOLDER>
+singularity exec containers/model_fitting_$DOCKER_TAG.sif urbanair experiment batch $EXPERIMENT_NAME 0 1 --experiment-root <EXPERIMENT_FOLDER_NAME>
 ```
 
 The last line will need to be updated for each instance that is being run. For example:
 
 ```
-singularity exec containers/model_fitting_$DOCKER_TAG.sif urbanair experiment batch $EXPERIMENT_NAME 0 1 --experiment-root <MODEL_FOLDER>
+singularity exec containers/model_fitting_$DOCKER_TAG.sif urbanair experiment batch $EXPERIMENT_NAME 0 1 --experiment-root <EXPERIMENT_FOLDER_NAME>
 
-singularity exec containers/model_fitting_$DOCKER_TAG.sif urbanair experiment batch $EXPERIMENT_NAME 1 1 --experiment-root <MODEL_FOLDER>
+singularity exec containers/model_fitting_$DOCKER_TAG.sif urbanair experiment batch $EXPERIMENT_NAME 1 1 --experiment-root <EXPERIMENT_FOLDER_NAME>
 
-singularity exec containers/model_fitting_$DOCKER_TAG.sif urbanair experiment batch $EXPERIMENT_NAME 2 1 --experiment-root <MODEL_FOLDER>
+singularity exec containers/model_fitting_$DOCKER_TAG.sif urbanair experiment batch $EXPERIMENT_NAME 2 1 --experiment-root <EXPERIMENT_FOLDER_NAME>
 ```
 
 etc.
@@ -169,7 +169,7 @@ etc.
 Move the model cache folder to `cleanair/` on the external cluster, e.g:
 
 ```bash
-scp -i $CLUSTER_KEY -C -r $CACHE_FOLDER $CLUSTER_USER@$CLUSTER_ADDR:cleanair/
+scp -i $CLUSTER_KEY -C -r $LOCAL_EXPERIMENT_FOLDER_PATH $CLUSTER_USER@$CLUSTER_ADDR:cleanair/
 ```
 
 #### Running the models
@@ -187,8 +187,8 @@ and the appropriate command for each instance.
 To update the results in the cleanair database we need to first move the results from the external cluster to the experiment directory:
 
 ```bash
-#sync folder from cluster to CACHE_FOLDER/results
-rsync -ra --relative --progress --compress -e "ssh -i $CLUSTER_KEY"  $CLUSTER_USER@$CLUSTER_ADDR:cleanair/$CACHE_DIR $CACHE_FOLDER
+#sync folder from cluster to EXPERIMENT_FOLDER_NAME/results
+rsync -ra --relative --progress --compress -e "ssh -i $CLUSTER_KEY"  $CLUSTER_USER@$CLUSTER_ADDR:cleanair/$EXPERIMENT_FOLDER_NAME $LOCAL_EXPERIMENT_FOLDER_PATH
 ```
 
 To push to the clean air cluster we need to run the below script for each instance:

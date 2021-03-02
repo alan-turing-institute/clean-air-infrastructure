@@ -38,9 +38,9 @@ if [ "$HELP" == '1' ]; then
 fi
 
 if [ "$SYNC" == '1' ]; then
-    echo $CACHE_FOLDER
-    #sync folder from cluster to CACHE_FOLDER/results
-    rsync -ra --progress --compress -e "ssh -i $CLUSTER_KEY" $CLUSTER_USER@$CLUSTER_ADDR:cleanair/$CACHE_DIR/ $CACHE_FOLDER
+    echo $LOCAL_EXPERIMENT_FOLDER_PATH
+    #sync folder from cluster to LOCAL_EXPERIMENT_FOLDER_PATH/results
+    rsync -ra --progress --compress -e "ssh -i $CLUSTER_KEY" $CLUSTER_USER@$CLUSTER_ADDR:cleanair/$EXPERIMENT_FOLDER_NAME/ $LOCAL_EXPERIMENT_FOLDER_PATH
 fi
 
 cd ../../
@@ -52,7 +52,7 @@ if [ "$PUSH" == '1' ]; then
     i=0
     for EXPERIMENT_NAME in ${EXPERIMENT_NAMES[@]}; do
         model=${MODELS[$i]}
-        for INSTANCE in $CACHE_FOLDER/$EXPERIMENT_NAME/*/; do
+        for INSTANCE in $LOCAL_EXPERIMENT_FOLDER_PATH/$EXPERIMENT_NAME/*/; do
 
             #check if results exists
             if [ -f $INSTANCE/result/pred_forecast.pkl ]; then
