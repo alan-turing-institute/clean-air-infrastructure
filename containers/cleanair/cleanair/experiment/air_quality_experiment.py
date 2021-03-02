@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 from pathlib import Path
-from typing import Dict, Optional, TYPE_CHECKING
+from typing import Dict, Optional, TYPE_CHECKING, List
 import pandas as pd
 from .experiment import RunnableExperimentMixin, SetupExperimentMixin
 from ..models import ModelData, ModelDataExtractor, MRDGP, SVGP
@@ -34,25 +34,79 @@ class SetupAirQualityExperiment(SetupExperimentMixin):
         self.model_data = ModelData(secretfile=secretfile, **kwargs)
 
     def load_training_dataset(self, data_id: str) -> Dict[Source, pd.DataFrame]:
-        """Load a training dataset from the database"""
+        """Load unnormalised training dataset from the database."""
         data_config = self._data_config_lookup[data_id]
         training_data: Dict[
             Source, pd.DateFrame
         ] = self.model_data.download_config_data(data_config, training_data=True)
+        return training_data
+
+    def normalised_training_dataset(
+        self, data_id: str, training_data: Dict[Source, pd.DataFrame]
+    ) -> Dict[Source, pd.DataFrame]:
+        """Normalise training dataset."""
+        data_config = self._data_config_lookup[data_id]
         training_data_norm: Dict[Source, pd.DateFrame] = self.model_data.normalize_data(
             data_config, training_data
         )
         return training_data_norm
 
     def load_test_dataset(self, data_id: str) -> Dict[Source, pd.DataFrame]:
-        """Load a test dataset from the database"""
+        """Load unnormalised test dataset from the dataset"""
         data_config = self._data_config_lookup[data_id]
         prediction_data: Dict[
             Source, pd.DateFrame
         ] = self.model_data.download_config_data(data_config, training_data=False)
+        return prediction_data
+
+    def load_datasets(self) -> None:
+        """Load the datasets.
+        When setting up the dataset we need to normalise the testing data w.r.t to the training
+        We do not have to do this when loading from a file, because it will already be normalised
+        """
+        # TODO check uniqueness of data id
+        data_id_list: List[str] = [
+            instance.data_id for _, instance in self._instances.items()
+        ]
+        for data_id in data_id_list:
+            # the unnormalised training dataset must first be loaded so that the testing data
+            # can be normalised wrt to it.
+
+            unnormalised_training_dataset = self.load_training_dataset(data_id)
+            training_dataset = self.normalised_training_dataset(
+                data_id, unnormalised_training_dataset
+            )
+
+            # normalise the test data wrt the training data
+            test_dataset = self.normalised_test_dataset(
+                data_id, unnormalised_training_dataset
+            )
+
+            self.add_training_dataset(data_id, training_dataset)
+            self.add_test_dataset(data_id, test_dataset)
+
+    def normalised_test_dataset(
+        self, data_id: str, training_data: Optional[Dict[Source, pd.DataFrame]] = None
+    ) -> Dict[Source, pd.DataFrame]:
+        """Load a normalised test dataset from the database.
+
+        Args:
+            data_id: index into data_config
+            training_data: Optional data. if passed then test_dataset will be normalised to training_data.
+        """
+        prediction_data = self.load_test_dataset(data_id)
+        data_config = self._data_config_lookup[data_id]
+        if training_data is None:
+            # do not normalize wrt the training dat
+            norm_wrt_data = prediction_data
+        else:
+            norm_wrt_data = training_data
+
         prediction_data_norm: Dict[
             Source, pd.DateFrame
-        ] = self.model_data.normalize_data(data_config, prediction_data)
+        ] = self.model_data.normalize_data_wrt(
+            data_config, prediction_data, norm_wrt_data
+        )
         return prediction_data_norm
 
     def write_instance_to_file(self, instance_id: str) -> None:
