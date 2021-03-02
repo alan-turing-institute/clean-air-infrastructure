@@ -14,6 +14,6 @@ urbanair processors scoot forecast --traindays 5 --preddays 2 --trainupto today
 # Processs scoot features
 urbanair features scoot fill --ndays 7 --upto overmorrow \
     --source laqn \
-    --source hexgrid \
+    --source satellite \
     --insert-method missing \
-    --nworkers 2
+    --nworkers 6
