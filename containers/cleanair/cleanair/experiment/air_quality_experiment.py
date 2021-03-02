@@ -62,7 +62,6 @@ class SetupAirQualityExperiment(SetupExperimentMixin):
         )
         return training_data_norm
 
-    @abstractmethod
     def load_test_dataset(self, data_id: str) -> Any:
         """Use the data id to load a test dataset"""
         raise RuntimeError()
