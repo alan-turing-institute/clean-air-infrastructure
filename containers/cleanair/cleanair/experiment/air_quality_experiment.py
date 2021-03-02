@@ -33,9 +33,7 @@ class SetupAirQualityExperiment(SetupExperimentMixin):
         super().__init__(name, experiment_root)
         self.model_data = ModelData(secretfile=secretfile, **kwargs)
 
-    def load_unnormalised_training_dataset(
-        self, data_id: str
-    ) -> Dict[Source, pd.DataFrame]:
+    def unnormalised_training_dataset(self, data_id: str) -> Dict[Source, pd.DataFrame]:
         """Load unnormalised training dataset."""
         data_config = self._data_config_lookup[data_id]
         training_data: Dict[
@@ -43,7 +41,7 @@ class SetupAirQualityExperiment(SetupExperimentMixin):
         ] = self.model_data.download_config_data(data_config, training_data=True)
         return training_data
 
-    def load_normalised_training_dataset(
+    def normalised_training_dataset(
         self, data_id: str, training_data: Dict[Source, pd.DataFrame]
     ) -> Dict[Source, pd.DataFrame]:
         """Normalise training dataset."""
@@ -77,22 +75,20 @@ class SetupAirQualityExperiment(SetupExperimentMixin):
             # the unnormalised training dataset must first be loaded so that the testing data
             # can be normalised wrt to it.
 
-            unnormalised_training_dataset = self.load_unnormalised_training_dataset(
-                data_id
-            )
-            training_dataset = self.load_normalised_training_dataset(
+            unnormalised_training_dataset = self.unnormalised_training_dataset(data_id)
+            training_dataset = self.normalised_training_dataset(
                 data_id, unnormalised_training_dataset
             )
 
             # normalise the test data wrt the training data
-            test_dataset = self.load_norm_test_dataset(
+            test_dataset = self.normalised_test_dataset(
                 data_id, unnormalised_training_dataset
             )
 
             self.add_training_dataset(data_id, training_dataset)
             self.add_test_dataset(data_id, test_dataset)
 
-    def load_norm_test_dataset(
+    def normalised_test_dataset(
         self, data_id: str, training_data: Optional[Dict[Source, pd.DataFrame]] = None
     ) -> Dict[Source, pd.DataFrame]:
         """Load a test dataset from the database.

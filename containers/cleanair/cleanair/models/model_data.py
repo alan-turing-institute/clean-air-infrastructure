@@ -114,6 +114,8 @@ class ModelDataExtractor:
         self, full_config: FullDataConfig, data_frames: Dict[str, pd.DateFrame]
     ) -> Dict[str, pd.DateFrame]:
         """Normalise the x columns"""
+
+        # Normlize data_frames w.r.t to itself
         return self.normalize_data_wrt(full_config, data_frames, data_frames)
 
     def normalize_data_wrt(
