@@ -65,7 +65,10 @@ class SetupAirQualityExperiment(SetupExperimentMixin):
         return training_data_norm
 
     def load_datasets(self) -> None:
-        """Load the datasets."""
+        """Load the datasets.
+        When setting up the dataset we need to normalise the testing data w.r.t to the training
+        We do not have to do this when loading from a file, because it will already be normalised
+        """
         # TODO check uniqueness of data id
         data_id_list: List[str] = [
             instance.data_id for _, instance in self._instances.items()
@@ -82,14 +85,14 @@ class SetupAirQualityExperiment(SetupExperimentMixin):
             )
 
             # normalise the test data wrt the training data
-            test_dataset = self.load_test_dataset(
+            test_dataset = self.load_norm_test_dataset(
                 data_id, unnormalised_training_dataset
             )
 
             self.add_training_dataset(data_id, training_dataset)
             self.add_test_dataset(data_id, test_dataset)
 
-    def load_test_dataset(
+    def load_norm_test_dataset(
         self, data_id: str, training_data: Optional[Dict[Source, pd.DataFrame]] = None
     ) -> Dict[Source, pd.DataFrame]:
         """Load a test dataset from the database.
