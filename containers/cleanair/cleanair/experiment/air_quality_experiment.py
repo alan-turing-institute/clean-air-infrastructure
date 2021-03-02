@@ -59,7 +59,6 @@ class SetupAirQualityExperiment(SetupExperimentMixin):
         ] = self.model_data.download_config_data(data_config, training_data=False)
         return prediction_data
 
-
     def load_datasets(self) -> None:
         """Load the datasets.
         When setting up the dataset we need to normalise the testing data w.r.t to the training
