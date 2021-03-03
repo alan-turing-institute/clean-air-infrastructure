@@ -169,7 +169,7 @@ def dgp_vary_inducing_and_maxiter(secretfile: str) -> List[InstanceMixin]:
 def dgp_small_inducing_and_maxiter(secretfile: str) -> List[InstanceMixin]:
     """MRDGP with a single combination of number of inducing points and max iterations"""
     # TODO: can probably refactor this and dgp_vary_inducing_and_maxiter
-    inducing_point_sizes = [200]
+    inducing_point_sizes = [300]
     iters = [10000]
 
     instance_list: List[InstanceMixin] = []
