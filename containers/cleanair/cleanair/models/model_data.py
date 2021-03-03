@@ -115,7 +115,18 @@ class ModelDataExtractor:
     ) -> Dict[str, pd.DateFrame]:
         """Normalise the x columns"""
 
-        norm_mean, norm_std = self.__norm_stats(full_config, data_frames)
+        # Normlize data_frames w.r.t to itself
+        return self.normalize_data_wrt(full_config, data_frames, data_frames)
+
+    def normalize_data_wrt(
+        self,
+        full_config: FullDataConfig,
+        data_frames: Dict[str, pd.DateFrame],
+        wrt_data_frames: Dict[str, pd.DateFrame],
+    ) -> Dict[str, pd.DateFrame]:
+        """Normalise the x columns wrt wrt_data_frames"""
+
+        norm_mean, norm_std = self.__norm_stats(full_config, wrt_data_frames)
 
         x_names_norm = self.__x_names_norm(full_config.x_names)
 
@@ -326,7 +337,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
             )
         return data_output
 
-    def download_forecast_data_for_source(
+    def download_forecast_source_data(
         self, full_config: FullDataConfig, source: Source
     ) -> pd.DataFrame:
         """Download the readings in a forecast period for a specific source."""
@@ -349,7 +360,9 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
         data_output: Dict[Source, pd.DataFrame] = {}
         for source in full_config.pred_sources:
             self.logger.info("Downloading source %s forecast data.", source.value)
-            data_output[source] = self.download_forecast_data_for_source(full_config, source)
+            data_output[source] = self.download_forecast_source_data(
+                full_config, source
+            )
         return data_output
 
     # pylint: disable=R0913
