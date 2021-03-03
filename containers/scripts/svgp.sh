@@ -13,7 +13,6 @@ urbanair model data generate-config \
     --preddays 2 \
     --train-source laqn \
     --pred-source laqn \
-    --pred-source hexgrid \
     --species NO2 \
     --static-features total_a_road_length \
     --dynamic-features max_n_vehicles \

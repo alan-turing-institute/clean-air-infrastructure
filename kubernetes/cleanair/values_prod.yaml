@@ -142,6 +142,7 @@ cronjobs:
     concurrencyPolicy: Allow
     restartPolicy: OnFailure
     failedJobsHistoryLimit: 10
+    startingDeadlineSeconds: 3600
     image:
         repository: cleanairdocker.azurecr.io/cleanair
         imagePullPolicy: IfNotPresent
@@ -159,6 +160,11 @@ cronjobs:
         secretName: secrets
     imagePullSecrets:
         - name: regcred
+    resources:
+      limits:
+        cpu: "6"
+      requests:
+        cpu: "3"
 
   - name: air-forecast-svgp-gpu
     schedule: "30 0 * * *"
