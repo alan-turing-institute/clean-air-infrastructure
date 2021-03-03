@@ -41,7 +41,7 @@ cd ../../
 
 if [ "$BUILD" == '1' ]; then
     if [ $USE_GPU == 1 ]; then
-        DOCKER_IMAGE='model_fitting_gpu'
+        DOCKER_IMAGE='model_fitting_gpu_cluster'
     else
         DOCKER_IMAGE='model_fitting'
     fi
