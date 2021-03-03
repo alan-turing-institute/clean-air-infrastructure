@@ -46,6 +46,7 @@ from .jamcam_tables import (
     JamCamDayStats,
     JamCamMetaData,
 )
+from .road_point_map import RoadPointMap
 
 __all__ = [
     "AirQualityDataTable",
@@ -69,6 +70,7 @@ __all__ = [
     "OSHighway",
     "RectGrid",
     "RectGrid100",
+    "RoadPointMap",
     "SatelliteGrid",
     "SatelliteForecast",
     "SatelliteBox",
