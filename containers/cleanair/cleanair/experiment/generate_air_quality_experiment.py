@@ -27,8 +27,7 @@ STATIC_FEATURES_LIST = [
 
 # list used in varying inducing points experiments
 STANDARD_FEATURES_LIST = [
-    StaticFeatureNames.total_a_road_length,
-    StaticFeatureNames.flat,
+    StaticFeatureNames.total_a_road_length
 ]
 
 def _get_svgp_kernel_settings(feature_list):
@@ -171,7 +170,7 @@ def dgp_small_inducing_and_maxiter(secretfile: str) -> List[InstanceMixin]:
     """MRDGP with a single combination of number of inducing points and max iterations"""
     # TODO: can probably refactor this and dgp_vary_inducing_and_maxiter
     inducing_point_sizes = [200]
-    iters = [5000]
+    iters = [10000]
 
     instance_list: List[InstanceMixin] = []
 
@@ -214,8 +213,8 @@ def dgp_small_inducing_and_maxiter(secretfile: str) -> List[InstanceMixin]:
 
 def svgp_small_inducing_and_maxiter(secretfile: str) -> List[InstanceMixin]:
     """SVGP with a single combination of number of inducing points and max iterations and on hexgrid"""
-    inducing_point_sizes = [200]
-    iters = [5000]
+    inducing_point_sizes = [1000]
+    iters = [10000]
 
     instance_list: List[InstanceMixin] = []
 
