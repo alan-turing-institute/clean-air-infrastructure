@@ -89,7 +89,7 @@ def get_laqn_forecast_with_observations(instance, file_manager, model_data):
     X_forecast = file_manager.load_test_data()["laqn"]
 
     # download forecast observations
-    laqn_forecast_true = model_data.download_forecast_data_for_source(
+    laqn_forecast_true = model_data.download_forecast_source_data(
         full_config=instance.data_config, source=Source.laqn
     )
 
