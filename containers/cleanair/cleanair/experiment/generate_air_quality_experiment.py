@@ -29,6 +29,8 @@ STATIC_FEATURES_LIST = [
 STANDARD_FEATURES_LIST = [
     StaticFeatureNames.total_a_road_length,
     StaticFeatureNames.total_a_road_primary_length,
+    StaticFeatureNames.flat,
+    StaticFeatureNames.max_canyon_ratio,
 ]
 STANDARD_BUFFER_SIZE = [FeatureBufferSize.two_hundred]
 
@@ -179,7 +181,9 @@ def dgp_small_inducing_and_maxiter(secretfile: str) -> List[InstanceMixin]:
 
     model_config = ModelConfig(secretfile=secretfile)
     data_config = default_sat_data_config()
+
     static_features = STANDARD_FEATURES_LIST
+    buffer_sizes = STANDARD_BUFFER_SIZE
 
     n_features = len(static_features)
 
@@ -198,7 +202,9 @@ def dgp_small_inducing_and_maxiter(secretfile: str) -> List[InstanceMixin]:
     n_features = 3 + n_features
 
     # create a data config from static_features
+    data_config.buffer_sizes = buffer_sizes
     data_config.static_features = static_features
+
     full_data_config = model_config.generate_full_config(data_config)
 
     for num_z, maxiter in itertools.product(inducing_point_sizes, iters):
