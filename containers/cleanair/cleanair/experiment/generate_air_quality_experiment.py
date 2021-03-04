@@ -6,7 +6,7 @@ from typing import List, Optional
 from ..mixins import InstanceMixin
 from ..models import ModelConfig
 from ..params import default_svgp_model_params, default_mrdgp_model_params
-from ..types import StaticFeatureNames, ModelName, Tag
+from ..types import StaticFeatureNames, ModelName, Tag, FeatureBufferSize
 from .default_air_quality_data_config import (
     default_laqn_data_config,
     default_sat_data_config,
@@ -225,9 +225,9 @@ def svgp_small_inducing_and_maxiter(secretfile: str) -> List[InstanceMixin]:
     data_config = default_laqn_data_config()
 
     static_features = STANDARD_FEATURES_LIST
+    buffer_sizes = STANDARD_BUFFER_SIZE
 
     n_features = len(static_features)
-
 
     static_features, input_dim, active_dims = _get_svgp_kernel_settings(static_features)
 
@@ -235,7 +235,9 @@ def svgp_small_inducing_and_maxiter(secretfile: str) -> List[InstanceMixin]:
     n_features = 3 + n_features
 
     # create a data config from static_features
+    data_config.buffer_sizes = buffer_sizes
     data_config.static_features = static_features
+
     full_data_config = model_config.generate_full_config(data_config)
 
     for num_z, maxiter in itertools.product(inducing_point_sizes, iters):
