@@ -1,12 +1,13 @@
 """Generate air quality experiments"""
 
 import itertools
+import inspect
 
 from typing import List, Optional
 from ..mixins import InstanceMixin
 from ..models import ModelConfig
 from ..params import default_svgp_model_params, default_mrdgp_model_params
-from ..types import StaticFeatureNames, ModelName, Tag
+from ..types import StaticFeatureNames, ModelName, Tag, FeatureBufferSize
 from .default_air_quality_data_config import (
     default_laqn_data_config,
     default_sat_data_config,
@@ -28,8 +29,9 @@ STATIC_FEATURES_LIST = [
 # list used in varying inducing points experiments
 STANDARD_FEATURES_LIST = [
     StaticFeatureNames.total_a_road_length,
-    StaticFeatureNames.flat,
+    StaticFeatureNames.total_a_road_primary_length,
 ]
+STANDARD_BUFFER_SIZE = [FeatureBufferSize.two_hundred]
 
 def _get_svgp_kernel_settings(feature_list):
     """Return input_dim and active_dims for SVGP model_params."""
@@ -162,6 +164,11 @@ def dgp_vary_static_features(secretfile: str) -> List[InstanceMixin]:
 
     return instance_list
 
+def enumerate_enum(enum):
+    return [e for e in enum]
+
+
+
 
 def dgp_vary_inducing_and_maxiter(secretfile: str) -> List[InstanceMixin]:
     """MRDGP with various combinations of number of inducing points and max iterations"""
@@ -215,6 +222,15 @@ def dgp_small_inducing_and_maxiter(secretfile: str) -> List[InstanceMixin]:
     data_config = default_sat_data_config()
     static_features = STANDARD_FEATURES_LIST
 
+    static_features=enumerate_enum(StaticFeatureNames)
+    buffer_sizes=enumerate_enum(FeatureBufferSize)
+
+    print('static_features: ', static_features)
+    print('buffer_sizes: ', buffer_sizes)
+    print([e for e in FeatureBufferSize])
+    print(FeatureBufferSize.five_hundred)
+
+
     n_features = len(static_features)
 
     # default model parameters for every model
@@ -232,6 +248,7 @@ def dgp_small_inducing_and_maxiter(secretfile: str) -> List[InstanceMixin]:
     n_features = 3 + n_features
 
     # create a data config from static_features
+    data_config.buffer_sizes = buffer_sizes
     data_config.static_features = static_features
     full_data_config = model_config.generate_full_config(data_config)
 
@@ -258,10 +275,10 @@ def svgp_small_inducing_and_maxiter(secretfile: str) -> List[InstanceMixin]:
     model_config = ModelConfig(secretfile=secretfile)
     data_config = default_laqn_data_config()
 
-    static_features = STANDARD_FEATURES_LIST
+    static_features=STANDARD_FEATURES_LIST
+    buffer_sizes=STANDARD_BUFFER_SIZE
 
     n_features = len(static_features)
-
 
     static_features, input_dim, active_dims = _get_svgp_kernel_settings(static_features)
 
@@ -269,6 +286,7 @@ def svgp_small_inducing_and_maxiter(secretfile: str) -> List[InstanceMixin]:
     n_features = 3 + n_features
 
     # create a data config from static_features
+    data_config.buffer_sizes = buffer_sizes
     data_config.static_features = static_features
     full_data_config = model_config.generate_full_config(data_config)
 
