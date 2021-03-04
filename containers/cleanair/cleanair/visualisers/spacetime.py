@@ -363,7 +363,7 @@ class ST_ScatterPlot(object):
 
 
 class SpaceTimeVisualise(object):
-    def __init__(self, train_df, test_df, geopandas_flag=True, test_start=None):
+    def __init__(self, train_df, test_df, sat_df=None, geopandas_flag=True, test_start=None):
         columns = {
             "id": "id",
             "epoch": "epoch",
@@ -379,6 +379,7 @@ class SpaceTimeVisualise(object):
 
         self.train_df = train_df
         self.test_df = test_df
+        self.sat_df = sat_df
 
         self.grid_plot_flag = not (self.test_df is None)
 
@@ -486,6 +487,7 @@ class SpaceTimeVisualise(object):
         )
         self.time_series_plot.setup()
 
+
         if self.grid_plot_flag:
             self.val_grid_plot.plot(self.start_epoch)
             self.var_grid_plot.plot(self.start_epoch)
@@ -496,5 +498,9 @@ class SpaceTimeVisualise(object):
         self.time_series_plot.plot(self.start_id)
 
         self.val_scatter_plot.plot_active(self.start_id)
+
+        if self.sat_df is not None:
+            self.time_series_plot.ax.scatter(self.sat_df['epoch'], self.sat_df[self.columns['observed']], alpha=0.4)
+
 
         plt.show()

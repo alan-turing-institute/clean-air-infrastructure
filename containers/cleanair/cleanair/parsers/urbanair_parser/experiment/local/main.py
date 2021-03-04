@@ -176,6 +176,20 @@ def get_laqn_train_with_observations(file_manager):
 
     return X
 
+def get_satellite_train_with_observations(file_manager):
+    # already has NO2
+    X = file_manager.load_training_data()["satellite"]
+
+    # load forecast predictions
+    X["NO2_mean"] = np.NaN
+    X["NO2_var"] = np.NaN
+
+    X["observed"] = X["NO2"]
+    X["pred"] = np.NaN
+    X["var"] = np.NaN
+
+    return X
+
 
 
 def get_hexgrid_forecast(file_manager, hexgrid_file):
@@ -219,6 +233,10 @@ def check_if_can_plot_hexgrid(file_manager, hexgrid_file):
         "hexgrid" in file_manager.load_forecast_from_pickle().keys()
     ) and hexgrid_file is not None
 
+def check_if_can_plot_satellite(file_manager):
+    return (
+        "satellite" in file_manager.load_training_data().keys()
+    ) 
 
 @app.command()
 def vis(
@@ -241,6 +259,7 @@ def vis(
     #precompute_hexgrid_sjoin(file_manager, hexgrid)
 
     plot_hexgrid_flag = check_if_can_plot_hexgrid(file_manager, hexgrid)
+    plot_sat_flag = check_if_can_plot_satellite(file_manager)
 
     _columns = ["point_id", "epoch", "lat", "lon", "measurement_start_utc"]
 
@@ -261,6 +280,14 @@ def vis(
 
     laqn_train_df = laqn_train_df[_columns + ["observed", "pred", "var"]]
     laqn_test_df = laqn_test_df[_columns + ["observed", "pred", "var"]]
+
+    if plot_sat_flag:
+        sat_df = get_satellite_train_with_observations(file_manager)
+        sat_df = sat_df[_columns + ["observed", "pred", "var"]]
+    else:
+        sat_df = None
+
+
 
     # load hexgrid if in test data
     if plot_hexgrid_flag:
@@ -307,6 +334,7 @@ def vis(
     vis = SpaceTimeVisualise(
         laqn_df,
         hexgrid_df,
+        sat_df=sat_df,
         geopandas_flag=True,
         test_start=np.min(laqn_test_df["epoch"]),
     )
@@ -339,32 +367,37 @@ def metrics(
     meta = {}
     results = {}
     for instance_id in all_instance_ids:
+        try:
 
-        instance_path = Path(f"{experiment_root}/{experiment_name}/{instance_id}")
-        file_manager = FileManager(instance_path)
-        instance = file_manager.read_instance_from_json()
-        secretfile = state["secretfile"]
+            instance_path = Path(f"{experiment_root}/{experiment_name}/{instance_id}")
+            file_manager = FileManager(instance_path)
+            instance = file_manager.read_instance_from_json()
+            secretfile = state["secretfile"]
 
-        if debug:
-            results[instance_id] = {'rmse': 1.0, 'mse': 1.0}
+            if debug:
+                results[instance_id] = {'rmse': 1.0, 'mse': 1.0}
 
-        else:
-            model_data = ModelData(secretfile=secretfile)
+            else:
+                model_data = ModelData(secretfile=secretfile)
 
-            # get predictions and true data
-            laqn_forecast = get_laqn_forecast_with_observations(
-                instance, file_manager, model_data
-            )
+                # get predictions and true data
+                laqn_forecast = get_laqn_forecast_with_observations(
+                    instance, file_manager, model_data
+                )
 
-            # compute metric
-            true_y = np.array(laqn_forecast["NO2"])
-            pred_y = np.array(laqn_forecast["NO2_mean"])
+                # compute metric
+                true_y = np.array(laqn_forecast["NO2"])
+                pred_y = np.array(laqn_forecast["NO2_mean"])
 
-            results[instance_id] = compute_metrics(true_y, pred_y)
+                results[instance_id] = compute_metrics(true_y, pred_y)
 
-        #meta info
-        meta[instance_id] = {}
-        meta[instance_id]['static_features'] = [str(s) for s in instance.data_config.static_features]
+            #meta info
+            meta[instance_id] = {}
+            meta[instance_id]['static_features'] = [str(s) for s in instance.data_config.static_features]
+        except Exception as e:
+            print(f'Error with instance: {instance_id} -- ignoring!')
+            print(e)
+            continue
 
 
 
