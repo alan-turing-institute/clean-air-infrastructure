@@ -27,8 +27,11 @@ STATIC_FEATURES_LIST = [
 
 # list used in varying inducing points experiments
 STANDARD_FEATURES_LIST = [
-    StaticFeatureNames.total_a_road_length
+    StaticFeatureNames.total_a_road_length,
+    StaticFeatureNames.total_a_road_primary_length,
 ]
+STANDARD_BUFFER_SIZE = [FeatureBufferSize.two_hundred]
+
 
 def _get_svgp_kernel_settings(feature_list):
     """Return input_dim and active_dims for SVGP model_params."""
