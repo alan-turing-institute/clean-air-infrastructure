@@ -45,7 +45,7 @@ fi
 
 
 if [ $USE_GPU == 1 ]; then
-    DOCKER_IMAGE='model_fitting_gpu'
+    DOCKER_IMAGE='model_fitting_gpu_cluster'
     GPU_NUM=$NUM_GPUS
 else
     DOCKER_IMAGE='model_fitting'
