@@ -115,7 +115,7 @@ def setup_aq_experiment(
     experiment_name,
     experiment_dir,
     laqn_svgp_instance,
-    sat_mrdgp_instance,
+    # sat_mrdgp_instance,
 ) -> SetupAirQualityExperiment:
     """Setup air quality experiment class"""
     experiment = SetupAirQualityExperiment(
@@ -125,7 +125,7 @@ def setup_aq_experiment(
         connection=connection_class,
     )
     experiment.add_instance(laqn_svgp_instance)
-    experiment.add_instance(sat_mrdgp_instance)
+    # experiment.add_instance(sat_mrdgp_instance)
     return experiment
 
 
@@ -135,7 +135,7 @@ def runnable_aq_experiment(
     experiment_name,
     experiment_dir,
     laqn_svgp_instance,
-    sat_mrdgp_instance,
+    # sat_mrdgp_instance,
 ) -> RunnableAirQualityExperiment:
     """A runnable air quality experiment"""
     # load the experiment and write it to file first
@@ -152,7 +152,7 @@ def runnable_aq_experiment(
 
 @pytest.fixture(scope="function")
 def update_aq_experiment(
-    runnable_aq_experiment, experiment_dir, secretfile, connection,
+    runnable_aq_experiment, experiment_dir, secretfile, connection_class,
 ) -> UpdateAirQualityExperiment:
     """Fixture for updating experiment"""
     runnable_aq_experiment.load_datasets()
@@ -161,7 +161,7 @@ def update_aq_experiment(
         runnable_aq_experiment.name,
         experiment_dir,
         secretfile=secretfile,
-        connection=connection,
+        connection=connection_class,
     )
     update_experiment.add_instances_from_file(runnable_aq_experiment.get_instance_ids())
     return update_experiment

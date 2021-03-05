@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 from pathlib import Path
-from typing import Dict, Optional, TYPE_CHECKING
+from typing import Any, Dict, Optional, TYPE_CHECKING
 import pandas as pd
 from .air_quality_result import AirQualityResult
 from ..databases import DBWriter
@@ -177,11 +177,13 @@ class UpdateAirQualityExperiment(DBWriter, UpdateExperimentMixin):
         name: ExperimentName,
         experiment_root: Path,
         secretfile: Optional[str] = None,
+        connection: Optional[Any] = None,
         **kwargs
     ):
-        DBWriter.__init__(self, secretfile=secretfile, **kwargs)
+        DBWriter.__init__(self, secretfile=secretfile, connection=connection, **kwargs)
         UpdateExperimentMixin.__init__(self, name, experiment_root)
         self.secretfile = secretfile
+        self.connection = connection
 
     @property
     def data_table(self) -> AirQualityDataTable:
@@ -218,9 +220,15 @@ class UpdateAirQualityExperiment(DBWriter, UpdateExperimentMixin):
                 instance_id,
                 instance.data_id,
                 self.secretfile,
+                connection=self.connection,
             )
             update_predictions_on_dataset(
-                test_data, y_forecast, instance_id, instance.data_id, self.secretfile
+                test_data,
+                y_forecast,
+                instance_id,
+                instance.data_id,
+                self.secretfile,
+                connection=self.connection,
             )
 
     def update_remote_tables(self):
@@ -234,6 +242,7 @@ def update_predictions_on_dataset(
     instance_id: str,
     data_id: str,
     secretfile: str,
+    connection: Optional[Any] = None,
 ) -> None:
     """For each source (except satellite), join the dataset with prediction
     on space-time columns, then create a Result object which writes to the DB
@@ -244,6 +253,7 @@ def update_predictions_on_dataset(
         instance_id: The ID of the instance
         data_id: The ID of the dataset
         secretfile: The location of your database secrets
+        connection: Connection object for database
     """
 
     for source, dataframe in dataset.items():
@@ -253,5 +263,7 @@ def update_predictions_on_dataset(
             dataframe, prediction[source]
         )
         pred_df["point_id"] = pred_df.point_id.apply(str)
-        result = AirQualityResult(instance_id, data_id, pred_df, secretfile=secretfile,)
+        result = AirQualityResult(
+            instance_id, data_id, pred_df, secretfile=secretfile, connection=connection
+        )
         result.update_remote_tables()
