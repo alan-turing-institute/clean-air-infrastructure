@@ -2,7 +2,7 @@
 
 from typing import List
 from sqlalchemy import inspect
-from ..databases import Base
+from .base import Base
 
 
 def get_columns_of_table(table: Base) -> List[str]:

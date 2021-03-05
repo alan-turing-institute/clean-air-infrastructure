@@ -1,7 +1,6 @@
 """Setup, run and update experiments"""
 
 import logging
-import sys
 from typing import Callable, List
 from pathlib import Path
 import typer
