@@ -1,6 +1,7 @@
 """Generate air quality experiments"""
 
 from typing import List, Optional
+from ..utils import total_num_features
 from ..mixins import InstanceMixin
 from ..models import ModelConfig
 from ..params import default_svgp_model_params, default_mrdgp_model_params
@@ -24,7 +25,7 @@ STATIC_FEATURES_LIST = [
 ]
 
 
-def _get_svgp_kernel_settings(feature_list):
+def _get_svgp_kernel_settings(data_config, feature_list):
     """Return input_dim and active_dims for SVGP model_params."""
     if len(feature_list) == 0:
         active_dims = [0, 1, 2]  # work around so that no features are used
@@ -34,14 +35,9 @@ def _get_svgp_kernel_settings(feature_list):
         input_dim = 3
     else:
         active_dims = None  # use all features
-        input_dim = len(feature_list)
+        input_dim = total_num_features(data_config)
 
     return feature_list, input_dim, active_dims
-
-
-def enumerate_enum(enum):
-    """Return all possibilities of an enum."""
-    return [e for e in enum]
 
 
 def cached_instance(secretfile: str) -> List[InstanceMixin]:
@@ -53,8 +49,8 @@ def cached_instance(secretfile: str) -> List[InstanceMixin]:
     data_config = default_sat_data_config()
 
     # get all features and sources
-    static_features = enumerate_enum(StaticFeatureNames)
-    buffer_sizes = enumerate_enum(FeatureBufferSize)
+    static_features = list(StaticFeatureNames)
+    buffer_sizes = list(FeatureBufferSize)
     train_sources = [Source.laqn, Source.satellite]
     pred_sources = [Source.laqn, Source.hexgrid]
 
@@ -70,7 +66,9 @@ def cached_instance(secretfile: str) -> List[InstanceMixin]:
     full_data_config = model_config.generate_full_config(data_config)
 
     # SVGP as a tempory model just to create the instance
-    static_features, input_dim, active_dims = _get_svgp_kernel_settings(static_features)
+    static_features, input_dim, active_dims = _get_svgp_kernel_settings(
+        data_config, static_features
+    )
     model_params = default_svgp_model_params(
         active_dims=active_dims, input_dim=input_dim
     )
@@ -108,7 +106,7 @@ def svgp_vary_static_features(secretfile: str) -> List[InstanceMixin]:
         # create a data config from static_features
         data_config = default_laqn_data_config()
         data_config.static_features = static_features
-        # model_config.validate_config(data_config)
+        model_config.validate_config(data_config)
         full_data_config = model_config.generate_full_config(data_config)
 
         # create instance and add to list

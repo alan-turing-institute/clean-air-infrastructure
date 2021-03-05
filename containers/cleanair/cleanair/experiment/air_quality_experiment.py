@@ -33,48 +33,7 @@ class SetupAirQualityExperiment(SetupExperimentMixin):
         super().__init__(name, experiment_root)
         self.model_data = ModelData(secretfile=secretfile, **kwargs)
 
-    def construct_feature_name(self, buffer_size, feature):
-        """Get normalised and non-normalised feature name of feature with a specific buffer size."""
-        n = f"value_{buffer_size}_{feature}"
-        return [n, f"{n}_norm"]
-
-    def extract_required_features(self, X, data_config, training=True):
-        """Extract required columns and static+dynamic features."""
-        X = X.copy()
-
-        # select only required features
-        required_columns = [
-            "point_id",
-            "in_london",
-            "lon",
-            "lon_norm",
-            "lat_norm",
-            "measurement_start_utc",
-            "epoch",
-            "epoch_norm",
-        ]
-
-        if training:
-            for pollutant in data_config.species:
-                required_columns.append(pollutant.name)
-        else:
-            required_columns.append("species_code")
-
-        # append static  and dynamic columns
-        for buffer_size in data_config.buffer_sizes:
-            for feature in data_config.static_features:
-                required_columns = required_columns + self.construct_feature_name(
-                    buffer_size, feature
-                )
-
-            for feature in data_config.dynamic_features:
-                required_columns = required_columns + self.construct_feature_name(
-                    buffer_size, feature
-                )
-
-        return X[required_columns]
-
-    def load_training_dataset_from_instance(
+    def load_train_dataset_from_cache(
         self, data_id: str, file_manager
     ) -> Dict[Source, pd.DataFrame]:
         """Load training dataset from cached instance."""
@@ -85,15 +44,15 @@ class SetupAirQualityExperiment(SetupExperimentMixin):
         training_data = {}
 
         for src in data_config.train_sources:
-            X_src = X[src]
+            data_src = X[src]
 
-            X_src = self.extract_required_features(X_src, data_config, training=True)
+            data_src = extract_required_features(data_src, data_config, training=True)
 
-            training_data[src] = X_src
+            training_data[src] = data_src
 
         return training_data
 
-    def load_test_dataset_from_instance(
+    def load_test_dataset_from_cache(
         self, data_id: str, file_manager
     ) -> Dict[Source, pd.DataFrame]:
         """Load test dataset from cached instance."""
@@ -104,11 +63,11 @@ class SetupAirQualityExperiment(SetupExperimentMixin):
         test_data = {}
 
         for src in data_config.pred_sources:
-            X_src = X[src]
+            data_src = X[src]
 
-            X_src = self.extract_required_features(X_src, data_config, training=False)
+            data_src = extract_required_features(data_src, data_config, training=False)
 
-            test_data[src] = X_src
+            test_data[src] = data_src
 
         return test_data
 
@@ -151,13 +110,10 @@ class SetupAirQualityExperiment(SetupExperimentMixin):
         #  correct sources and features.
         instance_path = cache_dir
         file_manager = FileManager(instance_path)
-        instance = file_manager.read_instance_from_json()
 
         for data_id in data_id_list:
-            training_dataset = self.load_training_dataset_from_instance(
-                data_id, file_manager
-            )
-            test_dataset = self.load_test_dataset_from_instance(data_id, file_manager)
+            training_dataset = self.load_train_dataset_from_cache(data_id, file_manager)
+            test_dataset = self.load_test_dataset_from_cache(data_id, file_manager)
 
             self.add_training_dataset(data_id, training_dataset)
             self.add_test_dataset(data_id, test_dataset)
@@ -312,3 +268,46 @@ class RunnableAirQualityExperiment(RunnableExperimentMixin):
         y_forecast = self._test_result[instance_id]
         file_manager.save_pred_training_to_pickle(y_training_result)
         file_manager.save_forecast_to_pickle(y_forecast)
+
+
+def construct_feature_name(buffer_size, feature):
+    """Get normalised and non-normalised feature name of feature with a specific buffer size."""
+    name = f"value_{buffer_size}_{feature}"
+    return [name, f"{name}_norm"]
+
+
+def extract_required_features(X, data_config, training=True):
+    """Extract required columns and static+dynamic features."""
+    X = X.copy()
+
+    # select only required features
+    required_columns = [
+        "point_id",
+        "in_london",
+        "lon",
+        "lon_norm",
+        "lat_norm",
+        "measurement_start_utc",
+        "epoch",
+        "epoch_norm",
+    ]
+
+    if training:
+        for pollutant in data_config.species:
+            required_columns.append(pollutant.name)
+    else:
+        required_columns.append("species_code")
+
+    # append static  and dynamic columns
+    for buffer_size in data_config.buffer_sizes:
+        for feature in data_config.static_features:
+            required_columns = required_columns + construct_feature_name(
+                buffer_size, feature
+            )
+
+        for feature in data_config.dynamic_features:
+            required_columns = required_columns + construct_feature_name(
+                buffer_size, feature
+            )
+
+    return X[required_columns]
