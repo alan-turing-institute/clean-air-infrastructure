@@ -198,8 +198,7 @@ def vis(
     secretfile = state["secretfile"]
     model_data = ModelData(secretfile=secretfile)
 
-    # precompute_hexgrid_sjoin(file_manager, hexgrid)
-
+    # check if we should plot hexgrid, satellite
     plot_hexgrid_flag = check_if_can_plot_hexgrid(file_manager, hexgrid)
     plot_sat_flag = check_if_can_plot_satellite(file_manager)
 
@@ -221,27 +220,28 @@ def vis(
     laqn_train_df = laqn_train_df[_columns + ["observed", "pred", "var"]]
     laqn_test_df = laqn_test_df[_columns + ["observed", "pred", "var"]]
 
+    # Load satellite data, if required
     if plot_sat_flag:
         sat_df = get_satellite_train_with_observations(file_manager)
         sat_df = sat_df[_columns + ["observed", "pred", "var"]]
     else:
         sat_df = None
 
-    # load hexgrid if in test data
+    # Load hexgrid, if required
     if plot_hexgrid_flag:
         print("loading hexgrid")
 
         hexgrid_df = get_hexgrid_forecast(file_manager, hexgrid)
         hexgrid_df = hexgrid_df[_columns + ["geom", "observed", "pred", "var"]]
     else:
-        print("no hexgrid")
         hexgrid_df = None
+
+    # Prep data for SpaceTime visualiser
 
     laqn_df = pd.concat([laqn_train_df, laqn_test_df])
     # laqn_df = laqn_test_df
     laqn_df = swap_lat_lon(laqn_df)
 
-    # rename columns for spacetime.py
     laqn_df.columns = [
         "id",
         "epoch",
@@ -296,8 +296,6 @@ def metrics(
         # load specific instance
         all_instance_ids.append(instance_id)
 
-    debug = False
-
     meta = {}
     results = {}
     for instance_id in all_instance_ids:
@@ -307,22 +305,18 @@ def metrics(
             instance = file_manager.read_instance_from_json()
             secretfile = state["secretfile"]
 
-            if debug:
-                results[instance_id] = {"rmse": 1.0, "mse": 1.0}
+            model_data = ModelData(secretfile=secretfile)
 
-            else:
-                model_data = ModelData(secretfile=secretfile)
+            # get predictions and true data
+            laqn_forecast = get_laqn_forecast_with_observations(
+                instance, file_manager, model_data
+            )
 
-                # get predictions and true data
-                laqn_forecast = get_laqn_forecast_with_observations(
-                    instance, file_manager, model_data
-                )
+            # compute metric
+            true_y = np.array(laqn_forecast["NO2"])
+            pred_y = np.array(laqn_forecast["NO2_mean"])
 
-                # compute metric
-                true_y = np.array(laqn_forecast["NO2"])
-                pred_y = np.array(laqn_forecast["NO2_mean"])
-
-                results[instance_id] = compute_metrics(true_y, pred_y)
+            results[instance_id] = compute_metrics(true_y, pred_y)
 
             # meta info
             meta[instance_id] = {}
@@ -334,13 +328,16 @@ def metrics(
             print(e)
             continue
 
-    # Print Table of Results
+    # Collect table of results
     results_df = pd.DataFrame(results).T
     metrics = list(results_df.columns)
 
+    # Collect meta data
     meta_df = pd.DataFrame(meta).T
     meta = list(meta_df.columns)
 
-    results_df = results_df.merge(meta_df, left_index=True, right_index=True)
+    # Merge results and meta data
+    results_df = meta_df.merge(results_df, left_index=True, right_index=True)
 
+    # Print results
     print(tabulate.tabulate(results_df, headers=["Instance Id"] + metrics + meta))
