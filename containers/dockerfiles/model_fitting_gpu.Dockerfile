@@ -8,6 +8,9 @@ ENV GIT_HASH=${git_hash}
 # Stop git python errors
 ENV GIT_PYTHON_REFRESH=quiet
 
+RUN apt-get update
+RUN apt-get -y install gcc g++
+
 # Set the working directory to /app
 WORKDIR /app
 
@@ -16,4 +19,4 @@ COPY cleanair /app/cleanair
 COPY scripts/ /app/scripts
 
 # Install cleanair
-RUN pip install '/app/cleanair'
+RUN pip install '/app/cleanair[traffic, models]'
