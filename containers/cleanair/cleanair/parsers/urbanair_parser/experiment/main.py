@@ -1,6 +1,6 @@
 """Setup, run and update experiments"""
 
-from typing import Callable, List
+from typing import Callable, List, Optional
 from pathlib import Path
 import typer
 from ....experiment import (
@@ -18,7 +18,10 @@ app = typer.Typer(help="Experiment CLI")
 
 @app.command()
 def setup(
-    experiment_name: ExperimentName, experiment_root: Path = ExperimentDir
+    experiment_name: ExperimentName,
+    experiment_root: Path = ExperimentDir,
+    use_cache: Optional[bool] = False,
+    instance_root: Optional[Path] = None,
 ) -> None:
     """Setup an experiment: load data + setup model parameters"""
     secretfile: str = state["secretfile"]
@@ -37,11 +40,21 @@ def setup(
     for instance in instance_list:
         setup_experiment.add_instance(instance)
     # download the data
-    setup_experiment.load_datasets()
+    if use_cache:
+        setup_experiment.load_datasets_from_cache(instance_root)
+    else:
+        setup_experiment.load_datasets()
     # save the data and model params to file
     for instance in instance_list:
         setup_experiment.write_instance_to_file(instance.instance_id)
     setup_experiment.write_experiment_config_to_json()
+
+
+@app.command()
+def setup_cached_instance(cached_root: Path):
+    """Setups an instance with all sources and all features."""
+
+    setup(ExperimentName.cached_instance, cached_root)
 
 
 @app.command()

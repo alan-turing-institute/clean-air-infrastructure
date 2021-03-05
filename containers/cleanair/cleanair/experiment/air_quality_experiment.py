@@ -28,10 +28,89 @@ class SetupAirQualityExperiment(SetupExperimentMixin):
         name: ExperimentName,
         experiment_root: Path,
         secretfile: Optional[str] = None,
-        **kwargs
+        **kwargs,
     ):
         super().__init__(name, experiment_root)
         self.model_data = ModelData(secretfile=secretfile, **kwargs)
+
+    def construct_feature_name(self, buffer_size, feature):
+        """Get normalised and non-normalised feature name of feature with a specific buffer size."""
+        n = f"value_{buffer_size}_{feature}"
+        return [n, f"{n}_norm"]
+
+    def extract_required_features(self, X, data_config, training=True):
+        """Extract required columns and static+dynamic features."""
+        X = X.copy()
+
+        # select only required features
+        required_columns = [
+            "point_id",
+            "in_london",
+            "lon",
+            "lon_norm",
+            "lat_norm",
+            "measurement_start_utc",
+            "epoch",
+            "epoch_norm",
+        ]
+
+        if training:
+            for pollutant in data_config.species:
+                required_columns.append(pollutant.name)
+        else:
+            required_columns.append("species_code")
+
+        # append static  and dynamic columns
+        for buffer_size in data_config.buffer_sizes:
+            for feature in data_config.static_features:
+                required_columns = required_columns + self.construct_feature_name(
+                    buffer_size, feature
+                )
+
+            for feature in data_config.dynamic_features:
+                required_columns = required_columns + self.construct_feature_name(
+                    buffer_size, feature
+                )
+
+        return X[required_columns]
+
+    def load_training_dataset_from_instance(
+        self, data_id: str, file_manager
+    ) -> Dict[Source, pd.DataFrame]:
+        """Load training dataset from cached instance."""
+        data_config = self._data_config_lookup[data_id]
+
+        X = file_manager.load_training_data()
+
+        training_data = {}
+
+        for src in data_config.train_sources:
+            X_src = X[src]
+
+            X_src = self.extract_required_features(X_src, data_config, training=True)
+
+            training_data[src] = X_src
+
+        return training_data
+
+    def load_test_dataset_from_instance(
+        self, data_id: str, file_manager
+    ) -> Dict[Source, pd.DataFrame]:
+        """Load test dataset from cached instance."""
+        data_config = self._data_config_lookup[data_id]
+
+        X = file_manager.load_test_data()
+
+        test_data = {}
+
+        for src in data_config.pred_sources:
+            X_src = X[src]
+
+            X_src = self.extract_required_features(X_src, data_config, training=False)
+
+            test_data[src] = X_src
+
+        return test_data
 
     def load_training_dataset(self, data_id: str) -> Dict[Source, pd.DataFrame]:
         """Load unnormalised training dataset from the database."""
@@ -58,6 +137,30 @@ class SetupAirQualityExperiment(SetupExperimentMixin):
             Source, pd.DateFrame
         ] = self.model_data.download_config_data(data_config, training_data=False)
         return prediction_data
+
+    def load_datasets_from_cache(self, cache_dir: Path) -> None:
+        """Load datasets form instance cache
+        Args:
+            cache_dir: path to the cached instance
+        """
+        data_id_list: List[str] = [
+            instance.data_id for _, instance in self._instances.items()
+        ]
+
+        # The instance will already be properly normalised. We only need to exract
+        #  correct sources and features.
+        instance_path = cache_dir
+        file_manager = FileManager(instance_path)
+        instance = file_manager.read_instance_from_json()
+
+        for data_id in data_id_list:
+            training_dataset = self.load_training_dataset_from_instance(
+                data_id, file_manager
+            )
+            test_dataset = self.load_test_dataset_from_instance(data_id, file_manager)
+
+            self.add_training_dataset(data_id, training_dataset)
+            self.add_test_dataset(data_id, test_dataset)
 
     def load_datasets(self) -> None:
         """Load the datasets.
