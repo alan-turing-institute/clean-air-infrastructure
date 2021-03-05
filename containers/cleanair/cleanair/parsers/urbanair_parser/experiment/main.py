@@ -27,7 +27,7 @@ def size(experiment_name: ExperimentName, experiment_root: Path = ExperimentDir)
     size_experiment = ExperimentMixin(experiment_name, experiment_root)
     experiment_config = size_experiment.read_experiment_config_from_json()
     size_experiment.add_instances_from_file(experiment_config.instance_id_list)
-    sys.exit(size_experiment.get_num_instances())
+    print(size_experiment.get_num_instances())
 
 
 @app.command()
