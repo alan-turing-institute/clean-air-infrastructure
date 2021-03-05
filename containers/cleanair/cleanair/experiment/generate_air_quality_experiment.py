@@ -27,12 +27,21 @@ STATIC_FEATURES_LIST = [
 
 # list used in varying inducing points experiments
 STANDARD_FEATURES_LIST = [
-    StaticFeatureNames.total_a_road_length,
-    StaticFeatureNames.total_a_road_primary_length,
-    StaticFeatureNames.flat,
-    StaticFeatureNames.max_canyon_ratio,
+    [
+        StaticFeatureNames.total_a_road_primary_length,
+        StaticFeatureNames.flat
+    ],
+    [
+        StaticFeatureNames.total_a_road_length,
+        StaticFeatureNames.total_a_road_primary_length,
+        StaticFeatureNames.flat,
+        StaticFeatureNames.max_canyon_ratio
+    ]
 ]
-STANDARD_BUFFER_SIZE = [FeatureBufferSize.two_hundred]
+STANDARD_BUFFER_SIZE = [FeatureBufferSize.two_hundred, FeatureBufferSize.one_hundred]
+
+STANDARD_LENGTHSCALES = [0.01, 0.1, 1.0]
+STANDARD_SIG_Y = [5.0]
 
 
 def _get_svgp_kernel_settings(feature_list):
@@ -49,8 +58,101 @@ def _get_svgp_kernel_settings(feature_list):
 
     return feature_list, input_dim, active_dims
 
+def _get_dgp_kernel_settings(feature_list):
+    """Return input_dim and active_dims for SVGP model_params."""
+    n_features = len(feature_list)
+
+    if len(feature_list) == 0:
+        feature_list = [
+            StaticFeatureNames.park
+        ]  # tempory feature which wont be used by model
 
 
+    #the DGP  uses n_features to construct active_dims and input_dim internally
+    n_features = n_features + 3
+
+    return feature_list, n_features
+
+
+def svgp_vary_standard(secretfile: str) -> List[InstanceMixin]:
+    """Default SVGP with changing static features"""
+    # default model parameters for every model
+    instance_list: List[InstanceMixin] = []
+
+    num_z = 1000
+    maxiter=10000
+
+    model_config = ModelConfig(secretfile=secretfile)
+
+    for features, buffer_size, lengthscale, sig_y in itertools.product(STANDARD_FEATURES_LIST, STANDARD_BUFFER_SIZE, STANDARD_LENGTHSCALES, STANDARD_SIG_Y):
+
+        data_config = default_laqn_data_config()
+        features, input_dim, active_dims = _get_svgp_kernel_settings(features)
+
+        # create a data config from static_features
+        data_config.buffer_sizes = [buffer_size]
+        data_config.static_features = features
+
+        #model_config.validate_config(data_config)
+        
+
+        full_data_config = model_config.generate_full_config(data_config)
+
+        model_params = default_svgp_model_params(
+            num_inducing_points=num_z, 
+            maxiter=maxiter,
+            active_dims=active_dims, 
+            input_dim=input_dim,
+            lengthscales=lengthscale,
+            likelihood_variance=sig_y
+        )
+
+        # create instance and add to list
+        instance = InstanceMixin(
+            full_data_config, ModelName.svgp, model_params, tag=Tag.validation
+        )
+        instance_list.append(instance)
+
+    return instance_list
+
+def dgp_vary_standard(secretfile: str) -> List[InstanceMixin]:
+    """Default SVGP with changing static features"""
+    # default model parameters for every model
+    instance_list: List[InstanceMixin] = []
+
+    num_z = 300
+    maxiter=10000
+
+    model_config = ModelConfig(secretfile=secretfile)
+
+    for features, buffer_size, lengthscale, sig_y in itertools.product(STANDARD_FEATURES_LIST, STANDARD_BUFFER_SIZE, STANDARD_LENGTHSCALES, STANDARD_SIG_Y):
+
+        data_config = default_laqn_data_config()
+        features, n_features = _get_dgp_kernel_settings(features)
+
+        # create a data config from static_features
+        data_config.buffer_sizes = [buffer_size]
+        data_config.static_features = features
+
+        #model_config.validate_config(data_config)
+
+        full_data_config = model_config.generate_full_config(data_config)
+
+        model_params = default_mrdgp_model_params(
+            n_features = n_features,
+            num_inducing_points=num_z, 
+            maxiter=maxiter,
+            lengthscales=lengthscale,
+            likelihood_variance=sig_y
+        )
+
+        # create instance and add to list
+        instance = InstanceMixin(
+            full_data_config, ModelName.mrdgp, model_params, tag=Tag.validation
+        )
+        instance_list.append(instance)
+
+    return instance_list
 
 def svgp_vary_static_features(secretfile: str) -> List[InstanceMixin]:
     """Default SVGP with changing static features"""
@@ -233,12 +335,8 @@ def svgp_small_inducing_and_maxiter(secretfile: str) -> List[InstanceMixin]:
     static_features = STANDARD_FEATURES_LIST
     buffer_sizes = STANDARD_BUFFER_SIZE
 
-    n_features = len(static_features)
 
     static_features, input_dim, active_dims = _get_svgp_kernel_settings(static_features)
-
-    # add 3 for epoch, lat, lon
-    n_features = 3 + n_features
 
     # create a data config from static_features
     data_config.buffer_sizes = buffer_sizes

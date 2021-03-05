@@ -7,6 +7,7 @@ set -e
 #default values
 BUILD=0
 SETUP=0
+SAFE=0
 HELP=0
 
 #handle input flags
@@ -23,6 +24,10 @@ case $key in
     SETUP=1
     shift # past argument
     ;;
+    --safe)
+    SAFE=1
+    shift # past argument
+    ;;
     --help)
     HELP=1
     shift # past argument
@@ -33,6 +38,7 @@ done
 if [ "$HELP" == '1' ]; then
     echo 'Help:'
     echo '  -b|--build : build and push docker file'
+    echo '  --safe : Call urbanair init production after every instance is setup'
     echo '  -s|--setup : setup  and download all data for experiment instances'
     exit
 fi
@@ -62,6 +68,11 @@ if [ "$SETUP" == '1' ]; then
     urbanair init production
 
     for EXPERIMENT_NAME in ${EXPERIMENT_NAMES[@]}; do
+
+        if [ "$SAFE" == '1' ]; then
+            urbanair init production
+        fi
+
         #saving cache in urbanair requires an empty folder
         if [ -d "$LOCAL_EXPERIMENT_FOLDER_PATH/$EXPERIMENT_NAME" ]; then
           # Take action if $DIR exists. #

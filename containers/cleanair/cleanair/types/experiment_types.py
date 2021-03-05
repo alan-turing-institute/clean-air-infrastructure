@@ -14,6 +14,9 @@ class ExperimentName(str, Enum):
     dgp_small_inducing_and_maxiter = "dgp_small_inducing_and_maxiter"
     svgp_small_inducing_and_maxiter = "svgp_small_inducing_and_maxiter"
 
+    svgp_vary_standard = "svgp_vary_standard"
+    dgp_vary_standard = "dgp_vary_standard"
+
 
 class ExperimentConfig(BaseModel):
     """Settings for an experiment"""
