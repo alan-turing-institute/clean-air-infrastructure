@@ -58,55 +58,9 @@ def compute_metrics(true_y, pred_y):
 
     return results
 
-def precompute_hexgrid_sjoin(file_manager, hexgrid_path):
-    hexgrid_df = file_manager.load_test_data()["hexgrid"]
-    y = file_manager.load_forecast_from_pickle()["hexgrid"]
-
-    hexgrid_df = swap_lat_lon(hexgrid_df)
-
-    # load hexgrid file
-    hexgrid_file = pd.read_csv(hexgrid_path)
-    hexgrid_file["geom"] = hexgrid_file["geom"].apply(wkt.loads)
-    hexgrid_file = gpd.GeoDataFrame(hexgrid_file, geometry="geom")
-
-    #use only one epoch
-    hexgrid_df = hexgrid_df[hexgrid_df['measurement_start_utc'] == hexgrid_df['measurement_start_utc'][0]]
-
-    # convert hexgrid_df to geodataframe
-    hexgrid_gdf = gpd.GeoDataFrame(
-        hexgrid_df, geometry=gpd.points_from_xy(x=hexgrid_df.lat, y=hexgrid_df.lon)
-    )
-
-
-    # spatial join to match hexgrid_df with hexgrid polygon geoms
-    grid_predictions = gpd.sjoin(hexgrid_gdf, hexgrid_file, how="right")
-    grid_predictions["point_id"] = grid_predictions["point_id_x"]
-
-    grid_predictions = grid_predictions[['point_id', 'geom']]
-
-    grid_predictions.to_csv('~/Downloads/hexgrid.csv', index=False)
-
-    exit()
-
-def load_hexgrid_polygons(hexgrid_df, hexgrid_path):
-    # load hexgrid file
-    hexgrid_file = pd.read_csv(hexgrid_path)
-    hexgrid_file["geom"] = hexgrid_file["geom"].apply(wkt.loads)
-    hexgrid_file = gpd.GeoDataFrame(hexgrid_file, geometry="geom")
-
-    # convert hexgrid_df to geodataframe
-    hexgrid_gdf = gpd.GeoDataFrame(
-        hexgrid_df, geometry=gpd.points_from_xy(x=hexgrid_df.lat, y=hexgrid_df.lon)
-    )
-
-    # spatial join to match hexgrid_df with hexgrid polygon geoms
-    grid_predictions = gpd.sjoin(hexgrid_gdf, hexgrid_file, how="right")
-    grid_predictions["point_id"] = grid_predictions["point_id_x"]
-
-    return grid_predictions
-
 
 def swap_lat_lon(df):
+    """Somewhere lat/lon is the wrong way around. Use this to align with hexgrid polygons."""
     df["_lat"] = df["lat"]
 
     df["lat"] = df["lon"]
@@ -115,13 +69,13 @@ def swap_lat_lon(df):
 
 
 def get_laqn_forecast_with_observations(instance, file_manager, model_data):
+    """Return laqn forecast input, with downloaded observations and model predictions."""
     X_forecast = file_manager.load_test_data()["laqn"]
 
     # download forecast observations
     laqn_forecast_true = model_data.download_forecast_source_data(
         full_config=instance.data_config, source=Source.laqn
     )
-
 
     laqn_forecast_true = laqn_forecast_true[
         ["point_id", "measurement_start_utc", "NO2"]
@@ -143,15 +97,15 @@ def get_laqn_forecast_with_observations(instance, file_manager, model_data):
 
     return laqn_forecast
 
+
 def get_laqn_forecast(instance, file_manager, model_data):
+    """Return laqn forecast input, without observations, and model predictions."""
     X_forecast = file_manager.load_test_data()["laqn"]
 
- 
     # load forecast predictions
     y_forecast = file_manager.load_forecast_from_pickle()["laqn"]["NO2"]
     X_forecast["NO2_mean"] = y_forecast["mean"]
     X_forecast["NO2_var"] = y_forecast["var"]
-
 
     X_forecast["pred"] = X_forecast["NO2_mean"]
     X_forecast["var"] = X_forecast["NO2_var"]
@@ -160,8 +114,8 @@ def get_laqn_forecast(instance, file_manager, model_data):
     return X_forecast
 
 
-
 def get_laqn_train_with_observations(file_manager):
+    """Return laqn trainging input, NO2 observations, and model predictions."""
     # already has NO2
     X = file_manager.load_training_data()["laqn"]
 
@@ -176,7 +130,9 @@ def get_laqn_train_with_observations(file_manager):
 
     return X
 
+
 def get_satellite_train_with_observations(file_manager):
+    """Return satellite trainging input and model predictions."""
     # already has NO2
     X = file_manager.load_training_data()["satellite"]
 
@@ -191,22 +147,8 @@ def get_satellite_train_with_observations(file_manager):
     return X
 
 
-
 def get_hexgrid_forecast(file_manager, hexgrid_file):
-    hexgrid_df = file_manager.load_test_data()["hexgrid"]
-    y = file_manager.load_forecast_from_pickle()["hexgrid"]
-
-    hexgrid_df = swap_lat_lon(hexgrid_df)
-
-    hexgrid_df = load_hexgrid_polygons(hexgrid_df, hexgrid_file)
-
-    hexgrid_df["observed"] = np.NaN
-    hexgrid_df["pred"] = y["NO2"]["mean"]
-    hexgrid_df["var"] = y["NO2"]["var"]
-
-    return hexgrid_df
-
-def get_hexgrid_forecast_no_sjoin(file_manager, hexgrid_file):
+    """Return hexgrid test input and model predictions."""
     hexgrid_df = file_manager.load_test_data()["hexgrid"]
     y = file_manager.load_forecast_from_pickle()["hexgrid"]
     hexgrid_df = swap_lat_lon(hexgrid_df)
@@ -214,9 +156,9 @@ def get_hexgrid_forecast_no_sjoin(file_manager, hexgrid_file):
     # load hexgrid file
     hexgrid_file = pd.read_csv(hexgrid_file)
     hexgrid_file["geom"] = hexgrid_file["geom"].apply(wkt.loads)
-    hexgrid_file['point_id'] = hexgrid_file['point_id'].apply(uuid.UUID)
+    hexgrid_file["point_id"] = hexgrid_file["point_id"].apply(uuid.UUID)
 
-    hexgrid_df = hexgrid_df.merge(hexgrid_file, on='point_id', how='left')
+    hexgrid_df = hexgrid_df.merge(hexgrid_file, on="point_id", how="left")
 
     hexgrid_df = gpd.GeoDataFrame(hexgrid_df, geometry="geom")
 
@@ -233,10 +175,11 @@ def check_if_can_plot_hexgrid(file_manager, hexgrid_file):
         "hexgrid" in file_manager.load_forecast_from_pickle().keys()
     ) and hexgrid_file is not None
 
+
 def check_if_can_plot_satellite(file_manager):
-    return (
-        "satellite" in file_manager.load_training_data().keys()
-    ) 
+    """Check if satellite is in training keys."""
+    return "satellite" in file_manager.load_training_data().keys()
+
 
 @app.command()
 def vis(
@@ -244,8 +187,7 @@ def vis(
     instance_id: str,
     experiment_root: Path,
     hexgrid: Optional[Path] = None,
-    test_observations: Optional[bool]=True,
-    spatial_join: Optional[bool]=False
+    test_observations: Optional[bool] = True,
 ) -> None:
     """Visualise experiment results and predictions locally"""
 
@@ -256,7 +198,7 @@ def vis(
     secretfile = state["secretfile"]
     model_data = ModelData(secretfile=secretfile)
 
-    #precompute_hexgrid_sjoin(file_manager, hexgrid)
+    # precompute_hexgrid_sjoin(file_manager, hexgrid)
 
     plot_hexgrid_flag = check_if_can_plot_hexgrid(file_manager, hexgrid)
     plot_sat_flag = check_if_can_plot_satellite(file_manager)
@@ -264,19 +206,17 @@ def vis(
     _columns = ["point_id", "epoch", "lat", "lon", "measurement_start_utc"]
 
     # load LAQN data
-    print('load laqn_train')
+    print("load laqn_train")
     laqn_train_df = get_laqn_train_with_observations(file_manager)
 
     if test_observations:
-        print('downloading test_observations')
+        print("downloading test_observations")
         laqn_test_df = get_laqn_forecast_with_observations(
             instance, file_manager, model_data
         )
     else:
-        print('no test_observations')
-        laqn_test_df = get_laqn_forecast(
-            instance, file_manager, model_data
-        )
+        print("no test_observations")
+        laqn_test_df = get_laqn_forecast(instance, file_manager, model_data)
 
     laqn_train_df = laqn_train_df[_columns + ["observed", "pred", "var"]]
     laqn_test_df = laqn_test_df[_columns + ["observed", "pred", "var"]]
@@ -287,20 +227,14 @@ def vis(
     else:
         sat_df = None
 
-
-
     # load hexgrid if in test data
     if plot_hexgrid_flag:
-        print('loading hexgrid')
-        if spatial_join:
-            hexgrid_df = get_hexgrid_forecast(file_manager, hexgrid)
-            hexgrid_df = hexgrid_df[_columns + ["geom", "observed", "pred", "var"]]
+        print("loading hexgrid")
 
-        else:
-            hexgrid_df = get_hexgrid_forecast_no_sjoin(file_manager, hexgrid)
-            hexgrid_df = hexgrid_df[_columns + ["geom", "observed", "pred", "var"]]
+        hexgrid_df = get_hexgrid_forecast(file_manager, hexgrid)
+        hexgrid_df = hexgrid_df[_columns + ["geom", "observed", "pred", "var"]]
     else:
-        print('no hexgrid')
+        print("no hexgrid")
         hexgrid_df = None
 
     laqn_df = pd.concat([laqn_train_df, laqn_test_df])
@@ -368,14 +302,13 @@ def metrics(
     results = {}
     for instance_id in all_instance_ids:
         try:
-
             instance_path = Path(f"{experiment_root}/{experiment_name}/{instance_id}")
             file_manager = FileManager(instance_path)
             instance = file_manager.read_instance_from_json()
             secretfile = state["secretfile"]
 
             if debug:
-                results[instance_id] = {'rmse': 1.0, 'mse': 1.0}
+                results[instance_id] = {"rmse": 1.0, "mse": 1.0}
 
             else:
                 model_data = ModelData(secretfile=secretfile)
@@ -391,20 +324,19 @@ def metrics(
 
                 results[instance_id] = compute_metrics(true_y, pred_y)
 
-            #meta info
+            # meta info
             meta[instance_id] = {}
-            meta[instance_id]['static_features'] = [str(s) for s in instance.data_config.static_features]
+            meta[instance_id]["static_features"] = [
+                str(s) for s in instance.data_config.static_features
+            ]
         except Exception as e:
-            print(f'Error with instance: {instance_id} -- ignoring!')
+            print(f"Error with instance: {instance_id} -- ignoring!")
             print(e)
             continue
-
-
 
     # Print Table of Results
     results_df = pd.DataFrame(results).T
     metrics = list(results_df.columns)
-
 
     meta_df = pd.DataFrame(meta).T
     meta = list(meta_df.columns)
