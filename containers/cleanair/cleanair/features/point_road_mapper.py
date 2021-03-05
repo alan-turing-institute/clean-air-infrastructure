@@ -1,12 +1,12 @@
-from datetime import datetime
-from typing import Optional, List
+from typing import List
 
 from sqlalchemy import func
+from sqlalchemy.sql.expression import literal
+from sqlalchemy.types import Float
 
 from ..databases import DBWriter
-from ..databases.tables import MetaPoint, PointRoadMap
+from ..databases.tables import MetaPoint, PointRoadMap, OSHighway
 from ..decorators import db_query
-from ..types.enum_types import Source
 
 
 class PointRoadMapper(DBWriter):
@@ -27,10 +27,40 @@ class PointRoadMapper(DBWriter):
             return unprocessed_ids_query
 
     @db_query()
-    def unprocessed_counts(self):
+    def unprocessed_counts(self, sources=None):
 
-        ids = self.unprocessed_ids().all()
+        ids = self.unprocessed_ids(sources=sources).all()
 
         with self.dbcnxn.open_session() as session:
             return session.query(MetaPoint.source, func.count(MetaPoint.id).label("unprocessed")).group_by(MetaPoint.source)
 
+    @db_query()
+    def buffers(self, point_ids: List[str], radius: float):
+        with self.dbcnxn.open_session() as session:
+            return session.query(
+                MetaPoint.id.label("id"),
+                func.Geometry(func.ST_Buffer(func.Geography(MetaPoint.location), radius)).label("geom")
+            ).filter(MetaPoint.id in point_ids)
+
+    @db_query()
+    def map_points(self, point_ids: List[str]):
+        with self.dbcnxn.open_session() as session:
+            for radius in [10, 100, 200, 500, 1000]:
+                buffers = self.buffers(point_ids=point_ids, radius=radius).cte("buffer")
+
+                maps = (
+                    session.query(
+                        buffers.c.id.label("point_id"),
+                        OSHighway.toid.label("road_segment_id"),
+                        literal(radius, Float).label("buffer_radius"),
+                        func.now().label("map_datetime")
+                    )
+                        .filter(func.ST_Intersects(buffers.c.geom, OSHighway.geom))
+                        .subquery()
+                )
+
+                self.commit_records(
+                    maps,
+                    on_conflict="overwrite",
+                    table=PointRoadMap
+                )

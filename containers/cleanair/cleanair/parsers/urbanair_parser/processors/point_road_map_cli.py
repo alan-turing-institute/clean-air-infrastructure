@@ -10,13 +10,17 @@ app = typer.Typer()
 
 
 @app.command()
-def points(source: List[ValidSources] = Sources):
-    pass
+def check() -> None:
+    map = PointRoadMapper(secretfile=state["secretfile"])
+    unprocessed_ids = map.unprocessed_counts(output_type="tabulate")
+
+    typer.echo(unprocessed_ids)
 
 
 @app.command()
-def check() -> None:
+def map(source: List[ValidSources] = Sources) -> None:
     map = PointRoadMapper(secretfile=state["secretfile"])
-    unprocesed_ids = map.unprocessed_counts(output_type="tabulate")
 
-    typer.echo(unprocesed_ids)
+    unprocessed_ids = map.unprocessed_ids(sources=source).all()
+
+    map.map_points(point_ids=unprocessed_ids)
