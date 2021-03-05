@@ -46,7 +46,9 @@ class SetupAirQualityExperiment(SetupExperimentMixin):
         for src in data_config.train_sources:
             data_src = X[src]
 
-            data_src = extract_required_features(data_src, data_config, training=True)
+            data_src = extract_required_features(
+                data_src, data_config, training=True, satellite=(src == "satellite")
+            )
 
             training_data[src] = data_src
 
@@ -276,7 +278,7 @@ def construct_feature_name(buffer_size, feature):
     return [name, f"{name}_norm"]
 
 
-def extract_required_features(X, data_config, training=True):
+def extract_required_features(X, data_config, training=True, satellite=False):
     """Extract required columns and static+dynamic features."""
     X = X.copy()
 
@@ -297,6 +299,9 @@ def extract_required_features(X, data_config, training=True):
             required_columns.append(pollutant.name)
     else:
         required_columns.append("species_code")
+
+    if satellite:
+        required_columns.append("box_id")
 
     # append static  and dynamic columns
     for buffer_size in data_config.buffer_sizes:
