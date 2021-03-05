@@ -9,6 +9,7 @@ BUILD=0
 SETUP=0
 SAFE=0
 HELP=0
+CACHED=0
 
 #handle input flags
 while [[ $# -gt 0 ]]
@@ -24,8 +25,8 @@ case $key in
     SETUP=1
     shift # past argument
     ;;
-    --safe)
-    SAFE=1
+    -c|--cached)
+    CACHED=1
     shift # past argument
     ;;
     --help)
@@ -40,6 +41,7 @@ if [ "$HELP" == '1' ]; then
     echo '  -b|--build : build and push docker file'
     echo '  --safe : Call urbanair init production after every instance is setup'
     echo '  -s|--setup : setup  and download all data for experiment instances'
+    echo '  -c|--cached : Used cached instance to construct experiment data'
     exit
 fi
 
@@ -63,15 +65,10 @@ fi
 if [ "$SETUP" == '1' ]; then
     echo 'Setting up experiment'
 
-
     #Download data for experiment and setup mrdgp 
     urbanair init production
 
     for EXPERIMENT_NAME in ${EXPERIMENT_NAMES[@]}; do
-
-        if [ "$SAFE" == '1' ]; then
-            urbanair init production
-        fi
 
         #saving cache in urbanair requires an empty folder
         if [ -d "$LOCAL_EXPERIMENT_FOLDER_PATH/$EXPERIMENT_NAME" ]; then
@@ -79,7 +76,15 @@ if [ "$SETUP" == '1' ]; then
           echo "OUTPUT_DIR $LOCAL_EXPERIMENT_FOLDER_PATH/$EXPERIMENT_NAME should not already exist. ignoring this experiment."
         else
             echo "Processing $EXPERIMENT_NAME"
-            urbanair experiment setup --experiment-root $LOCAL_EXPERIMENT_FOLDER_PATH $EXPERIMENT_NAME
+
+            if [ "$CACHED" == '1' ]; then
+                echo "Using cached data"
+                urbanair experiment setup --experiment-root $LOCAL_EXPERIMENT_FOLDER_PATH $EXPERIMENT_NAME \
+                    --use-cache \
+                    --instance-root $CACHE_ROOT
+            else
+                urbanair experiment setup --experiment-root $LOCAL_EXPERIMENT_FOLDER_PATH $EXPERIMENT_NAME
+            fi
         fi
     done
 fi
