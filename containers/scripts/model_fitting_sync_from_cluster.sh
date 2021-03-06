@@ -40,7 +40,7 @@ fi
 if [ "$SYNC" == '1' ]; then
     echo $LOCAL_EXPERIMENT_FOLDER_PATH
     #sync folder from cluster to LOCAL_EXPERIMENT_FOLDER_PATH/results
-    rsync -ra --progress --compress -e "ssh -i $CLUSTER_KEY" $CLUSTER_USER@$CLUSTER_ADDR:cleanair/$EXPERIMENT_FOLDER_NAME/ $LOCAL_EXPERIMENT_FOLDER_PATH
+    rsync -ra --progress --compress -e "ssh -i $CLUSTER_KEY" $CLUSTER_USER@$CLUSTER_ADDR:cleanair_$TAG/$EXPERIMENT_FOLDER_NAME/ $LOCAL_EXPERIMENT_FOLDER_PATH
 fi
 
 cd ../../
