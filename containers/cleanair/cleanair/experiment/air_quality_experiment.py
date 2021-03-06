@@ -40,10 +40,50 @@ class SetupAirQualityExperiment(SetupExperimentMixin):
         name: ExperimentName,
         experiment_root: Path,
         secretfile: Optional[str] = None,
-        **kwargs
+        **kwargs,
     ):
         super().__init__(name, experiment_root)
         self.model_data = ModelData(secretfile=secretfile, **kwargs)
+
+    def load_train_dataset_from_cache(
+        self, data_id: str, file_manager
+    ) -> Dict[Source, pd.DataFrame]:
+        """Load training dataset from cached instance."""
+        data_config = self._data_config_lookup[data_id]
+
+        X = file_manager.load_training_data()
+
+        training_data = {}
+
+        for src in data_config.train_sources:
+            data_src = X[src]
+
+            data_src = extract_required_features(
+                data_src, data_config, training=True, satellite=(src == "satellite")
+            )
+
+            training_data[src] = data_src
+
+        return training_data
+
+    def load_test_dataset_from_cache(
+        self, data_id: str, file_manager
+    ) -> Dict[Source, pd.DataFrame]:
+        """Load test dataset from cached instance."""
+        data_config = self._data_config_lookup[data_id]
+
+        X = file_manager.load_test_data()
+
+        test_data = {}
+
+        for src in data_config.pred_sources:
+            data_src = X[src]
+
+            data_src = extract_required_features(data_src, data_config, training=False)
+
+            test_data[src] = data_src
+
+        return test_data
 
     def load_training_dataset(self, data_id: str) -> Dict[Source, pd.DataFrame]:
         """Load unnormalised training dataset from the database."""
@@ -70,6 +110,27 @@ class SetupAirQualityExperiment(SetupExperimentMixin):
             Source, pd.DateFrame
         ] = self.model_data.download_config_data(data_config, training_data=False)
         return prediction_data
+
+    def load_datasets_from_cache(self, cache_dir: Path) -> None:
+        """Load datasets form instance cache
+        Args:
+            cache_dir: path to the cached instance
+        """
+        data_id_list: List[str] = [
+            instance.data_id for _, instance in self._instances.items()
+        ]
+
+        # The instance will already be properly normalised. We only need to exract
+        #  correct sources and features.
+        instance_path = cache_dir
+        file_manager = FileManager(instance_path)
+
+        for data_id in data_id_list:
+            training_dataset = self.load_train_dataset_from_cache(data_id, file_manager)
+            test_dataset = self.load_test_dataset_from_cache(data_id, file_manager)
+
+            self.add_training_dataset(data_id, training_dataset)
+            self.add_test_dataset(data_id, test_dataset)
 
     def load_datasets(self) -> None:
         """Load the datasets.
@@ -321,3 +382,47 @@ def update_predictions_on_dataset(
             instance_id, data_id, pred_df, secretfile=secretfile, connection=connection
         )
         result.update_remote_tables()
+def construct_feature_name(buffer_size, feature):
+    """Get normalised and non-normalised feature name of feature with a specific buffer size."""
+    name = f"value_{buffer_size}_{feature}"
+    return [name, f"{name}_norm"]
+
+
+def extract_required_features(X, data_config, training=True, satellite=False):
+    """Extract required columns and static+dynamic features."""
+    X = X.copy()
+
+    # select only required features
+    required_columns = [
+        "point_id",
+        "in_london",
+        "lon",
+        "lon_norm",
+        "lat_norm",
+        "measurement_start_utc",
+        "epoch",
+        "epoch_norm",
+    ]
+
+    if training:
+        for pollutant in data_config.species:
+            required_columns.append(pollutant.name)
+    else:
+        required_columns.append("species_code")
+
+    if satellite:
+        required_columns.append("box_id")
+
+    # append static  and dynamic columns
+    for buffer_size in data_config.buffer_sizes:
+        for feature in data_config.static_features:
+            required_columns = required_columns + construct_feature_name(
+                buffer_size, feature
+            )
+
+        for feature in data_config.dynamic_features:
+            required_columns = required_columns + construct_feature_name(
+                buffer_size, feature
+            )
+
+    return X[required_columns]
