@@ -39,7 +39,6 @@ done
 if [ "$HELP" == '1' ]; then
     echo 'Help:'
     echo '  -b|--build : build and push docker file'
-    echo '  --safe : Call urbanair init production after every instance is setup'
     echo '  -s|--setup : setup  and download all data for experiment instances'
     echo '  -c|--cached : Used cached instance to construct experiment data'
     exit
