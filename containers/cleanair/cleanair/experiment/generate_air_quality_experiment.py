@@ -45,7 +45,7 @@ STANDARD_LENGTHSCALES = [0.01, 0.1, 1.0]
 STANDARD_SIG_Y = [5.0]
 
 
-def _get_svgp_kernel_settings(feature_list):
+def _get_svgp_kernel_settings(data_config, feature_list):
     """Return input_dim and active_dims for SVGP model_params."""
     if len(feature_list) == 0:
         active_dims = [0, 1, 2]  # work around so that no features are used
@@ -55,7 +55,7 @@ def _get_svgp_kernel_settings(feature_list):
         input_dim = 3
     else:
         active_dims = None  # use all features
-        input_dim = len(feature_list)
+        input_dim = total_num_features(data_config)
 
     return feature_list, input_dim, active_dims
 
@@ -88,7 +88,7 @@ def svgp_vary_standard(secretfile: str) -> List[InstanceMixin]:
     for features, buffer_size, lengthscale, sig_y in itertools.product(STANDARD_FEATURES_LIST, STANDARD_BUFFER_SIZE, STANDARD_LENGTHSCALES, STANDARD_SIG_Y):
 
         data_config = default_laqn_data_config()
-        features, input_dim, active_dims = _get_svgp_kernel_settings(features)
+        features, input_dim, active_dims = _get_svgp_kernel_settings(data_config, features)
 
         # create a data config from static_features
         data_config.buffer_sizes = [buffer_size]
@@ -128,7 +128,7 @@ def dgp_vary_standard(secretfile: str) -> List[InstanceMixin]:
 
     for features, buffer_size, lengthscale, sig_y in itertools.product(STANDARD_FEATURES_LIST, STANDARD_BUFFER_SIZE, STANDARD_LENGTHSCALES, STANDARD_SIG_Y):
 
-        data_config = default_laqn_data_config()
+        data_config = default_sat_data_config()
         features, n_features = _get_dgp_kernel_settings(features)
 
         # create a data config from static_features
@@ -155,19 +155,7 @@ def dgp_vary_standard(secretfile: str) -> List[InstanceMixin]:
 
     return instance_list
 
-def _get_svgp_kernel_settings(data_config, feature_list):
-    """Return input_dim and active_dims for SVGP model_params."""
-    if len(feature_list) == 0:
-        active_dims = [0, 1, 2]  # work around so that no features are used
-        feature_list = [
-            StaticFeatureNames.park
-        ]  # tempory feature which wont be used by model
-        input_dim = 3
-    else:
-        active_dims = None  # use all features
-        input_dim = total_num_features(data_config)
 
-    return feature_list, input_dim, active_dims
 
 
 def cached_instance(secretfile: str) -> List[InstanceMixin]:
