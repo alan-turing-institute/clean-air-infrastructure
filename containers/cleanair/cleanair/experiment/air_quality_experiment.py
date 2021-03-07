@@ -1,6 +1,7 @@
 """Experiments for air quality model validation"""
 
 from __future__ import annotations
+from logging import Logger
 from pathlib import Path
 from typing import Any, Dict, List, Optional, TYPE_CHECKING
 import pandas as pd
@@ -17,6 +18,7 @@ from .experiment import (
     SetupExperimentMixin,
     UpdateExperimentMixin,
 )
+from ..loggers import get_logger
 from ..models import ModelData, ModelDataExtractor, MRDGP, SVGP
 from ..types import ExperimentName, IndexedDatasetDict, ModelName, Source, TargetDict
 from ..utils import FileManager
@@ -293,7 +295,7 @@ class UpdateAirQualityExperiment(DBWriter, UpdateExperimentMixin):
         experiment_root: Path,
         secretfile: Optional[str] = None,
         connection: Optional[Any] = None,
-        **kwargs
+        **kwargs,
     ):
         DBWriter.__init__(self, secretfile=secretfile, connection=connection, **kwargs)
         UpdateExperimentMixin.__init__(self, name, experiment_root)
@@ -358,6 +360,7 @@ def update_predictions_on_dataset(
     data_id: str,
     secretfile: str,
     connection: Optional[Any] = None,
+    logger: Logger = get_logger("update-predictions"),
 ) -> None:
     """For each source (except satellite), join the dataset with prediction
     on space-time columns, then create a Result object which writes to the DB
@@ -372,6 +375,7 @@ def update_predictions_on_dataset(
     """
 
     for source, dataframe in dataset.items():
+        logger.info("Writing %s results for instance %s.", source, instance_id)
         if source == Source.satellite:
             continue
         pred_df = ModelDataExtractor.join_forecast_on_dataframe(
@@ -382,6 +386,8 @@ def update_predictions_on_dataset(
             instance_id, data_id, pred_df, secretfile=secretfile, connection=connection
         )
         result.update_remote_tables()
+
+
 def construct_feature_name(buffer_size, feature):
     """Get normalised and non-normalised feature name of feature with a specific buffer size."""
     name = f"value_{buffer_size}_{feature}"

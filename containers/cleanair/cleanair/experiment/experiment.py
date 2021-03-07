@@ -3,6 +3,7 @@
 from abc import abstractmethod
 from datetime import datetime
 import json
+from logging import Logger
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 import tensorflow as tf
@@ -14,6 +15,7 @@ from ..databases.mixins import (
     InstanceTableMixin,
     ModelTableMixin,
 )
+from ..loggers import get_logger
 from ..mixins import InstanceMixin
 from ..types import ExperimentConfig, ExperimentName
 from ..utils import FileManager
@@ -32,7 +34,10 @@ class ExperimentMixin:
     EXPERIMENT_CONFIG_JSON_FILENAME = "experiment_config.json"
 
     def __init__(
-        self, name: ExperimentName, experiment_root: Path,
+        self,
+        name: ExperimentName,
+        experiment_root: Path,
+        logger: Logger = get_logger("experiment"),
     ):
         # super().__init__(**kwargs)
         self.name = name
@@ -46,6 +51,7 @@ class ExperimentMixin:
             / name.value
             / ExperimentMixin.EXPERIMENT_CONFIG_JSON_FILENAME
         )
+        self.logger = logger
 
         # dictionaries to manage the experiment
         self._instances: Dict[str, InstanceMixin] = dict()
@@ -247,6 +253,8 @@ class UpdateExperimentMixin(ExperimentMixin):
         # TODO would be nice to have an experiment table too
         # convert pydantic models to dictionaries
 
+        self.logger.info("Writing instances, data config and model params to database")
+
         # get column names for each table
         data_config_cols = get_columns_of_table(self.data_table)
         instance_cols = get_columns_of_table(self.instance_table)
@@ -256,15 +264,26 @@ class UpdateExperimentMixin(ExperimentMixin):
         data_config_records = list()
         instance_records = list()
         model_records = list()
+        data_ids = set()
+        param_ids = set()
+        instance_ids = set()
 
         # add records to list
-        for instance in self._instances.values():
+        for instance_id, instance in self._instances.items():
             instance_dict = instance.dict()
-            data_config_records.append(
-                {key: instance_dict[key] for key in data_config_cols}
-            )
-            model_records.append({key: instance_dict[key] for key in model_cols})
-            instance_records.append({key: instance_dict[key] for key in instance_cols})
+            if instance.data_id not in data_ids:
+                data_ids.add(instance.data_id)
+                data_config_records.append(
+                    {key: instance_dict[key] for key in data_config_cols}
+                )
+            if instance.param_id not in param_ids:
+                param_ids.add(instance.param_id)
+                model_records.append({key: instance_dict[key] for key in model_cols})
+            if instance_id not in instance_ids:
+                instance_ids.add(instance_id)
+                instance_records.append(
+                    {key: instance_dict[key] for key in instance_cols}
+                )
 
         # write records to the database
         self.commit_records(

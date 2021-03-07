@@ -89,6 +89,12 @@ def svgp_vary_static_features(secretfile: str) -> List[InstanceMixin]:
 
     model_config = ModelConfig(secretfile=secretfile)
     for static_features in STATIC_FEATURES_LIST:
+        # create a data config from static_features
+        data_config = default_laqn_data_config()
+        data_config.static_features = static_features
+        model_config.validate_config(data_config)
+        full_data_config = model_config.generate_full_config(data_config)
+
         if len(static_features) == 0:
             active_dims = [0, 1, 2]  # work around so that no features are used
             static_features = [
@@ -97,18 +103,11 @@ def svgp_vary_static_features(secretfile: str) -> List[InstanceMixin]:
             input_dim = 3
         else:
             active_dims = None  # use all features
-            input_dim = len(static_features)
+            input_dim = total_num_features(full_data_config)
 
         model_params = default_svgp_model_params(
             active_dims=active_dims, input_dim=input_dim
         )
-
-        # create a data config from static_features
-        data_config = default_laqn_data_config()
-        data_config.static_features = static_features
-        model_config.validate_config(data_config)
-        full_data_config = model_config.generate_full_config(data_config)
-
         # create instance and add to list
         instance = InstanceMixin(
             full_data_config, ModelName.svgp, model_params, tag=Tag.validation
