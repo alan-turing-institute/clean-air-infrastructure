@@ -59,11 +59,11 @@ function setup_cluster() {
 #setup folder structure on cluster and pull most recent docker file
 #we run singularity pull inside a cluster node because pearl sometimes fails on the login node
 ssh -T -i $CLUSTER_KEY $CLUSTER_USER@$CLUSTER_ADDR  << HERE
-    rm -rf cleanair
+    rm -rf cleanair_$TAG
     mkdir -p logs
-    mkdir cleanair
-    mkdir cleanair/logs
-    cd cleanair
+    mkdir cleanair_$TAG
+    mkdir cleanair_$TAG/logs
+    cd cleanair_$TAG
     mkdir containers    
     cd containers
     SINGULARITY_DOCKER_USERNAME=$DOCKER_USERNAME SINGULARITY_DOCKER_PASSWORD=$DOCKER_PASSWORD bash -c 'srun --export=ALL singularity pull -F docker://cleanairdocker.azurecr.io/$DOCKER_IMAGE:$DOCKER_TAG'
@@ -72,7 +72,7 @@ HERE
 
 function create_sbatch_files() {
 ssh -T -i $CLUSTER_KEY $CLUSTER_USER@$CLUSTER_ADDR  << HERE
-    cd cleanair
+    cd cleanair_$TAG
     touch sbatch_${1}_$2.sh
 
     tee sbatch_${1}_$2.sh << END
@@ -96,7 +96,7 @@ ssh -T -i $CLUSTER_KEY $CLUSTER_USER@$CLUSTER_ADDR  << HERE
 ##### Setup Environment
 
 ##### Run Command
-cd ~/cleanair
+cd ~/cleanair_$TAG
 # run script with arguments
 singularity exec containers/${DOCKER_IMAGE}_$DOCKER_TAG.sif urbanair experiment batch $1 $(($2-1)) 1 --experiment-root $EXPERIMENT_FOLDER_NAME/
 
@@ -107,7 +107,7 @@ HERE
 
 function run_sbatch() {
     ssh -T -i $CLUSTER_KEY $CLUSTER_USER@$CLUSTER_ADDR  << HERE
-    cd cleanair
+    cd cleanair_$TAG
     sbatch sbatch_${1}_$2.sh
 HERE
 }
@@ -142,7 +142,7 @@ fi
 
 if [ "$DRY" == '0' ]; then 
     echo 'Moving cache dir to cluster'
-    scp -i $CLUSTER_KEY -C -r $LOCAL_EXPERIMENT_FOLDER_PATH $CLUSTER_USER@$CLUSTER_ADDR:cleanair/ 
+    scp -i $CLUSTER_KEY -C -r $LOCAL_EXPERIMENT_FOLDER_PATH $CLUSTER_USER@$CLUSTER_ADDR:cleanair_$TAG/ 
 
     for EXPERIMENT_NAME in ${EXPERIMENT_NAMES[@]}; do
         #TODO: make an urbanair command to return the number of instances
