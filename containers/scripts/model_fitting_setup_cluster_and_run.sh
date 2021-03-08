@@ -52,6 +52,9 @@ else
     GPU_NUM=0
 fi
 
+JOBS_PATH=$LOCAL_EXPERIMENT_FOLDER_PATH/jobs
+
+
 #helper functions
 
 function setup_cluster() {
@@ -59,23 +62,29 @@ function setup_cluster() {
 #setup folder structure on cluster and pull most recent docker file
 #we run singularity pull inside a cluster node because pearl sometimes fails on the login node
 ssh -T -i $CLUSTER_KEY $CLUSTER_USER@$CLUSTER_ADDR  << HERE
-    rm -rf cleanair
+    rm -rf cleanair_$TAG
     mkdir -p logs
-    mkdir cleanair
-    mkdir cleanair/logs
-    cd cleanair
+    mkdir cleanair_$TAG
+    mkdir cleanair_$TAG/logs
+    cd cleanair_$TAG
     mkdir containers    
     cd containers
     SINGULARITY_DOCKER_USERNAME=$DOCKER_USERNAME SINGULARITY_DOCKER_PASSWORD=$DOCKER_PASSWORD bash -c 'srun --export=ALL singularity pull -F docker://cleanairdocker.azurecr.io/$DOCKER_IMAGE:$DOCKER_TAG'
 HERE
 }
 
-function create_sbatch_files() {
-ssh -T -i $CLUSTER_KEY $CLUSTER_USER@$CLUSTER_ADDR  << HERE
-    cd cleanair
-    touch sbatch_${1}_$2.sh
 
-    tee sbatch_${1}_$2.sh << END
+
+function create_local_cluster_folder() {
+    echo "Jobs path: $JOBS_PATH"
+    rm -rf $JOBS_PATH
+    mkdir -p $JOBS_PATH
+}
+
+
+function create_sbatch_files() {
+    touch $JOBS_PATH/sbatch_${1}_$2.sh
+    tee $JOBS_PATH/sbatch_${1}_$2.sh << END
 #!/bin/bash
 #SBATCH --job-name=$1
 #SBATCH --nodes=1
@@ -96,20 +105,41 @@ ssh -T -i $CLUSTER_KEY $CLUSTER_USER@$CLUSTER_ADDR  << HERE
 ##### Setup Environment
 
 ##### Run Command
-cd ~/cleanair
+cd ~/cleanair_$TAG
 # run script with arguments
 singularity exec containers/${DOCKER_IMAGE}_$DOCKER_TAG.sif urbanair experiment batch $1 $(($2-1)) 1 --experiment-root $EXPERIMENT_FOLDER_NAME/
 
 END
 
-HERE
 }
 
 function run_sbatch() {
     ssh -T -i $CLUSTER_KEY $CLUSTER_USER@$CLUSTER_ADDR  << HERE
-    cd cleanair
-    sbatch sbatch_${1}_$2.sh
+    cd cleanair_$TAG
+    sh ./run_all.sh
 HERE
+}
+
+function move_sbatch_to_cluster() {
+    scp -i $CLUSTER_KEY -C $JOBS_PATH/*.sh $CLUSTER_USER@$CLUSTER_ADDR:cleanair_$TAG/ 
+}
+
+function create_sbatch_run_script() {
+    touch $JOBS_PATH/run_all.sh
+    for EXPERIMENT_NAME in ${EXPERIMENT_NAMES[@]}; do
+        #TODO: make an urbanair command to return the number of instances
+        #Work around for now until urbanair command issue is completed
+        NUM_INSTANCES=$(find $LOCAL_EXPERIMENT_FOLDER_PATH/$EXPERIMENT_NAME -mindepth 1 -maxdepth 1 -type d | wc -l)
+
+        if [ $NUM_INSTANCES == 0 ]; then
+            echo "No instances found in $LOCAL_EXPERIMENT_FOLDER_PATH/$EXPERIMENT_NAME"
+        else
+            #add newline
+            for i in $(seq $NUM_INSTANCES); do
+                echo "sbatch sbatch_${EXPERIMENT_NAME}_$i.sh" >> $JOBS_PATH/run_all.sh
+            done
+        fi
+    done
 }
 
 
@@ -118,6 +148,8 @@ if [ "$NO_SETUP" == '0' ]; then
     echo 'Setting up cluster and pulling docker image'
 
     setup_cluster
+    create_local_cluster_folder
+    create_sbatch_run_script
 
     echo 'Moving datafiles to cluster'
 
@@ -138,27 +170,17 @@ if [ "$NO_SETUP" == '0' ]; then
         fi
     done
 
+    move_sbatch_to_cluster
 fi
 
 if [ "$DRY" == '0' ]; then 
     echo 'Moving cache dir to cluster'
-    scp -i $CLUSTER_KEY -C -r $LOCAL_EXPERIMENT_FOLDER_PATH $CLUSTER_USER@$CLUSTER_ADDR:cleanair/ 
+    scp -i $CLUSTER_KEY -C -r $LOCAL_EXPERIMENT_FOLDER_PATH $CLUSTER_USER@$CLUSTER_ADDR:cleanair_$TAG/ 
 
-    for EXPERIMENT_NAME in ${EXPERIMENT_NAMES[@]}; do
-        #TODO: make an urbanair command to return the number of instances
-        #Work around for now until urbanair command issue is completed
-        NUM_INSTANCES=$(find $LOCAL_EXPERIMENT_FOLDER_PATH/$EXPERIMENT_NAME -mindepth 1 -maxdepth 1 -type d | wc -l)
+    run_sbatch
 
-        if [ $NUM_INSTANCES == 0 ]; then
-            echo "No instances found in $LOCAL_EXPERIMENT_FOLDER_PATH/$EXPERIMENT_NAME"
-        else
-            echo "Run every instance in $LOCAL_EXPERIMENT_FOLDER_PATH/$EXPERIMENT_NAME"
-            for i in $(seq $NUM_INSTANCES); do
-                run_sbatch $EXPERIMENT_NAME $i
-            done
-        fi
-
-    done
+    #clean up
+    rm -rf $JOBS_PATH
 fi
 
 
