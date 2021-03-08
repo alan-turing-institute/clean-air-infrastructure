@@ -1,6 +1,7 @@
 from typing import List
 
 from sqlalchemy import func
+from sqlalchemy.dialects import postgresql
 from sqlalchemy.sql.expression import literal
 from sqlalchemy.types import Float
 
@@ -22,7 +23,7 @@ class PointRoadMapper(DBWriter):
                 .filter(MetaPoint.id.notin_(processed_ids_query))
             if sources:
                 unprocessed_ids_query = unprocessed_ids_query \
-                    .filter(MetaPoint.source in sources)
+                    .filter(MetaPoint.source.in_(sources))
 
             return unprocessed_ids_query
 
@@ -40,7 +41,7 @@ class PointRoadMapper(DBWriter):
             return session.query(
                 MetaPoint.id.label("id"),
                 func.Geometry(func.ST_Buffer(func.Geography(MetaPoint.location), radius)).label("geom")
-            ).filter(MetaPoint.id in point_ids)
+            ).filter(MetaPoint.id.in_(point_ids))
 
     @db_query()
     def map_points(self, point_ids: List[str]):
