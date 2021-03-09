@@ -10,6 +10,7 @@ class ExperimentName(str, Enum):
 
     svgp_vary_static_features = "svgp_vary_static_features"
     dgp_vary_static_features = "dgp_vary_static_features"
+    cached_instance = "cached_instance"
 
 
 class ExperimentConfig(BaseModel):

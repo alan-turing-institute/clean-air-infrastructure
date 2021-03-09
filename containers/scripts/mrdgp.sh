@@ -17,7 +17,6 @@ urbanair model data generate-config \
     --train-source laqn \
     --train-source satellite \
     --pred-source laqn \
-    --pred-source hexgrid \
     --species NO2 \
     --overwrite
 
@@ -35,3 +34,4 @@ urbanair model fit mrdgp --refresh 10
 
 # push the results to the database
 urbanair model update results mrdgp --tag production --cluster-id kubernetes
+
