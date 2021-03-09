@@ -4,8 +4,7 @@ from datetime import timedelta
 from typing import Dict, List, Optional
 import pandas as pd
 import sklearn
-from sqlalchemy import inspect
-from ..databases import DBWriter, Base
+from ..databases import DBWriter, get_columns_of_table
 from ..databases.tables import (
     AirQualityDataTable,
     AirQualityInstanceTable,
@@ -216,12 +215,6 @@ class AirQualityMetrics(DBWriter, InstanceQueryMixin, ResultQueryMixin):
             on_conflict="overwrite",
             table=AirQualityTemporalMetricsTable,
         )
-
-
-def get_columns_of_table(table: Base) -> List[str]:
-    """Get the column names of a table."""
-    table_inst = inspect(table)
-    return [c_attr.key for c_attr in table_inst.mapper.column_attrs]
 
 
 def remove_rows_with_nans(joined_df: pd.DataFrame, species: List[Species]):
