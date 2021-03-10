@@ -137,7 +137,7 @@ cronjobs:
     imagePullSecrets:
         - name: regcred
 
-  - name: forecast-scoot
+  - name: scoot-forecast
     schedule: "* 22 * * *"
     concurrencyPolicy: Allow
     restartPolicy: OnFailure
