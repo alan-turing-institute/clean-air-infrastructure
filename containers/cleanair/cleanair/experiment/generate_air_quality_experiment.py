@@ -42,7 +42,7 @@ VARY_STATIC_FEATURES = [
     [StaticFeatureNames.water],
     [StaticFeatureNames.total_a_road_primary_length, StaticFeatureNames.flat],
     [
-        StaticFeatureNames.total_a_road_length,
+        StaticFeatureNames.park,
         StaticFeatureNames.total_a_road_primary_length,
         StaticFeatureNames.flat,
         StaticFeatureNames.max_canyon_ratio,
@@ -197,12 +197,10 @@ def cached_instance(secretfile: str) -> List[InstanceMixin]:
 
 
 def svgp_vary_static_features(secretfile: str) -> List[InstanceMixin]:
-    """Default SVGP with changing static features"""
-    # default model parameters for every model
+    """Default SVGP with changing static features and buffer sizes"""
     instance_list: List[InstanceMixin] = []
-
     model_config = ModelConfig(secretfile=secretfile)
-    for static_features in VARY_STATIC_FEATURES:
+    for static_features in itertools.product(VARY_STATIC_FEATURES, VARY_BUFFER_SIZES):
         # create a data config from static_features
         data_config = default_laqn_data_config()
         data_config.static_features = static_features
