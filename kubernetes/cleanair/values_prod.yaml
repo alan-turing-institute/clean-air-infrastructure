@@ -138,7 +138,7 @@ cronjobs:
         - name: regcred
 
   - name: scoot-forecast
-    schedule: "* 22 * * *"
+    schedule: "00 22 * * *"
     concurrencyPolicy: Allow
     restartPolicy: OnFailure
     failedJobsHistoryLimit: 10
