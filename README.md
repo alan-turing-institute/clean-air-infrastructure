@@ -414,7 +414,7 @@ export PGPASSWORD=$(az account get-access-token --resource-type oss-rdbms --quer
 Once your IP has been whitelisted (ask the [database adminstrators](#contributors-:dancers:)), you will be able to
 access the database using psql:
 ```bash
-psql "host=cleanair-inputs-server-2021.postgres.database.azure.com port=5432 dbname=cleanair_inputs_db user=<your-turing-credentials>@cleanair-inputs-server-2021 sslmode=require"
+psql "host=cleanair-inputs-2021-server.postgres.database.azure.com port=5432 dbname=cleanair_inputs_db user=<your-turing-credentials>@cleanair-inputs-2021-server sslmode=require"
 ```
 replacing `<your-turing-credentials>` with your turing credentials (e.g. `jblogs@turing.ac.uk`).
 
@@ -424,15 +424,15 @@ To connect to the database using the CleanAir package you will need to create an
 
 ```bash
 echo '{
-    "username": "<your-turing-credentials>@cleanair-inputs-server-2021",
-    "host": "cleanair-inputs-server-2021.postgres.database.azure.com",
+    "username": "<your-turing-credentials>@cleanair-inputs-2021-server",
+    "host": "cleanair-inputs-2021-server.postgres.database.azure.com",
     "port": 5432,
     "db_name": "cleanair_inputs_db",
     "ssl_mode": "require"
 }' >> .secrets/db_secrets_ad.json
 ```
 
-Make sure you then replace `<your-turing-credentials>` with your full Turing username (e.g.`jblogs@turing.ac.uk@cleanair-inputs-server-2021`).
+Make sure you then replace `<your-turing-credentials>` with your full Turing username (e.g.`jblogs@turing.ac.uk@cleanair-inputs-2021-server`).
 
 
 # Running entry points
