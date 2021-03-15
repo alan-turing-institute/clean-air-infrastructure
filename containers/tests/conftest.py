@@ -48,7 +48,7 @@ def engine(secretfile):
 
 @pytest.fixture(scope="module")
 def engine_module(secretfile):
-    """Create an engine fixture with module scopee"""
+    """Create an engine fixture with module scope"""
     connection_str = DBConnectionMixin(secretfile).connection_string
 
     return create_engine(connection_str)
@@ -94,8 +94,13 @@ def connection_class(engine_class):
 
 @pytest.fixture(scope="function")
 def config_file(shared_datadir):
-    "A database config file fixure"
+    "A database config file fixture"
     return shared_datadir / "database_config.yaml"
+
+
+@pytest.fixture(scope="function")
+def httpasswdfile(shared_datadir):
+    return shared_datadir / "localhtpasswd-users"
 
 
 @pytest.fixture(scope="module")

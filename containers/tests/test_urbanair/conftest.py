@@ -9,13 +9,13 @@ from sqlalchemy.orm import sessionmaker
 import numpy as np
 from cleanair.databases import DBReader
 from cleanair.databases.tables import HexGrid, MetaPoint
-from urbanair import urbanair, odysseus, databases
+from urbanair import urbanair, odysseus, databases, security
 from urbanair.types import DetectionClass
 
 # pylint: disable=C0103,W0621
 
 
-@pytest.fixture()
+@pytest.fixture(scope="module")
 def client_db_overide(connection_module):
     "Client database setup"
 
@@ -51,26 +51,26 @@ def client_db_overide_class(connection_class):
     return override_get_db
 
 
-@pytest.fixture()
-def client_module_urbanair(client_db_overide):
-    """A fast api client fixture
-    TODO: connection is valid for whole module so database will not reset on each function
-    """
+@pytest.fixture(scope="class")
+def http_basic_overload_class():
+    "Return an override function for get_http_username"
 
-    urbanair.app.dependency_overrides[databases.get_db] = client_db_overide
+    def get_http_username():
+        return "local"
 
-    test_client = TestClient(urbanair.app)
-
-    return test_client
+    return get_http_username
 
 
 @pytest.fixture()
-def client_class_urbanair(client_db_overide_class):
+def client_class_urbanair(client_db_overide_class, http_basic_overload_class):
     """A fast api client fixture
     TODO: connection is valid for whole module so database will not reset on each function
     """
-
+    urbanair.app.dependency_overrides = {}
     urbanair.app.dependency_overrides[databases.get_db] = client_db_overide_class
+    urbanair.app.dependency_overrides[
+        security.http_basic.get_http_username
+    ] = http_basic_overload_class
 
     test_client = TestClient(urbanair.app)
 
@@ -78,25 +78,16 @@ def client_class_urbanair(client_db_overide_class):
 
 
 @pytest.fixture()
-def client_module_odysseus(client_db_overide):
+def client_class_odysseus(client_db_overide_class, http_basic_overload_class):
     """A fast api client fixture
     TODO: connection is valid for whole module so database will not reset on each function
     """
 
-    odysseus.app.dependency_overrides[databases.get_db] = client_db_overide
-
-    test_client = TestClient(odysseus.app)
-
-    return test_client
-
-
-@pytest.fixture()
-def client_class_odysseus(client_db_overide_class):
-    """A fast api client fixture
-    TODO: connection is valid for whole module so database will not reset on each function
-    """
-
+    odysseus.app.dependency_overrides = {}
     odysseus.app.dependency_overrides[databases.get_db] = client_db_overide_class
+    odysseus.app.dependency_overrides[
+        security.http_basic.get_http_username
+    ] = http_basic_overload_class
 
     test_client = TestClient(odysseus.app)
 

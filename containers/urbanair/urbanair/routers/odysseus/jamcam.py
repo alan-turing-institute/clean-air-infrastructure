@@ -28,6 +28,7 @@ from ...types import DetectionClass
 
 router = APIRouter()
 
+
 ONE_WEEK_SECONDS = 7 * 24 * 60 * 60
 ONE_DAYS_SECONDS = 1 * 24 * 60 * 60
 

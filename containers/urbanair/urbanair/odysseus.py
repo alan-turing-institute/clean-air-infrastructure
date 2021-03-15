@@ -1,12 +1,13 @@
 """UrbanAir API"""
 import os
 import logging
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from fastapi.staticfiles import StaticFiles
 import sentry_sdk
 from sentry_sdk.integrations.asgi import SentryAsgiMiddleware
 from .routers.odysseus import static, jamcam
 from .config import get_settings
+from .security import get_http_username
 
 logger = logging.getLogger("fastapi")  # pylint: disable=invalid-name
 
@@ -33,5 +34,12 @@ app.mount(
     name="static",
 )
 
-app.include_router(static.router)
-app.include_router(jamcam.router, prefix="/api/v1/jamcams", tags=["jamcam"])
+app.include_router(
+    static.router, dependencies=[Depends(get_http_username)],
+)
+app.include_router(
+    jamcam.router,
+    prefix="/api/v1/jamcams",
+    tags=["jamcam"],
+    dependencies=[Depends(get_http_username)],
+)
