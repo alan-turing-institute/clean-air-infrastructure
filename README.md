@@ -727,7 +727,7 @@ docker run -it --rm cleanairdocker.azurecr.io/model_fitting:latest sh /app/scrip
 
 To fit and predict using the MRDGP run:
 ```bash
-docker run -it --rm cleanairdocker.azurecr.io/model_fitting:latest sh /app/scripts/mrdgp.sh
+docker run -it --rm cleanairdocker.azurecr.io/model_fitting:latest sh /app/scripts/mrdgp_static.sh
 ```
 
 If you are running on your local machine you will also need to add `-e PGPASSWORD -e DB_SECRET_FILE -v $SECRET_DIR:/secrets` after the `run` command and set the environment variables (see above in the README).

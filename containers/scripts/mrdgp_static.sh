@@ -7,16 +7,17 @@ set -e
 urbanair init local --secretfile "$DB_SECRET_FILE"
 
 # generate the data config
+# TODO add hexgrid as a pred-source 
 urbanair model data generate-config \
     --trainupto today \
-    --traindays 5 \
+    --traindays 3 \
     --preddays 2 \
     --train-source laqn \
+    --train-source satellite \
     --pred-source laqn \
     --species NO2 \
     --static-features total_a_road_length \
-    --dynamic-features max_n_vehicles \
-    --dynamic-features avg_n_vehicles \
+    --static-features flat \
     --feature-buffer 500 \
     --feature-buffer 100 \
     --overwrite
@@ -27,14 +28,14 @@ urbanair model data generate-full-config
 # download the data using the config
 urbanair model data download --training-data --prediction-data --output-csv
 
-# Optionally save the data to a different directory
-# urbanair model data save-cache [name of directory]
-
 # create the model parameters
-urbanair model setup svgp --maxiter 10000 --num-inducing-points 2000
+# TODO increase number of maxiter and inducing points
+# urbanair model setup mrdgp --maxiter 5000 --num-inducing-points 500
+urbanair model setup mrdgp --maxiter 1000 --num-inducing-points 200
 
 # fit the model and predict
-urbanair model fit svgp --refresh 100
+urbanair model fit mrdgp --refresh 10
 
 # push the results to the database
-urbanair model update results svgp --tag production --cluster-id nc6
+urbanair model update results mrdgp --tag production --cluster-id kubernetes
+

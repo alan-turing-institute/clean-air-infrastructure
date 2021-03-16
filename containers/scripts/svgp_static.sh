@@ -8,14 +8,15 @@ urbanair init local --secretfile "$DB_SECRET_FILE"
 
 # generate the data config
 urbanair model data generate-config \
-    --trainupto yesterday \
+    --trainupto today \
     --traindays 5 \
     --preddays 2 \
     --train-source laqn \
     --pred-source laqn \
     --pred-source hexgrid \
     --species NO2 \
-    --static_features total_a_road_length \
+    --static-features total_a_road_length \
+    --static-features flat \
     --feature-buffer 500 \
     --feature-buffer 100 \
     --overwrite
