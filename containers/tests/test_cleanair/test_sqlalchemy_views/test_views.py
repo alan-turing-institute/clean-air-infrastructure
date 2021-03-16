@@ -115,16 +115,18 @@ def test_today_stats_view(secretfile, connection, todayStatsView):
         [
             JamCamVideoStats(
                 id=100000000,
-                camera_id="test",
+                camera_id="test_a",
                 video_upload_datetime=today,
                 detection_class="car",
+                counts=20,
                 source=1,
             ),
             JamCamVideoStats(
                 id=100000001,
-                camera_id="test",
+                camera_id="test_b",
                 video_upload_datetime=yesterday,
                 detection_class="bus",
+                counts=10,
                 source=1,
             ),
         ],
@@ -138,8 +140,8 @@ def test_today_stats_view(secretfile, connection, todayStatsView):
 
         view_output = session.query(todayStatsView)
 
-        result = view_output.first()
-
-        assert len(view_output.all()) == 1
-        assert result.camera_id == "test"
-        assert result.detection_class == "car"
+        for row in view_output.all():
+            assert row.camera_id == "test_a"
+            assert row.counts == 20
+            print(row.__dict__)
+        assert len(view_output.all()) == 2

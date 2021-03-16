@@ -8,7 +8,10 @@ from pathos.multiprocessing import ProcessingPool as Pool
 
 # Turn off fbprophet stdout logger
 logging.getLogger("fbprophet").setLevel(logging.CRITICAL)
-from fbprophet import Prophet
+try:
+    from fbprophet import Prophet
+except ImportError:
+    logging.warning("Could not import fbprophet")
 import pandas as pd
 from ..databases import DBWriter
 from ..databases.tables import ScootReading, ScootForecast
@@ -65,9 +68,13 @@ class ScootPerDetectorForecaster(DateRangeMixin, DBWriter):
         start_time = time.time()
 
         with self.dbcnxn.open_session() as session:
-            q_scoot_reading = session.query(ScootReading).filter(
-                ScootReading.measurement_start_utc >= self.start_datetime,
-                ScootReading.measurement_start_utc < self.end_datetime,
+            q_scoot_reading = (
+                session.query(ScootReading)
+                .filter(
+                    ScootReading.measurement_start_utc >= self.start_datetime,
+                    ScootReading.measurement_start_utc < self.end_datetime,
+                )
+                .filter(ScootReading.n_vehicles_in_interval.isnot(None))
             )
             if self.detector_ids:
                 q_scoot_reading = q_scoot_reading.filter(

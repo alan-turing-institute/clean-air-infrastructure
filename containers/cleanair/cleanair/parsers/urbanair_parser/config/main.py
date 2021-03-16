@@ -1,5 +1,6 @@
 """Configurations for urbanair."""
 
+import shutil
 import typer
 from ..state import APP_DIR
 from ....loggers.logcolours import red
@@ -29,7 +30,7 @@ def remove() -> None:
     if confirm == "y":
         try:
             shutil.rmtree(APP_DIR)
-        except:
+        except Exception:
             typer.echo(f"Failed to delete directory {str(APP_DIR)}")
             raise typer.Abort()
     else:

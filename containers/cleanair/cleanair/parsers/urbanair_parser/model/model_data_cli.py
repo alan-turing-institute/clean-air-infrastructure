@@ -14,7 +14,8 @@ from ....models import ModelConfig, ModelData
 from ....types import (
     Species,
     Source,
-    FeatureNames,
+    StaticFeatureNames,
+    DynamicFeatureNames,
     FeatureBufferSize,
 )
 from ....loggers import red, green
@@ -87,20 +88,13 @@ def generate_config(
         help="Pollutants to train and predict on",
         show_default=True,
     ),
-    features: List[FeatureNames] = typer.Option(
-        [
-            FeatureNames.total_road_length.value,
-            FeatureNames.total_a_road_length.value,
-            FeatureNames.total_a_road_primary_length.value,
-            FeatureNames.total_b_road_length.value,
-            FeatureNames.grass.value,
-            FeatureNames.building_height.value,
-            FeatureNames.water.value,
-            FeatureNames.park.value,
-            FeatureNames.max_canyon_narrowest.value,
-            FeatureNames.max_canyon_ratio.value,
-        ],
-        help="Features to predict on",
+    static_features: List[StaticFeatureNames] = typer.Option(
+        [], help="Spatial features that do not change over time", show_default=True,
+    ),
+    dynamic_features: List[DynamicFeatureNames] = typer.Option(
+        [],
+        help="Features that change over time such as average number of vehicles. Default is no dynamic features.",
+        show_default=True,
     ),
     feature_buffer: List[FeatureBufferSize] = typer.Option(
         ["1000", "500"], help="Size of buffer for features", show_default=True
@@ -128,7 +122,8 @@ def generate_config(
         pred_sources=pred_source,
         species=species,
         norm_by=norm_by,
-        features=features,
+        static_features=static_features,
+        dynamic_features=dynamic_features,
         buffer_sizes=feature_buffer,
     )
     file_manager = FileManager(DATA_CACHE)
@@ -173,7 +168,7 @@ def download(
         False, "--prediction-data", help="Download prediction data",
     ),
     output_csv: bool = typer.Option(
-        True, "--output-csv", help="Output dataframes as csv", show_default=True
+        False, "--output-csv", help="Output dataframes as csv", show_default=True
     ),
 ):
     """Download data from the database

@@ -20,7 +20,7 @@ class TestMRDGP:
         """Create the fake dataset for this class."""
 
     def test_mrdgp_training(
-        self, mrdgp_model_params, sat_training_data, sat_full_config,
+        self, tf_session, mrdgp_model_params, sat_training_data, sat_full_config,
     ) -> None:
         """Test the MRDGP trains."""
         model_data = ModelDataExtractor()

@@ -64,7 +64,7 @@ resource "azurerm_postgresql_server" "this" {
   name                = "${azurerm_key_vault_secret.db_server_name.value}"
   location            = "${var.location}"
   resource_group_name = "${var.resource_group}"
-  sku_name            = "MO_Gen5_4"
+  sku_name            = "MO_Gen5_8"
 
   storage_profile {
     storage_mb            = "${local.db_size_mb}"
@@ -76,7 +76,7 @@ resource "azurerm_postgresql_server" "this" {
   administrator_login          = "${azurerm_key_vault_secret.db_admin_username.value}"
   administrator_login_password = "${azurerm_key_vault_secret.db_admin_password.value}"
   version                      = "11"
-  ssl_enforcement              = "Enabled"
+  ssl_enforcement_enabled      = true
 
   tags = {
     environment = "Terraform Clean Air"

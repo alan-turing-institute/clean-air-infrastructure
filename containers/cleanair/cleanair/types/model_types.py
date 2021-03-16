@@ -14,6 +14,7 @@ class KernelParams(BaseModel):
     lengthscales: Optional[Union[float, List[float]]]
     variance: Optional[Union[float, List[float]]]
     ARD: Optional[bool]
+    input_dim: int  # cannot be Optional/None due to gpflow error
 
 
 class BaseModelParams(BaseModel):

@@ -3,9 +3,10 @@
 
 import os
 import pickle
-import pytest
-import pandas as pd
+
 import numpy as np
+import pandas as pd
+import pytest
 from cleanair.inputs import SatelliteWriter
 from cleanair.types import Species
 from dateutil.parser import isoparse

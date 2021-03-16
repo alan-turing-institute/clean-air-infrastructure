@@ -21,7 +21,7 @@ class TestSVGP:
         pass
 
     def test_svgp_training(
-        self, svgp_model_params, laqn_training_data, laqn_full_config
+        self, tf_session, svgp_model_params, laqn_training_data, laqn_full_config
     ) -> None:
         """Test the SVGP trains."""
         model_data = ModelDataExtractor()

@@ -151,7 +151,9 @@ class ScootRoadForecast(Base):
         primary_key=True,
         nullable=False,
     )
-    measurement_start_utc = Column(TIMESTAMP, primary_key=True, nullable=False)
+    measurement_start_utc = Column(
+        TIMESTAMP, primary_key=True, nullable=False, index=True
+    )
     measurement_end_utc = Column(TIMESTAMP, primary_key=True, nullable=False)
     n_vehicles_in_interval = Column(Integer)
     occupancy_percentage = Column(DOUBLE_PRECISION)

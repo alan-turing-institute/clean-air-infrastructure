@@ -1,8 +1,9 @@
 """Tables for air quality instances, models, data, metrics and results."""
 
-from sqlalchemy import ForeignKeyConstraint, Column
-from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION
+from sqlalchemy import ForeignKeyConstraint, Column, ForeignKey, String
+from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, UUID, TIMESTAMP, BOOLEAN
 from ..base import Base
+from .meta_point_table import MetaPoint
 from ..mixins.instance_tables_mixin import (
     InstanceTableMixin,
     ModelTableMixin,
@@ -46,10 +47,10 @@ class AirQualityModelTable(Base, ModelTableMixin):
     __table_args__ = {"schema": "air_quality_modelling"}
 
 
-class AirQualityMetricsTable(Base, MetricsTableMixin):
-    """Storing metrics that have been evaluated on a model."""
+class AirQualitySpatialMetricsTable(Base, MetricsTableMixin):
+    """Storing metrics for each sensor that have been evaluated on a model."""
 
-    __tablename__ = "air_quality_metrics"
+    __tablename__ = "spatial_metrics"
     __table_args__ = (
         ForeignKeyConstraint(
             ["data_id"], ["air_quality_modelling.air_quality_data.data_id"]
@@ -59,31 +60,44 @@ class AirQualityMetricsTable(Base, MetricsTableMixin):
         ),
         {"schema": "air_quality_modelling"},
     )
+    point_id = Column(UUID, ForeignKey(MetaPoint.id), primary_key=True)
+    forecast = Column(
+        BOOLEAN, primary_key=True
+    )  # if true the metrics are evaluated on forecasts
+    source = Column(String(20), primary_key=True)
+    pollutant = Column(String(4), primary_key=True)
 
-    # columns for NO2 metrics
-    NO2_mae = Column(DOUBLE_PRECISION, nullable=True, index=False)
-    NO2_mse = Column(DOUBLE_PRECISION, nullable=True, index=False)
-    NO2_r2_score = Column(DOUBLE_PRECISION, nullable=False, index=False)
+    # columns for metrics
+    mae = Column(DOUBLE_PRECISION, nullable=False, index=False)
+    mse = Column(DOUBLE_PRECISION, nullable=False, index=False)
+    r2_score = Column(DOUBLE_PRECISION, nullable=False, index=False)
 
-    # columns for O3 metrics
-    O3_mae = Column(DOUBLE_PRECISION, nullable=True, index=False)
-    O3_mse = Column(DOUBLE_PRECISION, nullable=True, index=False)
-    O3_r2_score = Column(DOUBLE_PRECISION, nullable=True, index=False)
 
-    # columns for PM10 metrics
-    PM10_mae = Column(DOUBLE_PRECISION, nullable=True, index=False)
-    PM10_mse = Column(DOUBLE_PRECISION, nullable=True, index=False)
-    PM10_r2_score = Column(DOUBLE_PRECISION, nullable=True, index=False)
+class AirQualityTemporalMetricsTable(Base, MetricsTableMixin):
+    """Metrics for each timestamp aggregated over all sensors."""
 
-    # columns for PM25 metrics
-    PM25_mae = Column(DOUBLE_PRECISION, nullable=True, index=False)
-    PM25_mse = Column(DOUBLE_PRECISION, nullable=True, index=False)
-    PM25_r2_score = Column(DOUBLE_PRECISION, nullable=True, index=False)
+    __tablename__ = "temporal_metrics"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["data_id"], ["air_quality_modelling.air_quality_data.data_id"]
+        ),
+        ForeignKeyConstraint(
+            ["instance_id"], ["air_quality_modelling.air_quality_instance.instance_id"]
+        ),
+        {"schema": "air_quality_modelling"},
+    )
+    forecast = Column(
+        BOOLEAN, primary_key=True
+    )  # if true the metrics are evaluated on forecasts
+    source = Column(String(20), primary_key=True)
+    pollutant = Column(String(4), primary_key=True)
+    measurement_start_utc = Column(TIMESTAMP, primary_key=True, nullable=False)
+    measurement_end_utc = Column(TIMESTAMP, primary_key=False, nullable=False)
 
-    # columns for CO2 metrics
-    CO2_mae = Column(DOUBLE_PRECISION, nullable=True, index=False)
-    CO2_mse = Column(DOUBLE_PRECISION, nullable=True, index=False)
-    CO2_r2_score = Column(DOUBLE_PRECISION, nullable=True, index=False)
+    # columns for metrics
+    mae = Column(DOUBLE_PRECISION, nullable=False, index=False)
+    mse = Column(DOUBLE_PRECISION, nullable=False, index=False)
+    r2_score = Column(DOUBLE_PRECISION, nullable=False, index=False)
 
 
 class AirQualityResultTable(Base, ResultTableMixin):

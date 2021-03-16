@@ -7,7 +7,7 @@ import requests
 from sqlalchemy import create_engine, event
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.declarative import DeferredReflection
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, scoped_session
 from sqlalchemy.schema import CreateSchema
 from sqlalchemy.sql import text
 from sqlalchemy_utils import database_exists, create_database
@@ -24,7 +24,7 @@ class Connector(DBConnectionMixin):
     __engine = None
     __sessionfactory = None
 
-    def __init__(self, secretfile, connection=None, **kwargs):
+    def __init__(self, secretfile, connection=None, threadsafe=False, **kwargs):
         """
 
         Args:
@@ -46,6 +46,9 @@ class Connector(DBConnectionMixin):
         # connection for transactional connections
         self.connection = connection
         self.transaction = False
+
+        # Make threadsafe
+        self.threadsafe = threadsafe
 
     def initialise_tables(self):
         """Ensure that all table connections exist"""
@@ -69,7 +72,6 @@ class Connector(DBConnectionMixin):
         # Return the class-level engine
         return self.__engine
 
-    @property
     def sessionfactory(self):
         """Access the class-level sqlalchemy sessionfactory"""
         # Initialise the class-level sessionfactory if it does not already exist
@@ -80,6 +82,10 @@ class Connector(DBConnectionMixin):
                 self.__sessionfactory = sessionmaker(bind=self.connection)
             else:
                 self.__sessionfactory = sessionmaker(bind=self.engine)
+
+        # Ensure session scoped to thread
+        if self.threadsafe:
+            self.__sessionfactory = scoped_session(self.__sessionfactory)
         # Return the class-level sessionfactory
         return self.__sessionfactory
 
@@ -125,13 +131,13 @@ class Connector(DBConnectionMixin):
             create_database(self.connection_string)
 
     @contextmanager
-    def open_session(self, skip_check=False):
+    def open_session(self, skip_check=True):
         """
         Create a session as a context manager which will thereby self-close
         """
         try:
             # Use the session factory to create a new session
-            session = self.sessionfactory()
+            session = self.sessionfactory()()
             if self.transaction:
                 # Start a nested session if running tests
                 session.begin_nested()

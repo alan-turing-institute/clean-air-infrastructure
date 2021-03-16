@@ -1,7 +1,7 @@
 """Generating fake data for scoot."""
 
 from __future__ import annotations
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, List
 import string
 import random
 import numpy as np
@@ -24,26 +24,40 @@ class ScootGenerator(ScootQueryMixin, DBWriter):
         upto: str,
         offset: Optional[int] = None,
         limit: Optional[int] = None,
+        detectors: Optional[List[str]] = None,
         borough: Optional[Borough] = None,
         **kwargs
     ) -> None:
-        """Initialise a synthetic scoot writer."""
+        """Initialise a synthetic scoot writer
+        
+        Arguments:
+            start: Start datetime for fake data
+            upto: generate fake data up till this datetime
+            offset: Start at a different detector
+            limit: At most this many detectors
+            """
         self.start = start
         self.upto = upto
         self.offset = offset
         self.limit = limit
+        self.detectors = detectors
         self.borough = borough
+        self.readings_df = None
         super().__init__(**kwargs)
 
-    def update_remote_tables(self) -> None:
+    def generate_df(self) -> pd.DataFrame:
+        "Generate a dataframe of scoot data"
+        np.random.seed(0)
         # Theres no scoot readings in the DB - lets put in some fake ones
         start = pd.date_range(self.start, self.upto, freq="H", closed="left")
         end = start + pd.DateOffset(hours=1)
         nreadings = len(start)  # number of readings for each detector
+        # Detectors are already in the database as static data
         detectors = self.scoot_detectors(
             offset=self.offset,
             limit=self.limit,
             borough=self.borough,
+            detectors=self.detectors,
             output_type="df",
         )["detector_id"].to_list()
         nrows = nreadings * len(detectors)
@@ -72,7 +86,11 @@ class ScootGenerator(ScootQueryMixin, DBWriter):
                 )
             )
         # create a dataframe and insert the fake records
-        readings = pd.DataFrame(data)
+        return pd.DataFrame(data)
+
+    def update_remote_tables(self) -> None:
+
+        readings = self.generate_df()
         records = readings.to_dict("records")
         self.commit_records(records, on_conflict="ignore", table=ScootReading)
 
@@ -87,7 +105,6 @@ def generate_discrete_timeseries(
 ) -> NDArray[Int]:
     """Create a timeseries with discrete values."""
     # set seed
-    np.random.seed(0)
 
     X = np.linspace(0, size, num=size)
 
@@ -99,9 +116,10 @@ def generate_discrete_timeseries(
     )
 
     # floor function and add poisson noise
-    return np.random.choice([-1, 1], size) * (
-        np.random.poisson(lambda_noise, size) - 1
-    ) + np.floor(underlying_function)
+    return (
+        np.random.choice([-1, 1], size) * (np.random.poisson(lambda_noise, size) - 1)
+        + np.floor(underlying_function)
+    ).astype(int)
 
 
 def generate_detector_id() -> str:

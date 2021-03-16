@@ -105,11 +105,40 @@ Install it using on your own preferred environment with `pip install azure-cli`
 Download and install [Docker Desktop](https://www.docker.com/products/docker-desktop)
 
 ### PostgreSQL
+
 [PostgreSQL](https://www.postgresql.org/download) and [PostGIS](https://postgis.net/install).
+
+Setting up a local Postgres intance with PostGIS can be troublesome, so we recommend using a docker image.
+
+```bash
+docker run --name database -e POSTGRES_HOST_AUTH_METHOD=trust -p 5432:5432 cleanairdocker.azurecr.io/database
+```
+
+<details>
+<summary>If you aren't logged in with access to the cleanairdocker registry, you can build the image yourself and run it with:</summary>
+
+```bash
+docker build -t database:latest -f ./containers/dockerfiles/test_database.dockerfile .
+docker run --name database -e POSTGRES_HOST_AUTH_METHOD=trust -p 5432:5432 database
+```
+
+</details>
+
+! If you have another Postgres install running, it will likely be using port 5432. In this case, use a different port number, for example to 5000 (Remember to change your local secrets file to match). Run instead with:
+
+```bash
+docker run --name database -e POSTGRES_HOST_AUTH_METHOD=trust -p 5000:5432 database
+```
+
+
+<details>
+<summary>Alternatively, you can install Postgres with your package manager, such as Homebrew:</summary>
 
 ```bash
 brew install postgresql postgis
 ```
+</details>
+
 
 ### GDAL
 [GDAL](https://gdal.org/) can be installed using `brew` on OSX.
@@ -227,7 +256,7 @@ pip install azure-nspkg azure-mgmt-nspkg
 # The following fails with: ERROR: azure-cli 2.6.0 has requirement azure-storage-blob<2.0.0,>=1.3.1, but you'll have azure-storage-blob 12.3.0 which is incompatible.
 # but they install fine.
 pip install -r containers/requirements.txt
-pip install -e 'containers/cleanair[models]'
+pip install -e 'containers/cleanair[models,traffic]'
 pip install -e 'containers/odysseus'
 pip install -e 'containers/urbanair'
 
@@ -385,7 +414,7 @@ export PGPASSWORD=$(az account get-access-token --resource-type oss-rdbms --quer
 Once your IP has been whitelisted (ask the [database adminstrators](#contributors-:dancers:)), you will be able to
 access the database using psql:
 ```bash
-psql "host=cleanair-inputs-server.postgres.database.azure.com port=5432 dbname=cleanair_inputs_db user=<your-turing-credentials>@cleanair-inputs-server sslmode=require"
+psql "host=cleanair-inputs-2021-server.postgres.database.azure.com port=5432 dbname=cleanair_inputs_db user=<your-turing-credentials>@cleanair-inputs-2021-server sslmode=require"
 ```
 replacing `<your-turing-credentials>` with your turing credentials (e.g. `jblogs@turing.ac.uk`).
 
@@ -395,15 +424,15 @@ To connect to the database using the CleanAir package you will need to create an
 
 ```bash
 echo '{
-    "username": "<your-turing-credentials>@cleanair-inputs-server",
-    "host": "cleanair-inputs-server.postgres.database.azure.com",
+    "username": "<your-turing-credentials>@cleanair-inputs-2021-server",
+    "host": "cleanair-inputs-2021-server.postgres.database.azure.com",
     "port": 5432,
     "db_name": "cleanair_inputs_db",
     "ssl_mode": "require"
 }' >> .secrets/db_secrets_ad.json
 ```
 
-Make sure you then replace `<your-turing-credentials>` with your full Turing username (e.g.`jblogs@turing.ac.uk@cleanair-inputs-server`).
+Make sure you then replace `<your-turing-credentials>` with your full Turing username (e.g.`jblogs@turing.ac.uk@cleanair-inputs-2021-server`).
 
 
 # Running entry points
@@ -693,12 +722,12 @@ docker pull cleanairdocker.azurecr.io/model_fitting
 To fit and predict using the SVGP you can run:
 
 ```bash
-docker run -it --rm cleanairdocker.azurecr.io/model_fitting:latest sh /app/scripts/svgp.sh
+docker run -it --rm cleanairdocker.azurecr.io/model_fitting:latest sh /app/scripts/svgp_static.sh
 ```
 
 To fit and predict using the MRDGP run:
 ```bash
-docker run -it --rm cleanairdocker.azurecr.io/model_fitting:latest sh /app/scripts/mrdgp.sh
+docker run -it --rm cleanairdocker.azurecr.io/model_fitting:latest sh /app/scripts/mrdgp_static.sh
 ```
 
 If you are running on your local machine you will also need to add `-e PGPASSWORD -e DB_SECRET_FILE -v $SECRET_DIR:/secrets` after the `run` command and set the environment variables (see above in the README).

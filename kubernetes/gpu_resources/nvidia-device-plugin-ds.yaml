@@ -35,6 +35,10 @@ spec:
         operator: Equal
         value: cleangpu
         effect: NoSchedule
+      - key: group
+        operator: Equal
+        value: gpuBackFill
+        effect: NoSchedule
       containers:
       - image: nvidia/k8s-device-plugin:latest
         name: nvidia-device-plugin-ctr

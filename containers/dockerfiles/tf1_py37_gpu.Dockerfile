@@ -10,7 +10,7 @@ RUN apt-get -y install unzip
 
 RUN add-apt-repository ppa:deadsnakes/ppa
 
-RUN apt-get -y install python3.7 
+RUN apt-get -y install python3.7-dev
 
 RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.7 1
 

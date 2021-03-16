@@ -1,6 +1,7 @@
 """Fixtures for testing mixins."""
 
 from typing import Any
+
 import pytest
 from cleanair.databases import DBReader
 from cleanair.mixins import ScootQueryMixin
