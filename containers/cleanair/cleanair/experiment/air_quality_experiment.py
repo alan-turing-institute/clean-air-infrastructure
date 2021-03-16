@@ -284,6 +284,7 @@ class RunnableAirQualityExperiment(RunnableExperimentMixin):
         y_forecast = self._test_result[instance_id]
         file_manager.save_pred_training_to_pickle(y_training_result)
         file_manager.save_forecast_to_pickle(y_forecast)
+        file_manager.save_elbo(self._models[instance_id].elbo)
 
 
 class UpdateAirQualityExperiment(DBWriter, UpdateExperimentMixin):

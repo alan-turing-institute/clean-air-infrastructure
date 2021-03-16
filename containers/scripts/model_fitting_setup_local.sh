@@ -7,6 +7,7 @@ set -e
 #default values
 BUILD=0
 SETUP=0
+SAFE=0
 HELP=0
 CACHED=0
 
@@ -63,11 +64,11 @@ fi
 if [ "$SETUP" == '1' ]; then
     echo 'Setting up experiment'
 
-
     #Download data for experiment and setup mrdgp 
     urbanair init production
 
     for EXPERIMENT_NAME in ${EXPERIMENT_NAMES[@]}; do
+
         #saving cache in urbanair requires an empty folder
         if [ -d "$LOCAL_EXPERIMENT_FOLDER_PATH/$EXPERIMENT_NAME" ]; then
           # Take action if $DIR exists. #

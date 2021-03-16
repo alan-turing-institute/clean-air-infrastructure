@@ -10,6 +10,12 @@ class ExperimentName(str, Enum):
 
     svgp_vary_static_features = "svgp_vary_static_features"
     dgp_vary_static_features = "dgp_vary_static_features"
+    dgp_vary_inducing_and_maxiter = "dgp_vary_inducing_and_maxiter"
+    dgp_small_inducing_and_maxiter = "dgp_small_inducing_and_maxiter"
+    svgp_small_inducing_and_maxiter = "svgp_small_inducing_and_maxiter"
+
+    svgp_vary_standard = "svgp_vary_standard"
+    dgp_vary_standard = "dgp_vary_standard"
     cached_instance = "cached_instance"
 
 
