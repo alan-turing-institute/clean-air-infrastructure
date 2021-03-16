@@ -22,7 +22,7 @@ def point_ids(laqn_svgp_instance) -> List[UUID]:
     return laqn_svgp_instance.data_config.train_interest_points[Source.laqn]
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="class")
 def timestamps(dataset_start_date: datetime, dataset_end_date: datetime) -> List:
     """List of timestamps for each data point."""
     num_periods = (dataset_end_date - dataset_start_date).days * 24
@@ -30,7 +30,7 @@ def timestamps(dataset_start_date: datetime, dataset_end_date: datetime) -> List
     return pd.date_range(start=dataset_start_date, freq="H", periods=num_periods)
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="class")
 def num_training_data_points(point_ids, timestamps) -> int:
     """Number of data points."""
     return len(point_ids) * len(timestamps)
@@ -66,7 +66,7 @@ def observation_df(model_data, metrics_calculator):
     return metrics_calculator.load_observation_df(model_data)
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="class")
 def result_df(
     num_training_data_points,
     point_ids: List[UUID],
