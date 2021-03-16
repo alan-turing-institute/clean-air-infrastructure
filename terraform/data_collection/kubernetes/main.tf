@@ -92,7 +92,7 @@ resource "azurerm_kubernetes_cluster_node_pool" "cleanair_pool_gpu" {
   enable_auto_scaling   = true
   max_count             = 2
   min_count             = 0
-  node_count            = 1
+  node_count            = 0
   os_disk_size_gb       = 100
   node_taints           = ["group=cleangpu:NoSchedule"]
 }
