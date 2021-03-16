@@ -414,7 +414,7 @@ export PGPASSWORD=$(az account get-access-token --resource-type oss-rdbms --quer
 Once your IP has been whitelisted (ask the [database adminstrators](#contributors-:dancers:)), you will be able to
 access the database using psql:
 ```bash
-psql "host=cleanair-inputs-server.postgres.database.azure.com port=5432 dbname=cleanair_inputs_db user=<your-turing-credentials>@cleanair-inputs-server sslmode=require"
+psql "host=cleanair-inputs-2021-server.postgres.database.azure.com port=5432 dbname=cleanair_inputs_db user=<your-turing-credentials>@cleanair-inputs-2021-server sslmode=require"
 ```
 replacing `<your-turing-credentials>` with your turing credentials (e.g. `jblogs@turing.ac.uk`).
 
@@ -424,15 +424,15 @@ To connect to the database using the CleanAir package you will need to create an
 
 ```bash
 echo '{
-    "username": "<your-turing-credentials>@cleanair-inputs-server",
-    "host": "cleanair-inputs-server.postgres.database.azure.com",
+    "username": "<your-turing-credentials>@cleanair-inputs-2021-server",
+    "host": "cleanair-inputs-2021-server.postgres.database.azure.com",
     "port": 5432,
     "db_name": "cleanair_inputs_db",
     "ssl_mode": "require"
 }' >> .secrets/db_secrets_ad.json
 ```
 
-Make sure you then replace `<your-turing-credentials>` with your full Turing username (e.g.`jblogs@turing.ac.uk@cleanair-inputs-server`).
+Make sure you then replace `<your-turing-credentials>` with your full Turing username (e.g.`jblogs@turing.ac.uk@cleanair-inputs-2021-server`).
 
 
 # Running entry points
@@ -722,12 +722,12 @@ docker pull cleanairdocker.azurecr.io/model_fitting
 To fit and predict using the SVGP you can run:
 
 ```bash
-docker run -it --rm cleanairdocker.azurecr.io/model_fitting:latest sh /app/scripts/svgp.sh
+docker run -it --rm cleanairdocker.azurecr.io/model_fitting:latest sh /app/scripts/svgp_static.sh
 ```
 
 To fit and predict using the MRDGP run:
 ```bash
-docker run -it --rm cleanairdocker.azurecr.io/model_fitting:latest sh /app/scripts/mrdgp.sh
+docker run -it --rm cleanairdocker.azurecr.io/model_fitting:latest sh /app/scripts/mrdgp_static.sh
 ```
 
 If you are running on your local machine you will also need to add `-e PGPASSWORD -e DB_SECRET_FILE -v $SECRET_DIR:/secrets` after the `run` command and set the environment variables (see above in the README).

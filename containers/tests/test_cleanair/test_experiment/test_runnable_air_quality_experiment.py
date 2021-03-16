@@ -1,5 +1,6 @@
 """Test runnable AQ experiment"""
 
+
 import pytest
 from cleanair.types import PredictionDict, Source
 from cleanair.utils import FileManager

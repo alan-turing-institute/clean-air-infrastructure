@@ -155,9 +155,6 @@ class MRDGP(ModelMixin):
         y_sat = y_train[Source.satellite][Species.NO2].copy()
 
         # ===========================Setup Data===========================
-        features = [0, 1, 2]  # TODO change hardcoded features
-        x_laqn = x_laqn[:, features]
-        x_sat = x_sat[:, :, features]
 
         x_sat, y_sat = ModelMixin.clean_data(x_sat, y_sat)
         x_laqn, y_laqn = ModelMixin.clean_data(x_laqn, y_laqn)

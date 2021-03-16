@@ -58,7 +58,12 @@ def number_of_samples() -> int:
 @pytest.fixture(scope="function")
 def x_features(number_of_samples: int) -> NDArray[Float]:
     """Features"""
-    return np.arange(number_of_samples).reshape((number_of_samples, 1)).astype(np.float)
+    # return np.arange((number_of_samples, 1)).reshape((number_of_samples, 3)).astype(np.float)
+    return (
+        np.arange(number_of_samples * 3)
+        .reshape((number_of_samples, 3))
+        .astype(np.float)
+    )
 
 
 @pytest.fixture(scope="function")
@@ -66,7 +71,8 @@ def y_observations(
     x_features: NDArray[Float], number_of_samples: int
 ) -> NDArray[Float]:
     """Observations"""
-    return np.sin(2 * np.pi * x_features / float(number_of_samples)).reshape(
+    # only use first dimension to calculate feature
+    return np.sin(2 * np.pi * x_features[:, 0] / float(number_of_samples)).reshape(
         (number_of_samples, 1)
     )
 

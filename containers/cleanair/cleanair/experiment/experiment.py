@@ -3,15 +3,19 @@
 from abc import abstractmethod
 from datetime import datetime
 import json
+from logging import Logger
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 import tensorflow as tf
-from ..databases import DBWriter
+
+from ..databases import get_columns_of_table
+from ..databases.mixins import ResultTableMixin
 from ..databases.mixins import (
     DataTableMixin,
     InstanceTableMixin,
     ModelTableMixin,
 )
+from ..loggers import get_logger
 from ..mixins import InstanceMixin
 from ..types import ExperimentConfig, ExperimentName
 from ..utils import FileManager
@@ -30,7 +34,10 @@ class ExperimentMixin:
     EXPERIMENT_CONFIG_JSON_FILENAME = "experiment_config.json"
 
     def __init__(
-        self, name: ExperimentName, experiment_root: Path,
+        self,
+        name: ExperimentName,
+        experiment_root: Path,
+        logger: Logger = get_logger("experiment"),
     ):
         # super().__init__(**kwargs)
         self.name = name
@@ -44,6 +51,7 @@ class ExperimentMixin:
             / name.value
             / ExperimentMixin.EXPERIMENT_CONFIG_JSON_FILENAME
         )
+        self.logger = logger
 
         # dictionaries to manage the experiment
         self._instances: Dict[str, InstanceMixin] = dict()
@@ -79,6 +87,10 @@ class ExperimentMixin:
     def get_file_manager(self, instance_id: str) -> FileManager:
         """Get the file manager for the given instance"""
         return self._file_managers[instance_id]
+
+    def get_num_instances(self) -> int:
+        """Get the number of instances in the experiment"""
+        return len(self._instances)
 
     def create_file_manager_from_instance_id(self, instance_id: str) -> FileManager:
         """Create a file manager from an instance id"""
@@ -201,7 +213,7 @@ class RunnableExperimentMixin(SetupExperimentMixin):
         # make sure to load the datasets first
         for instance_id, instance in self._instances.items():
             instance.fit_start_time = datetime.now()
-            tf.compat.v1.reset_default_graph()
+            # tf.compat.v1.reset_default_graph()
             with tf.compat.v1.Graph().as_default():
                 with tf.compat.v1.Session().as_default() as session:
                     # session.reset(graph)
@@ -213,7 +225,7 @@ class RunnableExperimentMixin(SetupExperimentMixin):
                     session.close()
 
 
-class UpdateExperimentMixin(ExperimentMixin, DBWriter):
+class UpdateExperimentMixin(ExperimentMixin):
     """An experiment that can write to databases"""
 
     @property
@@ -231,18 +243,59 @@ class UpdateExperimentMixin(ExperimentMixin, DBWriter):
     def model_table(self) -> ModelTableMixin:
         """The modelling table."""
 
-    # def update_table_from_frame(self, frame: pd.DataFrame, table) -> None:
-    #     """Update a table with the dataframe."""
-    #     inst = inspect(table)
-    #     cols = [c_attr.key for c_attr in inst.mapper.column_attrs]
-    #     records = frame[cols].to_dict("records")
-    #     self.commit_records(
-    #         records, on_conflict="ignore", table=table,
-    #     )
+    @property
+    @abstractmethod
+    def result_table(self) -> ResultTableMixin:
+        """The modelling table."""
 
     def update_remote_tables(self):
         """Update the instance, data and model tables."""
+        # TODO would be nice to have an experiment table too
         # convert pydantic models to dictionaries
 
+        self.logger.info("Writing instances, data config and model params to database")
+
+        # get column names for each table
+        data_config_cols = get_columns_of_table(self.data_table)
+        instance_cols = get_columns_of_table(self.instance_table)
+        model_cols = get_columns_of_table(self.model_table)
+
+        # keep list or records to insert into DB
+        data_config_records = list()
+        instance_records = list()
+        model_records = list()
+        data_ids = set()
+        param_ids = set()
+        instance_ids = set()
+
+        # add records to list
+        for instance_id, instance in self._instances.items():
+            instance_dict = instance.dict()
+            if instance.data_id not in data_ids:
+                data_ids.add(instance.data_id)
+                data_config_records.append(
+                    {key: instance_dict[key] for key in data_config_cols}
+                )
+            if instance.param_id not in param_ids:
+                param_ids.add(instance.param_id)
+                model_records.append({key: instance_dict[key] for key in model_cols})
+            if instance_id not in instance_ids:
+                instance_ids.add(instance_id)
+                instance_records.append(
+                    {key: instance_dict[key] for key in instance_cols}
+                )
+
+        # write records to the database
+        self.commit_records(
+            data_config_records, on_conflict="overwrite", table=self.data_table,
+        )
+        self.commit_records(
+            model_records, on_conflict="overwrite", table=self.model_table,
+        )
+        self.commit_records(
+            instance_records, on_conflict="overwrite", table=self.instance_table,
+        )
+
+    @abstractmethod
     def update_result_tables(self):
         """Update the result tables"""
