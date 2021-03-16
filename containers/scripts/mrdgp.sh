@@ -3,8 +3,7 @@
 # exit when any command fails
 set -e
 
-# set the secretfile filepath
-#TODO: this throws line errors but doesnt seem to be needed?
+# set the secretfile filepath (if on own machine, use 'init production' to write to the production database)
 urbanair init local --secretfile "$DB_SECRET_FILE"
 
 # generate the data config
@@ -18,7 +17,6 @@ urbanair model data generate-config \
     --train-source laqn \
     --train-source satellite \
     --pred-source laqn \
-    --pred-source hexgrid \
     --species NO2 \
     --overwrite
 
@@ -36,3 +34,4 @@ urbanair model fit mrdgp --refresh 10
 
 # push the results to the database
 urbanair model update results mrdgp --tag production --cluster-id kubernetes
+

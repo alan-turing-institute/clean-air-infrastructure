@@ -10,7 +10,6 @@ from .shared_params import (
 )
 from ..types import KernelParams, KernelType, SVGPParams
 
-
 JITTER: float = 1e-5
 SVGP_NUM_INDUCING_POINTS = 2000
 SVGP_INPUT_DIM = 3

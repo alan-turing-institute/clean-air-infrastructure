@@ -1,6 +1,7 @@
 """Tests for saving and loading files for an air quality model."""
 
 from __future__ import annotations
+from datetime import datetime
 from typing import List, TYPE_CHECKING
 import numpy as np
 import tensorflow as tf
@@ -235,3 +236,4 @@ def test_read_write_instance(input_dir: Path, laqn_svgp_instance) -> None:
     assert instance.instance_id == laqn_svgp_instance.instance_id
     assert instance.data_id == laqn_svgp_instance.data_id
     assert instance.param_id == laqn_svgp_instance.param_id
+    assert isinstance(instance.fit_start_time, datetime)

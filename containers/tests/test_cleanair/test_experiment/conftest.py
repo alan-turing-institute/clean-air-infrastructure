@@ -2,6 +2,7 @@
 
 from typing import Any, List
 from pathlib import Path
+from cleanair.experiment.air_quality_experiment import UpdateAirQualityExperiment
 import numpy as np
 import pytest
 from pydantic import BaseModel
@@ -53,8 +54,16 @@ def experiment_name() -> ExperimentName:
 
 @pytest.fixture(scope="function")
 def experiment_dir(tmp_path_factory) -> Path:
-    """Temporary input directory."""
+    """Temporary experiment directory."""
     return tmp_path_factory.mktemp(".experiment")
+
+
+@pytest.fixture(scope="class")
+def experiment_dir_for_class(tmp_path_factory) -> Path:
+    """Temporary experiment directory that lasts for a class"""
+    # be careful when using this fixture, files will remain
+    # whilst the class its called by exists
+    return tmp_path_factory.mktemp(".experiment-class")
 
 
 @pytest.fixture(scope="function")
@@ -106,7 +115,7 @@ def setup_aq_experiment(
     experiment_name,
     experiment_dir,
     laqn_svgp_instance,
-    sat_mrdgp_instance,
+    # sat_mrdgp_instance,
 ) -> SetupAirQualityExperiment:
     """Setup air quality experiment class"""
     experiment = SetupAirQualityExperiment(
@@ -116,7 +125,7 @@ def setup_aq_experiment(
         connection=connection_class,
     )
     experiment.add_instance(laqn_svgp_instance)
-    experiment.add_instance(sat_mrdgp_instance)
+    # experiment.add_instance(sat_mrdgp_instance)
     return experiment
 
 
@@ -126,7 +135,7 @@ def runnable_aq_experiment(
     experiment_name,
     experiment_dir,
     laqn_svgp_instance,
-    sat_mrdgp_instance,
+    # sat_mrdgp_instance,
 ) -> RunnableAirQualityExperiment:
     """A runnable air quality experiment"""
     # load the experiment and write it to file first
@@ -139,3 +148,20 @@ def runnable_aq_experiment(
     experiment.add_instance(laqn_svgp_instance)
     # experiment.add_instance(sat_mrdgp_instance)
     return experiment
+
+
+@pytest.fixture(scope="function")
+def update_aq_experiment(
+    runnable_aq_experiment, experiment_dir, secretfile, connection_class,
+) -> UpdateAirQualityExperiment:
+    """Fixture for updating experiment"""
+    runnable_aq_experiment.load_datasets()
+    runnable_aq_experiment.run_experiment()
+    update_experiment = UpdateAirQualityExperiment(
+        runnable_aq_experiment.name,
+        experiment_dir,
+        secretfile=secretfile,
+        connection=connection_class,
+    )
+    update_experiment.add_instances_from_file(runnable_aq_experiment.get_instance_ids())
+    return update_experiment
