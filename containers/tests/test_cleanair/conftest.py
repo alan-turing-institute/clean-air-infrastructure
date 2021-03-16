@@ -3,7 +3,7 @@ Fixtures for the cleanair module.
 """
 # pylint: disable=redefined-outer-name,C0103
 from typing import Tuple
-from datetime import timedelta
+from datetime import datetime, timedelta
 import pytest
 from dateutil import rrule
 from dateutil.parser import isoparse
@@ -110,10 +110,12 @@ def dataset_end_date():
     "Fake dataset end date"
     return isoparse("2020-01-05")
 
+
 @pytest.fixture(scope="function")
 def fit_start_time() -> datetime:
     """Datetime for when model started fitting."""
     return datetime(2020, 1, 5, 1, 0, 0)
+
 
 @pytest.fixture(scope="module")
 def num_forecast_days():

@@ -24,7 +24,7 @@ class ResultQueryMixin:
         """The sqlalchemy table to query. The table must extend ResultTableMixin."""
 
     @staticmethod
-    def point_id_join(table, source: Source, columns = None, with_location: bool = False):
+    def point_id_join(table, source: Source, columns=None, with_location: bool = False):
         """Get the columns for a result query. The geom columns may be a point or polygon."""
         if columns is None:
             base_query = [table]
@@ -73,7 +73,9 @@ class ResultQueryMixin:
             with_location: If true, return a lat, lon & geom column.
             columns: A subset of columns to return. Columns must be in the result table.
         """
-        base_query = self.__class__.point_id_join(self.result_table, source, columns, with_location=with_location)
+        base_query = self.__class__.point_id_join(
+            self.result_table, source, columns, with_location=with_location
+        )
 
         # open connection and start the query
         with self.dbcnxn.open_session() as session:

@@ -7,6 +7,7 @@ from uuid import UUID
 import numpy as np
 import pandas as pd
 import pytest
+from cleanair.experiment import AirQualityResult
 from cleanair.metrics import AirQualityMetrics
 from cleanair.types import Source, Species
 from nptyping import NDArray, Float64
@@ -108,6 +109,18 @@ def metrics_calculator(laqn_svgp_instance, secretfile, connection_class):
     laqn_svgp_instance.update_remote_tables()
     return AirQualityMetrics(
         laqn_svgp_instance.instance_id,
+        secretfile=secretfile,
+        connection=connection_class,
+    )
+
+
+@pytest.fixture(scope="class")
+def svgp_result(secretfile, connection_class, result_df, laqn_svgp_instance):
+    """Result fixture for svgp"""
+    return AirQualityResult(
+        laqn_svgp_instance.instance_id,
+        laqn_svgp_instance.data_id,
+        result_df=result_df,
         secretfile=secretfile,
         connection=connection_class,
     )

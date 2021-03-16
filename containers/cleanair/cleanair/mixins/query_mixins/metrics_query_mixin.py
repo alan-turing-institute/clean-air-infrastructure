@@ -54,7 +54,9 @@ class SpatioTemporalMetricsQueryMixin(DBReader, InstanceQueryMixin, ResultQueryM
         return AirQualitySpatialMetricsTable
 
     @db_query()
-    def query_spatial_metrics(self, instance_id: str, source: Source, with_location: bool = False):
+    def query_spatial_metrics(
+        self, instance_id: str, source: Source, with_location: bool = False
+    ):
         """Query the spatial metrics for an air quality model."""
         table = self.spatial_metrics_table
         cols = self.__class__.point_id_join(table, source, with_location=with_location)
@@ -66,9 +68,7 @@ class SpatioTemporalMetricsQueryMixin(DBReader, InstanceQueryMixin, ResultQueryM
             )
             if with_location:
                 # inner join on point id and filter by source
-                readings = readings.join(
-                    MetaPoint, table.point_id == MetaPoint.id
-                )
+                readings = readings.join(MetaPoint, table.point_id == MetaPoint.id)
             return readings
 
     @db_query()
