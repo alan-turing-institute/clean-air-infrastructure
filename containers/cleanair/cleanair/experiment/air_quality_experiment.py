@@ -1,10 +1,24 @@
 """Experiments for air quality model validation"""
 
 from __future__ import annotations
+from logging import Logger
 from pathlib import Path
-from typing import Dict, Optional, TYPE_CHECKING, List
+from typing import Any, Dict, List, Optional, TYPE_CHECKING
 import pandas as pd
-from .experiment import RunnableExperimentMixin, SetupExperimentMixin
+from .air_quality_result import AirQualityResult
+from ..databases import DBWriter
+from ..databases.tables import (
+    AirQualityDataTable,
+    AirQualityInstanceTable,
+    AirQualityModelTable,
+    AirQualityResultTable,
+)
+from .experiment import (
+    RunnableExperimentMixin,
+    SetupExperimentMixin,
+    UpdateExperimentMixin,
+)
+from ..loggers import get_logger
 from ..models import ModelData, ModelDataExtractor, MRDGP, SVGP
 from ..types import ExperimentName, IndexedDatasetDict, ModelName, Source, TargetDict
 from ..utils import FileManager
@@ -270,6 +284,108 @@ class RunnableAirQualityExperiment(RunnableExperimentMixin):
         y_forecast = self._test_result[instance_id]
         file_manager.save_pred_training_to_pickle(y_training_result)
         file_manager.save_forecast_to_pickle(y_forecast)
+
+
+class UpdateAirQualityExperiment(DBWriter, UpdateExperimentMixin):
+    """Write an experiment to the database"""
+
+    def __init__(
+        self,
+        name: ExperimentName,
+        experiment_root: Path,
+        secretfile: Optional[str] = None,
+        connection: Optional[Any] = None,
+        **kwargs,
+    ):
+        DBWriter.__init__(self, secretfile=secretfile, connection=connection, **kwargs)
+        UpdateExperimentMixin.__init__(self, name, experiment_root)
+        self.secretfile = secretfile
+        self.connection = connection
+
+    @property
+    def data_table(self) -> AirQualityDataTable:
+        """The data config table."""
+        return AirQualityDataTable
+
+    @property
+    def instance_table(self) -> AirQualityInstanceTable:
+        """The instance table."""
+        return AirQualityInstanceTable
+
+    @property
+    def model_table(self) -> AirQualityModelTable:
+        """The modelling table."""
+        return AirQualityModelTable
+
+    @property
+    def result_table(self) -> AirQualityResultTable:
+        """The result table."""
+        return AirQualityResultTable
+
+    def update_result_tables(self):
+        """Update the result tables"""
+        for instance_id, instance in self._instances.items():
+            file_manager = self._file_managers[instance_id]
+            y_pred_training = file_manager.load_pred_training_from_pickle()
+            y_forecast = file_manager.load_forecast_from_pickle()
+            train_data = file_manager.load_training_data()
+            test_data = file_manager.load_test_data()
+            # TODO do we need to write the CSVs to file?
+            update_predictions_on_dataset(
+                train_data,
+                y_pred_training,
+                instance_id,
+                instance.data_id,
+                self.secretfile,
+                connection=self.connection,
+            )
+            update_predictions_on_dataset(
+                test_data,
+                y_forecast,
+                instance_id,
+                instance.data_id,
+                self.secretfile,
+                connection=self.connection,
+            )
+
+    def update_remote_tables(self):
+        """Write instances to air quality tables"""
+        return UpdateExperimentMixin.update_remote_tables(self)
+
+
+def update_predictions_on_dataset(
+    dataset: Dict[Source, pd.DataFrame],
+    prediction: TargetDict,
+    instance_id: str,
+    data_id: str,
+    secretfile: str,
+    connection: Optional[Any] = None,
+    logger: Logger = get_logger("update-predictions"),
+) -> None:
+    """For each source (except satellite), join the dataset with prediction
+    on space-time columns, then create a Result object which writes to the DB
+
+    Args:
+        dataset: Keys are sources (LAQN, hexgrid) and values are dataframes
+        prediction: For each source and each pollutant is a predicted mean and variance
+        instance_id: The ID of the instance
+        data_id: The ID of the dataset
+        secretfile: The location of your database secrets
+        connection: Connection object for database
+    """
+
+    for source, dataframe in dataset.items():
+        logger.info("Writing %s results for instance %s.", source, instance_id)
+        if source == Source.satellite:
+            continue
+        pred_df = ModelDataExtractor.join_forecast_on_dataframe(
+            dataframe, prediction[source]
+        )
+        pred_df["point_id"] = pred_df.point_id.apply(str)
+        result = AirQualityResult(
+            instance_id, data_id, pred_df, secretfile=secretfile, connection=connection
+        )
+        result.update_remote_tables()
 
 
 def construct_feature_name(buffer_size, feature):

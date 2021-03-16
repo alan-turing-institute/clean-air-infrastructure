@@ -1,11 +1,14 @@
 """Setup, run and update experiments"""
 
+import logging
 from typing import Callable, List, Optional
 from pathlib import Path
 import typer
 from ....experiment import (
+    ExperimentMixin,
     RunnableAirQualityExperiment,
     SetupAirQualityExperiment,
+    UpdateAirQualityExperiment,
     generate_air_quality_experiment,
 )
 from ....mixins import InstanceMixin
@@ -14,6 +17,16 @@ from ..state import state
 from ....types import ExperimentName
 
 app = typer.Typer(help="Experiment CLI")
+
+
+@app.command()
+def size(experiment_name: ExperimentName, experiment_root: Path = ExperimentDir) -> int:
+    """Number of instances in experiment is the size"""
+    logging.disable(logging.CRITICAL)  # turn off logging
+    size_experiment = ExperimentMixin(experiment_name, experiment_root)
+    experiment_config = size_experiment.read_experiment_config_from_json()
+    size_experiment.add_instances_from_file(experiment_config.instance_id_list)
+    print(size_experiment.get_num_instances())
 
 
 @app.command()
@@ -111,4 +124,11 @@ def update(
     experiment_name: ExperimentName, experiment_root: Path = ExperimentDir
 ) -> None:
     """Update experiment results to database"""
-    raise NotImplementedError("Coming soon")
+    secretfile: str = state["secretfile"]
+    update_experiment = UpdateAirQualityExperiment(
+        experiment_name, experiment_root, secretfile=secretfile
+    )
+    experiment_config = update_experiment.read_experiment_config_from_json()
+    update_experiment.add_instances_from_file(experiment_config.instance_id_list)
+    update_experiment.update_remote_tables()
+    update_experiment.update_result_tables()
