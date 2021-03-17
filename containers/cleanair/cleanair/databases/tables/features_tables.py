@@ -84,11 +84,12 @@ class DynamicFeature(Base):
         TIMESTAMP, primary_key=True, nullable=False, index=True
     )
     feature_name = Column(String(50), primary_key=True, nullable=False)
-    value_1000 = Column(Float, nullable=False)
-    value_500 = Column(Float, nullable=False)
-    value_200 = Column(Float, nullable=False)
-    value_100 = Column(Float, nullable=False)
-    value_10 = Column(Float, nullable=False)
+    value_1000 = Column(Float, nullable=False, default=0.0)
+    value_500 = Column(Float, nullable=False, default=0.0)
+    value_200 = Column(Float, nullable=False, default=0.0)
+    value_100 = Column(Float, nullable=False, default=0.0)
+    value_10 = Column(Float, nullable=False, default=0.0)
+    value_const = Column(Float, nullable=False, default=0.0)
 
     # Create DynamicFeature.point with no reverse relationship
     point = relationship("MetaPoint")

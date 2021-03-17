@@ -42,7 +42,7 @@ class DBWriter(DBInteractor):
 
         if isinstance(records, SUBQUERY_TYPE):
             select_stmt = records.select()
-            columns = inspect(table).columns
+            columns = inspect(select_stmt).columns
             insert_stmt = insert(table).from_select(columns, select_stmt)
         elif isinstance(records, list):
             if isinstance(records[0], Base):

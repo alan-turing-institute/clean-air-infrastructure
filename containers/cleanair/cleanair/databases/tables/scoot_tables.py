@@ -185,3 +185,25 @@ class ScootRoadReading(Base):
         cols = [c.name for c in self.__table__.columns]
         vals = ["{}='{}'".format(column, getattr(self, column)) for column in cols]
         return "<ScootRoadForecast(" + ", ".join(vals) + ")>"
+
+
+# class PointScootMap(Base):
+#     """Table of road segments mapped to interest points"""
+#
+#     __tablename__ = "point_scoot_map"
+#     __table_args__ = {"schema": "interest_points"}
+#
+#     point_id = Column(ForeignKey("interest_points.meta_point.id"))
+#     sensor_id = Column(ForeignKey("interest_points.scoot_detector.detector_n"))
+#     map_datetime = Column(DateTime)
+#
+#     road_point_pk = PrimaryKeyConstraint(point_id, sensor_id)
+#     point_index = Index(point_id)
+#
+#
+#     def __repr__(self):
+#         return f"<point_scoot_map("\
+#                f" point_id: {self.point_id}," \
+#                f" sensor_id: {self.sensor_id}" \
+#                f" time: {self.map_datetime}" \
+#                f")>"
