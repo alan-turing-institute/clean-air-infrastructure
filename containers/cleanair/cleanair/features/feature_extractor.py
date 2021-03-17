@@ -1,19 +1,20 @@
 """
 Feature extraction Base  class
 """
-from typing import List
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import timedelta
 from math import ceil
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from typing import List
+
+import numpy as np
 from dateutil.parser import isoparse
 from sqlalchemy import func, literal, or_, case, column, String, text
-from sqlalchemy.sql.expression import join, True_, null, literal_column
 from sqlalchemy.sql.selectable import Alias as SUBQUERY_TYPE
-from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION
-from sqlalchemy import bindparam
-import numpy as np
+
+from .feature_conf import FEATURE_CONFIG_DYNAMIC
 from ..databases import DBWriter
+from ..databases.base import Values
 from ..databases.tables import (
     StaticFeature,
     DynamicFeature,
@@ -25,12 +26,10 @@ from ..databases.tables import (
     ScootReading,
     ScootDetector,
 )
-from ..mixins.availability_mixins import StaticFeatureAvailabilityMixin
 from ..decorators import db_query
-from ..mixins import DBQueryMixin, DateRangeMixin
 from ..loggers import duration, green, red, get_logger
-from ..databases.base import Values
-from .feature_conf import FEATURE_CONFIG_DYNAMIC
+from ..mixins import DBQueryMixin, DateRangeMixin
+from ..mixins.availability_mixins import StaticFeatureAvailabilityMixin
 from ..types.enum_types import Source
 
 ONE_HOUR_INTERVAL = text("interval '1 hour'")
