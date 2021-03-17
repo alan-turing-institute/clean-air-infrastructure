@@ -148,7 +148,9 @@ class ScootFeatureExtractor(DateRangeMixin, DBWriter, FeatureExtractorMixin):
             )
 
     @db_query()
-    def generate_scoot_features(self, point_ids: List[str], start_datetime: str, end_datetime: str):
+    def generate_scoot_features(
+        self, point_ids: List[str], start_datetime: str, end_datetime: str
+    ):
 
         with self.dbcnxn.open_session() as session:
 
@@ -163,58 +165,70 @@ class ScootFeatureExtractor(DateRangeMixin, DBWriter, FeatureExtractorMixin):
 
                 print(agg_func)
 
-                points = session.query(
-                    MetaPoint.id.label('point_id'),
-                    MetaPoint.location.label('point_location')
-                ).filter(
-                    MetaPoint.id.in_(point_ids)
-                ).subquery().lateral()
+                points = (
+                    session.query(
+                        MetaPoint.id.label("point_id"),
+                        MetaPoint.location.label("point_location"),
+                    )
+                    .filter(MetaPoint.id.in_(point_ids))
+                    .subquery()
+                    .lateral()
+                )
 
-                nearest_detectors = session.query(
-                    MetaPoint.id.label('detector_id'),
-                    MetaPoint.location.label('detector_location')
-                ).filter(
-                    MetaPoint.source == 'scoot'
-                ).order_by(
-                    func.ST_Distance(points.c.point_location, MetaPoint.location)
-                ).limit(
-                    5
-                ).subquery().lateral()
+                nearest_detectors = (
+                    session.query(
+                        MetaPoint.id.label("detector_id"),
+                        MetaPoint.location.label("detector_location"),
+                    )
+                    .filter(MetaPoint.source == "scoot")
+                    .order_by(
+                        func.ST_Distance(points.c.point_location, MetaPoint.location)
+                    )
+                    .limit(5)
+                    .subquery()
+                    .lateral()
+                )
 
-                maps = session.query(points.join(nearest_detectors, literal(True))).subquery()
+                maps = session.query(
+                    points.join(nearest_detectors, literal(True))
+                ).subquery()
 
                 distances = session.query(
                     maps.c.point_id.label("point_id"),
                     maps.c.detector_id.label("detector_id"),
-                    func.ST_Distance(func.Geography(maps.c.point_location), func.Geography(maps.c.detector_location)).label("distance")
+                    func.ST_Distance(
+                        func.Geography(maps.c.point_location),
+                        func.Geography(maps.c.detector_location),
+                    ).label("distance"),
                 ).subquery()
 
-                q = session.query(
-                    distances.c.point_id.label("point_id"),
-                    ScootForecast.measurement_start_utc.label("measurement_start_utc"),
-                    func.coalesce(
-                        agg_func(ScootForecast.n_vehicles_in_interval),
-                        0.0
-                    ).label("value_const"),
-                    literal(feature_name).label("feature_name")
-                ).join(
-                    ScootDetector, ScootDetector.point_id == distances.c.detector_id
-                ).join(
-                    ScootForecast, ScootForecast.detector_id == ScootDetector.detector_n
-                ).filter(
-                    distances.c.distance < 1000
-                ).filter(
-                    ScootForecast.measurement_start_utc > start_datetime
-                ).filter(
-                    ScootForecast.measurement_start_utc <= end_datetime
-                ).group_by(
-                    distances.c.point_id, ScootForecast.measurement_start_utc
+                q = (
+                    session.query(
+                        distances.c.point_id.label("point_id"),
+                        ScootForecast.measurement_start_utc.label(
+                            "measurement_start_utc"
+                        ),
+                        func.coalesce(
+                            agg_func(ScootForecast.n_vehicles_in_interval), 0.0
+                        ).label("value_const"),
+                        literal(feature_name).label("feature_name"),
+                    )
+                    .join(
+                        ScootDetector, ScootDetector.point_id == distances.c.detector_id
+                    )
+                    .join(
+                        ScootForecast,
+                        ScootForecast.detector_id == ScootDetector.detector_n,
+                    )
+                    .filter(distances.c.distance < 1000)
+                    .filter(ScootForecast.measurement_start_utc > start_datetime)
+                    .filter(ScootForecast.measurement_start_utc <= end_datetime)
+                    .group_by(distances.c.point_id, ScootForecast.measurement_start_utc)
                 )
 
                 all_queries.append(q)
 
             return all_queries[0].union(*all_queries[1:])
-
 
     @db_query()
     def get_scoot_feature_availability(
