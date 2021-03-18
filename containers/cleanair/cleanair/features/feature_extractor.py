@@ -9,7 +9,7 @@ from typing import List
 
 import numpy as np
 from dateutil.parser import isoparse
-from sqlalchemy import func, literal, or_, case, column, String, text
+from sqlalchemy import func, literal, or_, and_, case, column, String, text
 from sqlalchemy.sql.selectable import Alias as SUBQUERY_TYPE
 
 from .feature_conf import FEATURE_CONFIG_DYNAMIC
@@ -20,8 +20,6 @@ from ..databases.tables import (
     DynamicFeature,
     UKMap,
     MetaPoint,
-    OSHighway,
-    ScootRoadMatch,
     ScootForecast,
     ScootReading,
     ScootDetector,
@@ -151,6 +149,7 @@ class ScootFeatureExtractor(DateRangeMixin, DBWriter, FeatureExtractorMixin):
     def generate_scoot_features(
         self, point_ids: List[str], start_datetime: str, end_datetime: str
     ):
+        """Generated scoot features for a set of points (no buffer used)"""
 
         with self.dbcnxn.open_session() as session:
 
@@ -158,9 +157,6 @@ class ScootFeatureExtractor(DateRangeMixin, DBWriter, FeatureExtractorMixin):
             for feature in self.features:
 
                 feature_name = feature.value
-                column_name = list(
-                    self.feature_map[feature.value]["feature_dict"].keys()
-                )[0]
                 agg_func = self.feature_map[feature.value]["aggfunc"]
 
                 print(agg_func)
@@ -202,7 +198,7 @@ class ScootFeatureExtractor(DateRangeMixin, DBWriter, FeatureExtractorMixin):
                     ).label("distance"),
                 ).subquery()
 
-                q = (
+                readings = (
                     session.query(
                         distances.c.point_id.label("point_id"),
                         ScootForecast.measurement_start_utc.label(
@@ -226,7 +222,7 @@ class ScootFeatureExtractor(DateRangeMixin, DBWriter, FeatureExtractorMixin):
                     .group_by(distances.c.point_id, ScootForecast.measurement_start_utc)
                 )
 
-                all_queries.append(q)
+                all_queries.append(readings)
 
             return all_queries[0].union(*all_queries[1:])
 
