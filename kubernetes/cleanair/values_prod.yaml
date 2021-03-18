@@ -8,15 +8,14 @@ jobs:
 cronjobs:
 
   - name: static-features-oshighway
-      schedule: "0 0 * * *"
-      concurrencyPolicy: Allow
-      restartPolicy: OnFailure
-      failedJobsHistoryLimit: 10
+    schedule: "0 0 * * *"
+    concurrencyPolicy: Allow
+    restartPolicy: OnFailure
+    failedJobsHistoryLimit: 10
     image:
       repository: cleanairdocker.azurecr.io/cleanair
       imagePullPolicy: Always
     args: [ "urbanair", "--secretfile", "db_secrets.json", "features", "static", "oshighway", "fill", "--insert-method", "missing", "--source", "laqn", "--source", "aqe", "--source", "hexgrid" ]
-    restartPolicy: OnFailure
     volumeMounts:
       - name: secrets
         mountPath: "/secrets/"
@@ -29,15 +28,14 @@ cronjobs:
       - name: regcred
 
   - name: static-features-ukmap
-      schedule: "0 0 * * *"
-      concurrencyPolicy: Allow
-      restartPolicy: OnFailure
-      failedJobsHistoryLimit: 10
+    schedule: "0 0 * * *"
+    concurrencyPolicy: Allow
+    restartPolicy: OnFailure
+    failedJobsHistoryLimit: 10
     image:
       repository: cleanairdocker.azurecr.io/cleanair
       imagePullPolicy: Always
     args: [ "urbanair", "--secretfile", "db_secrets.json", "features", "static", "ukmap", "fill", "--insert-method", "missing",  "--source", "laqn", "--source", "aqe", "--source", "hexgrid" ]
-    restartPolicy: OnFailure
     volumeMounts:
       - name: secrets
         mountPath: "/secrets/"
@@ -50,15 +48,14 @@ cronjobs:
       - name: regcred
 
   - name: static-features-street-canyon
-      schedule: "0 0 * * *"
-      concurrencyPolicy: Allow
-      restartPolicy: OnFailure
-      failedJobsHistoryLimit: 10
+    schedule: "0 0 * * *"
+    concurrencyPolicy: Allow
+    restartPolicy: OnFailure
+    failedJobsHistoryLimit: 10
     image:
       repository: cleanairdocker.azurecr.io/cleanair
       imagePullPolicy: Always
     args: [ "urbanair", "--secretfile", "db_secrets.json", "features", "static", "streetcanyon", "--insert-method", "missing",  "fill", "--source", "laqn", "--source", "aqe", "--source", "hexgrid" ]
-    restartPolicy: OnFailure
     volumeMounts:
       - name: secrets
         mountPath: "/secrets/"
