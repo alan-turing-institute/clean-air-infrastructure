@@ -159,8 +159,6 @@ class ScootFeatureExtractor(DateRangeMixin, DBWriter, FeatureExtractorMixin):
                 feature_name = feature.value
                 agg_func = self.feature_map[feature.value]["aggfunc"]
 
-                print(agg_func)
-
                 points = (
                     session.query(
                         MetaPoint.id.label("point_id"),
@@ -280,7 +278,7 @@ class ScootFeatureExtractor(DateRangeMixin, DBWriter, FeatureExtractorMixin):
             )
 
             # Expected data
-            expected_data = session.query(
+            expected_data = session.query (
                 expected_values, expected_date_times
             ).subquery()
 
@@ -362,65 +360,21 @@ class ScootFeatureExtractor(DateRangeMixin, DBWriter, FeatureExtractorMixin):
             self.logger.info("No interest points require processing")
             return
 
-        n_point_ids = len(missing_point_ids)
-        batch_size = self.batch_size
-        n_batches = ceil(n_point_ids / min(batch_size, n_point_ids))
+        self.logger.info(f"Generating features for {len(missing_point_ids)} points..")
 
-        self.logger.info(
-            "Processing %s interest points from sources %s in %s batches of max size %s",
-            n_point_ids,
-            [src.value for src in self.sources],
-            n_batches,
-            batch_size,
+        sq_select_and_insert = self.generate_scoot_features(
+            point_ids=missing_point_ids,
+            start_datetime=self.start_datetime.isoformat(),
+            end_datetime=self.end_datetime.isoformat(),
+            output_type="subquery",
         )
 
-        missing_point_id_batches = np.array_split(missing_point_ids, n_batches)
-
-        def process_batch(
-            point_id_batch, batch_i, n_batches, start_datetime, end_datetime
-        ):
-
-            self.logger.info("Processing batch %s of %s", batch_i, n_batches)
-
-            sq_select_and_insert = self.generate_scoot_features(
-                point_ids=point_id_batch.tolist(),
-                start_datetime=start_datetime.isoformat(),
-                end_datetime=end_datetime.isoformat(),
-                output_type="subquery",
-            )
-
-            self.commit_records(
-                sq_select_and_insert, on_conflict="overwrite", table=self.output_table
-            )
-
-            self.logger.info("Batch %s finished", batch_i)
-
-        with ThreadPoolExecutor(max_workers=self.n_workers) as executor:
-            self.logger.info(
-                "Processing %s on %s database cores", n_batches, self.n_workers
-            )
-            threads = []
-            for batch_no, point_id_batch in enumerate(
-                missing_point_id_batches, start=1
-            ):
-                threads.append(
-                    executor.submit(
-                        process_batch,
-                        point_id_batch=point_id_batch,
-                        batch_i=batch_no,
-                        n_batches=n_batches,
-                        start_datetime=self.start_datetime,
-                        end_datetime=self.end_datetime,
-                    )
-                )
-
-            for thread in as_completed(threads):
-                thread.result()
-
-        self.logger.info(
-            "Finished adding records after %s",
-            green(duration(update_start, time.time())),
+        self.commit_records(
+            sq_select_and_insert, on_conflict="overwrite", table=self.output_table
         )
+
+        self.logger.info(f"Done in {time.time()-update_start:.2f}s")
+
 
 
 class FeatureExtractor(
