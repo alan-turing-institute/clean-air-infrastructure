@@ -2,14 +2,13 @@
 Feature extraction Base  class
 """
 import time
-from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import timedelta
 from math import ceil
 from typing import List
 
 import numpy as np
 from dateutil.parser import isoparse
-from sqlalchemy import func, literal, or_, and_, case, column, String, text
+from sqlalchemy import func, literal, or_, and_, case, column, String, text, null, Float
 from sqlalchemy.sql.selectable import Alias as SUBQUERY_TYPE
 
 from .feature_conf import FEATURE_CONFIG_DYNAMIC
@@ -202,10 +201,15 @@ class ScootFeatureExtractor(DateRangeMixin, DBWriter, FeatureExtractorMixin):
                         ScootForecast.measurement_start_utc.label(
                             "measurement_start_utc"
                         ),
+                        literal(feature_name).label("feature_name"),
+                        null().label("value_1000").cast(Float),
+                        null().label("value_500").cast(Float),
+                        null().label("value_200").cast(Float),
+                        null().label("value_100").cast(Float),
+                        null().label("value_10").cast(Float),
                         func.coalesce(
                             agg_func(ScootForecast.n_vehicles_in_interval), 0.0
-                        ).label("value_const"),
-                        literal(feature_name).label("feature_name"),
+                        ).label("value_const").cast(Float),
                     )
                     .join(
                         ScootDetector, ScootDetector.point_id == distances.c.detector_id
