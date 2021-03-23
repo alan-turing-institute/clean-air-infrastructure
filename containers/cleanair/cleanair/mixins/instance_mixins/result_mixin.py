@@ -1,8 +1,10 @@
 """Mixin class for predictions from a model."""
 
+from logging import Logger
 from typing import Optional
 import pandas as pd
 from sqlalchemy import inspect
+from ...loggers import get_logger
 from ..query_mixins import ResultQueryMixin
 
 
@@ -21,11 +23,13 @@ class ResultMixin(ResultQueryMixin):  # pylint: disable=abstract-method
         data_id: str,
         result_df: Optional[pd.DataFrame] = None,
         secretfile: Optional[str] = None,
+        logger: Logger = get_logger("result"),
         **kwargs,
     ):
         super().__init__(secretfile=secretfile, **kwargs)
         self.instance_id = instance_id
         self.data_id = data_id
+        self.logger = logger
         if not result_df is None:
             self.result_df = result_df
             if "instance_id" not in self.result_df:
@@ -48,4 +52,7 @@ class ResultMixin(ResultQueryMixin):  # pylint: disable=abstract-method
         ].to_dict("records")
 
         # commit the records to the air quality results table
+        self.logger.info(
+            "Writing %s records to the air quality result table", len(records)
+        )
         self.commit_records(records, table=self.result_table, on_conflict="ignore")
