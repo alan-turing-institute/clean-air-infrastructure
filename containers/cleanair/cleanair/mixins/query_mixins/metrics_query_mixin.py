@@ -1,6 +1,5 @@
 """Queries for metrics"""
 
-from sqlalchemy import func
 from ...databases import DBReader
 from ...databases.tables import (
     AirQualityDataTable,
@@ -9,9 +8,7 @@ from ...databases.tables import (
     AirQualityResultTable,
     AirQualitySpatialMetricsTable,
     AirQualityTemporalMetricsTable,
-    HexGrid,
     MetaPoint,
-    RectGrid100,
 )
 from ...decorators import db_query
 from . import InstanceQueryMixin, ResultQueryMixin

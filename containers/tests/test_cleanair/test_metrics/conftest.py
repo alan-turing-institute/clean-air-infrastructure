@@ -75,10 +75,13 @@ def result_df(
 ) -> pd.DataFrame:
     """A dataframe of predictions for the mean and variance."""
     point_array = []
+    timestamp_array = []
     for pid in point_ids:
         point_array.extend(np.repeat(str(pid), len(timestamps)).tolist())
+        timestamp_array.extend(timestamps)
     dframe = pd.DataFrame()
-    dframe["measurement_start_utc"] = np.repeat(timestamps, len(point_ids))
+    # dframe["measurement_start_utc"] = np.repeat(timestamps, len(point_ids))
+    dframe["measurement_start_utc"] = timestamp_array
     print("len of time vs points:", len(dframe.measurement_start_utc), len(point_array))
     dframe["point_id"] = point_array
     dframe["NO2_mean"] = 2 * np.ones(num_training_data_points)
