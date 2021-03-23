@@ -202,14 +202,21 @@ class ScootFeatureExtractor(DateRangeMixin, DBWriter, FeatureExtractorMixin):
                             "measurement_start_utc"
                         ),
                         literal(feature_name).label("feature_name"),
-                        null().label("value_1000").cast(Float),
-                        null().label("value_500").cast(Float),
-                        null().label("value_200").cast(Float),
-                        null().label("value_100").cast(Float),
-                        null().label("value_10").cast(Float),
                         func.coalesce(
                             agg_func(ScootForecast.n_vehicles_in_interval), 0.0
-                        ).label("value_const").cast(Float),
+                        ).label("value_1000").cast(Float),
+                        func.coalesce(
+                            agg_func(ScootForecast.n_vehicles_in_interval), 0.0
+                        ).label("value_500").cast(Float),
+                        func.coalesce(
+                            agg_func(ScootForecast.n_vehicles_in_interval), 0.0
+                        ).label("value_200").cast(Float),
+                        func.coalesce(
+                            agg_func(ScootForecast.n_vehicles_in_interval), 0.0
+                        ).label("value_100").cast(Float),
+                        func.coalesce(
+                            agg_func(ScootForecast.n_vehicles_in_interval), 0.0
+                        ).label("value_10").cast(Float),
                     )
                     .join(
                         ScootDetector, ScootDetector.point_id == distances.c.detector_id
@@ -218,7 +225,6 @@ class ScootFeatureExtractor(DateRangeMixin, DBWriter, FeatureExtractorMixin):
                         ScootForecast,
                         ScootForecast.detector_id == ScootDetector.detector_n,
                     )
-                    .filter(distances.c.distance < 1000)
                     .filter(ScootForecast.measurement_start_utc > start_datetime)
                     .filter(ScootForecast.measurement_start_utc <= end_datetime)
                     .group_by(distances.c.point_id, ScootForecast.measurement_start_utc)
@@ -282,7 +288,7 @@ class ScootFeatureExtractor(DateRangeMixin, DBWriter, FeatureExtractorMixin):
             )
 
             # Expected data
-            expected_data = session.query (
+            expected_data = session.query(
                 expected_values, expected_date_times
             ).subquery()
 

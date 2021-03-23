@@ -64,7 +64,6 @@ class DynamicFeatureNames(str, Enum):
 @unique
 class FeatureBufferSize(str, Enum):
     "Buffer sizes"
-    const = "const"
     one_thousand = 1000
     five_hundred = 500
     two_hundred = 200
