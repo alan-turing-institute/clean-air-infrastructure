@@ -73,12 +73,7 @@ class TestModelData:
 
     @pytest.mark.parametrize("source", [Source.laqn, Source.aqe, Source.satellite])
     def test_select_static_features_config(
-        self,
-        model_data,
-        point_ids_all,
-        point_ids_valid,
-        valid_full_config,
-        source,
+        self, model_data, point_ids_all, point_ids_valid, valid_full_config, source,
     ):
         """
         Test that we get the correct static features.
@@ -170,12 +165,7 @@ class TestModelData:
         "species", [[Species.NO2], [Species.PM10], [Species.NO2, Species.PM10]]
     )
     def test_get_training_data_inputs(
-        self,
-        model_data,
-        valid_full_config,
-        source,
-        species,
-        lookup_sensor_reading,
+        self, model_data, valid_full_config, source, species, lookup_sensor_reading,
     ):
 
         # Id's from config file

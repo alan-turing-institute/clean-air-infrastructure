@@ -19,7 +19,6 @@ class TestDataConfig:
     def test_setup(self, fake_cleanair_dataset):
         """Insert test data"""
 
-
     def test_generate_config(self, model_config):
 
         try:
@@ -110,7 +109,6 @@ class TestDataConfig:
             valid_config.pred_end_date,
         )
 
-
         class FakeFeature(str, Enum):
 
             fake_feature = "fake_feature"
@@ -147,9 +145,7 @@ class TestDataConfig:
         "Check all validations pass"
         model_config.validate_config(valid_config)
 
-    def test_get_interest_point_ids_open_laqn(
-        self, model_config, laqn_sites_open
-    ):
+    def test_get_interest_point_ids_open_laqn(self, model_config, laqn_sites_open):
         "Check we get all interest points"
 
         # Check we get all open sites and not any closed sites
@@ -231,9 +227,14 @@ class TestDataConfig:
             full_config = model_config.generate_full_config(valid_config)
 
             for source in [Source.laqn, Source.aqe]:
-                assert full_config.train_interest_points[source] == [
-                    i for i in meta_within_london if i.source == source.value
+                point_id_in_london = [
+                    str(i.id) for i in meta_within_london if i.source == source.value
                 ]
+                assert isinstance(full_config.train_interest_points[source][0], str)
+                assert isinstance(point_id_in_london[0], str)
+                assert set(full_config.train_interest_points[source]) == set(
+                    point_id_in_london
+                )
 
         except ValidationError:
             pytest.raises("Full config failed")

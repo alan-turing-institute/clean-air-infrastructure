@@ -6,7 +6,6 @@ import numpy as np
 from cleanair.types import FeaturesDict, Source, TargetDict
 
 
-
 @pytest.fixture(scope="function")
 def satellite_x_train() -> FeaturesDict:
     """Training dictionary."""
@@ -50,7 +49,6 @@ def point_ids_invalid(meta_within_london_closed):
         return [i.id for i in meta_within_london_closed if i.source == source]
 
     return _point_ids_valid
-
 
 
 def unique_filter(lam, iterator):

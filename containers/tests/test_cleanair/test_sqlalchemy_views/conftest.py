@@ -23,6 +23,7 @@ def my_view():
 
     return MyView
 
+
 @pytest.fixture()
 def londonView():
     return LondonBoundaryView

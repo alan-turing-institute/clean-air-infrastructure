@@ -48,6 +48,7 @@ def test_refresh_materialised_view(secretfile, connection, londonView):
 
         assert result.geom is not None
 
+
 def test_materialised_view_not_persisted(secretfile, connection):
     """Check that materialized view isnt persisted during tests
     
