@@ -15,7 +15,7 @@ cronjobs:
     image:
       repository: cleanairdocker.azurecr.io/cleanair
       imagePullPolicy: Always
-    args: [ "urbanair", "--secretfile", "db_secrets.json", "features", "static", "oshighway", "fill", "--insert-method", "missing", "--source", "laqn", "--source", "aqe", "--source", "hexgrid" ]
+    args: [ "urbanair", "--secretfile", "db_secrets.json", "features", "static", "oshighway", "fill", "--insert-method", "missing", "--source", "laqn", "--source", "aqe", "--source", "hexgrid", "--source", "satellite"]
     volumeMounts:
       - name: secrets
         mountPath: "/secrets/"
@@ -35,7 +35,7 @@ cronjobs:
     image:
       repository: cleanairdocker.azurecr.io/cleanair
       imagePullPolicy: Always
-    args: [ "urbanair", "--secretfile", "db_secrets.json", "features", "static", "ukmap", "fill", "--insert-method", "missing",  "--source", "laqn", "--source", "aqe", "--source", "hexgrid" ]
+    args: [ "urbanair", "--secretfile", "db_secrets.json", "features", "static", "ukmap", "fill", "--insert-method", "missing",  "--source", "laqn", "--source", "aqe", "--source", "hexgrid", "--source", "satellite"]
     volumeMounts:
       - name: secrets
         mountPath: "/secrets/"
@@ -55,7 +55,7 @@ cronjobs:
     image:
       repository: cleanairdocker.azurecr.io/cleanair
       imagePullPolicy: Always
-    args: [ "urbanair", "--secretfile", "db_secrets.json", "features", "static", "streetcanyon", "--insert-method", "missing",  "fill", "--source", "laqn", "--source", "aqe", "--source", "hexgrid" ]
+    args: [ "urbanair", "--secretfile", "db_secrets.json", "features", "static", "streetcanyon", "--insert-method", "missing",  "fill", "--source", "laqn", "--source", "aqe", "--source", "hexgrid", "--source", "satellite"]
     volumeMounts:
       - name: secrets
         mountPath: "/secrets/"
