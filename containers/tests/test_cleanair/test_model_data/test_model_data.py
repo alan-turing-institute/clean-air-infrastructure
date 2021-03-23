@@ -17,7 +17,7 @@ get_satellite_readings
 """
 
 import uuid
-from datetime import timedelta, datetime, time
+from datetime import timedelta
 from itertools import product
 
 import pytest
@@ -26,113 +26,9 @@ from dateutil import rrule
 from pydantic import ValidationError
 
 
-def unique_filter(lam, iter):
-    "A filter that should return a single item or raise a ValueError"
-    x = filter(lam, iter)
-    val = next(x, None)
-
-    if val and not next(x, None):
-        return val
-
-    raise ValueError("Filter did not return exactly on item")
-
-
-@pytest.fixture()
-def point_ids_all(meta_records):
-    "Return a function which gets all points ids for a given source"
-
-    def _point_ids_all(source):
-        return [i.id for i in meta_records if i.source == source]
-
-    return _point_ids_all
-
-
-@pytest.fixture()
-def point_ids_valid(meta_within_london):
-    "All laqn points for sites that are open and in London"
-
-    def _point_ids_valid(source):
-        return [i.id for i in meta_within_london if i.source == source]
-
-    return _point_ids_valid
-
-
-@pytest.fixture()
-def point_ids_invalid(meta_within_london_closed):
-    "A sample of invalid interest points (i.e. they are within london by closed"
-
-    def _point_ids_valid(source):
-        return [i.id for i in meta_within_london_closed if i.source == source]
-
-    return _point_ids_valid
-
-
-@pytest.fixture()
-def lookup_sensor_reading(
-    meta_records,
-    laqn_site_records,
-    laqn_reading_records,
-    aqe_site_records,
-    aqe_reading_records,
-    satellite_meta_point_and_box_records,
-    satellite_forecast,
-):
-    def _lookup_sensor_reading(point_id, measurement_start_utc, species):
-
-        source = unique_filter(lambda x: x.id == point_id, meta_records).source
-
-        if source == Source.laqn.value:
-
-            site_records = laqn_site_records
-            reading_records = laqn_reading_records
-
-        elif source == Source.aqe.value:
-
-            site_records = aqe_site_records
-            reading_records = aqe_reading_records
-
-        elif source == Source.satellite:
-
-            reference_start_utc = datetime.combine(
-                measurement_start_utc.date(), time.min
-            )
-
-            box_id = unique_filter(
-                lambda x: x.point_id == point_id,
-                satellite_meta_point_and_box_records[1],
-            ).box_id
-
-            record = unique_filter(
-                lambda x: (x.reference_start_utc == reference_start_utc)
-                and (x.measurement_start_utc == measurement_start_utc)
-                and (x.species_code == species)
-                and (x.box_id == box_id),
-                satellite_forecast,
-            )
-
-            return record.value
-
-        source_record = unique_filter(lambda x: x.point_id == point_id, site_records)
-
-        record = unique_filter(
-            lambda x: (
-                (source_record.site_code == x.site_code)
-                and (measurement_start_utc == x.measurement_start_utc)
-                and (species.value == x.species_code)
-            ),
-            reading_records,
-        )
-
-        return record.value
-
-    return _lookup_sensor_reading
-
-
 class TestModelData:
     def test_setup(self, fake_cleanair_dataset):
         """Insert test data"""
-
-        pass
 
     def test_select_static_features(self, model_data, point_ids_valid):
 
@@ -181,7 +77,7 @@ class TestModelData:
         model_data,
         point_ids_all,
         point_ids_valid,
-        valid_full_config_dataset,
+        valid_full_config,
         source,
     ):
         """
@@ -191,7 +87,7 @@ class TestModelData:
         """
 
         # Id's from config file
-        config_ids = valid_full_config_dataset.train_interest_points[source]
+        config_ids = valid_full_config.train_interest_points[source]
 
         # Request static features
         dat = model_data.select_static_features(
@@ -220,7 +116,7 @@ class TestModelData:
         "species", [[Species.NO2], [Species.PM10], [Species.NO2, Species.PM10]]
     )
     def test_select_static_time_species(
-        self, model_data, valid_full_config_dataset, point_ids_valid, source, species
+        self, model_data, valid_full_config, source, species
     ):
         """
         Test that we can cross join ModelData.select_static_features
@@ -228,9 +124,9 @@ class TestModelData:
         """
 
         # Id's from config file
-        config_ids = valid_full_config_dataset.train_interest_points[source]
-        start_datetime = valid_full_config_dataset.train_start_date
-        end_datetime = valid_full_config_dataset.train_end_date
+        config_ids = valid_full_config.train_interest_points[source]
+        start_datetime = valid_full_config.train_start_date
+        end_datetime = valid_full_config.train_end_date
 
         features = [StaticFeatureNames.building_height, StaticFeatureNames.grass]
 
@@ -276,17 +172,16 @@ class TestModelData:
     def test_get_training_data_inputs(
         self,
         model_data,
-        valid_full_config_dataset,
-        point_ids_valid,
+        valid_full_config,
         source,
         species,
         lookup_sensor_reading,
     ):
 
         # Id's from config file
-        config_ids = valid_full_config_dataset.train_interest_points[source]
-        start_datetime = valid_full_config_dataset.train_start_date
-        end_datetime = valid_full_config_dataset.train_end_date
+        config_ids = valid_full_config.train_interest_points[source]
+        start_datetime = valid_full_config.train_start_date
+        end_datetime = valid_full_config.train_end_date
 
         features = [StaticFeatureNames.building_height, StaticFeatureNames.grass]
 

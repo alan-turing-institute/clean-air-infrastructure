@@ -20,13 +20,14 @@ class TestSVGP:
     def test_setup(self, fake_cleanair_dataset):
         pass
 
+    # pylint: disable=unused-argument
     def test_svgp_training(
         self, tf_session, svgp_model_params, laqn_training_data, laqn_full_config
     ) -> None:
         """Test the SVGP trains."""
         model_data = ModelDataExtractor()
         model = SVGP(svgp_model_params)
-        X_train, Y_train, index_train = model_data.get_data_arrays(
+        X_train, Y_train, _ = model_data.get_data_arrays(
             laqn_full_config, laqn_training_data, prediction=False,
         )
         model.fit(X_train, Y_train)

@@ -19,7 +19,6 @@ class TestDataConfig:
     def test_setup(self, fake_cleanair_dataset):
         """Insert test data"""
 
-        pass
 
     def test_generate_config(self, model_config):
 
@@ -105,14 +104,12 @@ class TestDataConfig:
         )
 
         # Check feature availability doesn't raise an error
-        try:
-            model_config.check_static_features_available(
-                valid_config.static_features,
-                valid_config.train_start_date,
-                valid_config.pred_end_date,
-            )
-        except Exception:
-            pytest.fail("Unexpected error")
+        model_config.check_static_features_available(
+            valid_config.static_features,
+            valid_config.train_start_date,
+            valid_config.pred_end_date,
+        )
+
 
         class FakeFeature(str, Enum):
 
@@ -136,14 +133,8 @@ class TestDataConfig:
         )
 
         # Check source availability doesn't raise an error
-        try:
-            model_config.check_sources_available(valid_config.train_sources)
-        except Exception:
-            pytest.fail("Unexpected error")
-        try:
-            model_config.check_sources_available(valid_config.pred_sources)
-        except Exception:
-            pytest.fail("Unexpected error")
+        model_config.check_sources_available(valid_config.train_sources)
+        model_config.check_sources_available(valid_config.pred_sources)
 
         class FakeSource(str, Enum):
             fake_source = "fake_source"
@@ -154,14 +145,10 @@ class TestDataConfig:
 
     def test_validate_config(self, valid_config, model_config):
         "Check all validations pass"
-
-        try:
-            model_config.validate_config(valid_config)
-        except Exception:
-            pytest.raises("Unexpected error")
+        model_config.validate_config(valid_config)
 
     def test_get_interest_point_ids_open_laqn(
-        self, valid_config, model_config, laqn_sites_open
+        self, model_config, laqn_sites_open
     ):
         "Check we get all interest points"
 
@@ -175,7 +162,7 @@ class TestDataConfig:
         }
 
     def test_get_interest_point_ids_open_laqn_within_london(
-        self, valid_config, model_config, meta_within_london
+        self, model_config, meta_within_london
     ):
         "Check we get all interest points"
 
@@ -244,7 +231,7 @@ class TestDataConfig:
             full_config = model_config.generate_full_config(valid_config)
 
             for source in [Source.laqn, Source.aqe]:
-                full_config.train_interest_points[source] == [
+                assert full_config.train_interest_points[source] == [
                     i for i in meta_within_london if i.source == source.value
                 ]
 

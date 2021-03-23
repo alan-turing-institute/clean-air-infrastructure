@@ -7,7 +7,6 @@ from pathlib import Path
 import pytest
 import numpy as np
 import pandas as pd
-import tensorflow as tf
 from cleanair.types import ModelName, Source, Species
 from cleanair.utils import FileManager
 

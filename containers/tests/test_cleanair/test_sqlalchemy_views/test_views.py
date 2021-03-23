@@ -1,45 +1,14 @@
 from datetime import datetime, timedelta
-
 import pytest
+from sqlalchemy.exc import ProgrammingError
 from cleanair.databases import (
     DBWriter,
     refresh_materialized_view,
-    Base,
 )
-from cleanair.databases.materialised_views import JamcamTodayStatsView
-from cleanair.databases.materialised_views import LondonBoundaryView
 from cleanair.databases.tables import JamCamVideoStats
-from cleanair.databases.views import create_materialized_view
-from sqlalchemy import select
-from sqlalchemy.exc import ProgrammingError
 
 
-@pytest.fixture()
-def MyView():
-    # Define views
-    class MyView(Base):
-        __table__ = create_materialized_view(
-            name="test_view",
-            schema="jamcam",
-            owner="refresher",
-            selectable=select([JamCamVideoStats.id, JamCamVideoStats.camera_id]),
-            metadata=Base.metadata,
-        )
-
-    return MyView
-
-
-@pytest.fixture()
-def londonView():
-    return LondonBoundaryView
-
-
-@pytest.fixture()
-def todayStatsView():
-    return JamcamTodayStatsView
-
-
-def test_create_view(secretfile, connection, MyView):
+def test_create_view(secretfile, connection, my_view):
     """Check that we can create a materialised view and refresh it"""
 
     db_instance = DBWriter(
@@ -56,7 +25,7 @@ def test_create_view(secretfile, connection, MyView):
 
         refresh_materialized_view(session, "jamcam.test_view")
 
-        output = session.query(MyView)
+        output = session.query(my_view)
 
         result = output.first()
         assert result.id == 4232
@@ -79,8 +48,7 @@ def test_refresh_materialised_view(secretfile, connection, londonView):
 
         assert result.geom is not None
 
-
-def test_materialised_view_not_persisted(secretfile, connection, londonView):
+def test_materialised_view_not_persisted(secretfile, connection):
     """Check that materialized view isnt persisted during tests
     
     If this fails another test is probably not using connection fixture"""
