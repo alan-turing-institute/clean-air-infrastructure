@@ -25,12 +25,12 @@ class ModelMixin:
     """
 
     def __init__(
-            self,
-            model_params: Union[MRDGPParams, SVGPParams],
-            batch_size: int = 100,
-            refresh: int = 10,
-            tasks: Optional[List] = None,
-            **kwargs
+        self,
+        model_params: Union[MRDGPParams, SVGPParams],
+        batch_size: int = 100,
+        refresh: int = 10,
+        tasks: Optional[List] = None,
+        **kwargs
     ) -> None:
         """Initialise a model with parameters and settings.
 
@@ -216,9 +216,9 @@ class ModelMixin:
         self.epoch += 1
 
     def batch_predict(
-            self,
-            x_array: NDArray[Float64],
-            predict_fn: Callable[[NDArray[Float64]], NDArrayTuple],
+        self,
+        x_array: NDArray[Float64],
+        predict_fn: Callable[[NDArray[Float64]], NDArrayTuple],
     ) -> NDArrayTuple:
         """Split up prediction into indepedent batches.
 
@@ -248,7 +248,7 @@ class ModelMixin:
                 # in last batch just use remaining of test points
                 batch = x_array[index:, :]
             else:
-                batch = x_array[index: index + batch_size, :]
+                batch = x_array[index : index + batch_size, :]
 
             index = index + batch_size
 
@@ -264,9 +264,9 @@ class ModelMixin:
         return y_mean, y_var
 
     def predict_srcs(
-            self,
-            x_test: FeaturesDict,
-            predict_fn: Callable[[NDArray[Float64]], NDArrayTuple],
+        self,
+        x_test: FeaturesDict,
+        predict_fn: Callable[[NDArray[Float64]], NDArrayTuple],
     ) -> PredictionDict:
         """Predict using the model at the laqn sites for NO2.
 
@@ -291,7 +291,7 @@ class ModelMixin:
 
     @staticmethod
     def clean_data(
-            x_array: NDArray[Float64], y_array: NDArray[Float64]
+        x_array: NDArray[Float64], y_array: NDArray[Float64]
     ) -> NDArrayTuple:
         """Remove nans and missing data for use in GPflow
 

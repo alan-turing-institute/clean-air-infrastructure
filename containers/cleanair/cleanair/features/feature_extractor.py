@@ -206,19 +206,29 @@ class ScootFeatureExtractor(DateRangeMixin, DBWriter, FeatureExtractorMixin):
                         literal(feature_name).label("feature_name"),
                         func.coalesce(
                             agg_func(ScootForecast.n_vehicles_in_interval), 0.0
-                        ).label("value_1000").cast(Float),
+                        )
+                        .label("value_1000")
+                        .cast(Float),
                         func.coalesce(
                             agg_func(ScootForecast.n_vehicles_in_interval), 0.0
-                        ).label("value_500").cast(Float),
+                        )
+                        .label("value_500")
+                        .cast(Float),
                         func.coalesce(
                             agg_func(ScootForecast.n_vehicles_in_interval), 0.0
-                        ).label("value_200").cast(Float),
+                        )
+                        .label("value_200")
+                        .cast(Float),
                         func.coalesce(
                             agg_func(ScootForecast.n_vehicles_in_interval), 0.0
-                        ).label("value_100").cast(Float),
+                        )
+                        .label("value_100")
+                        .cast(Float),
                         func.coalesce(
                             agg_func(ScootForecast.n_vehicles_in_interval), 0.0
-                        ).label("value_10").cast(Float),
+                        )
+                        .label("value_10")
+                        .cast(Float),
                     )
                     .join(
                         ScootDetector, ScootDetector.point_id == distances.c.detector_id
@@ -386,7 +396,6 @@ class ScootFeatureExtractor(DateRangeMixin, DBWriter, FeatureExtractorMixin):
         )
 
         self.logger.info(f"Done in {time.time()-update_start:.2f}s")
-
 
 
 class FeatureExtractor(
