@@ -39,8 +39,8 @@ jobs:
         - pylint --rcfile=.pylintrc --ignore=mr_dgp,cleanair.egg-info containers/cleanair/*
         # run linting for the mrdgp module but only detect warnings and errors
         - pylint --rcfile=.pylintrc --disable=R,C containers/cleanair/cleanair/models/mr_dgp/*
-        # run linting for the tests
-        - pylint --rcfile=.pylintrc containers/tests/test_cleanair containers/tests/test_database_init
+        # run linting for the tests but only detect warnings and errors
+        - pylint --rcfile=.pylintrc --disable=R,C containers/tests/test_cleanair/* containers/tests/test_database_init/*
         # Run type checking
         - mypy --config-file .mypy.ini containers/cleanair
   
