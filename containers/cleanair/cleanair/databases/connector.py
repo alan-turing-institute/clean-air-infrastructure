@@ -13,7 +13,7 @@ from sqlalchemy.sql import text
 from sqlalchemy_utils import database_exists, create_database
 from .base import Base
 from ..loggers import get_logger, green, red
-from ..mixins import DBConnectionMixin
+from .mixins import DBConnectionMixin
 
 
 class Connector(DBConnectionMixin):
