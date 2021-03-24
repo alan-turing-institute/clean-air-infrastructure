@@ -16,7 +16,6 @@ class TestResultQuery:
 
     def test_setup(self, fake_laqn_static_dataset):
         """Write dataset to database"""
-        pass
 
     # TODO test below ensures queries also return the polygon of a hexgrid
     # def test_air_quality_result_query(self, laqn_svgp_instance, svgp_result):

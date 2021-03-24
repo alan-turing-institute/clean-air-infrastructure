@@ -94,7 +94,7 @@ def valid_config(dataset_start_date, dataset_end_date, num_forecast_days):
 
 
 @pytest.fixture(scope="class")
-def valid_full_config_dataset(valid_config, model_config, fake_cleanair_dataset):
+def valid_full_config(valid_config, model_config, fake_cleanair_dataset):
     "Generate a full configuration file"
     return model_config.generate_full_config(valid_config)
 
