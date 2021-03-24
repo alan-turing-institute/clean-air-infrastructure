@@ -150,6 +150,8 @@ class ScootFeatureExtractor(DateRangeMixin, DBWriter, FeatureExtractorMixin):
     ):
         """Generated scoot features for a set of points (no buffer used)"""
 
+        self.logger.info("Currently populating all value columns with a fixed value")
+
         with self.dbcnxn.open_session() as session:
 
             all_queries = []
