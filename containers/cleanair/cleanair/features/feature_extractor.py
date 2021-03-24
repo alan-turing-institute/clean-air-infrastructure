@@ -8,7 +8,7 @@ from typing import List
 
 import numpy as np
 from dateutil.parser import isoparse
-from sqlalchemy import func, literal, or_, and_, case, column, String, text, null, Float
+from sqlalchemy import func, literal, or_, and_, case, column, String, text, Float
 from sqlalchemy.sql.selectable import Alias as SUBQUERY_TYPE
 
 from .feature_conf import FEATURE_CONFIG_DYNAMIC

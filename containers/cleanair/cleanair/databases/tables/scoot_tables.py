@@ -185,4 +185,3 @@ class ScootRoadReading(Base):
         cols = [c.name for c in self.__table__.columns]
         vals = ["{}='{}'".format(column, getattr(self, column)) for column in cols]
         return "<ScootRoadForecast(" + ", ".join(vals) + ")>"
-
