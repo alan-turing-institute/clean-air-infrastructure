@@ -3,7 +3,7 @@
 from shutil import copyfile
 import pytest
 from sqlalchemy import create_engine
-from cleanair.mixins import DBConnectionMixin
+from cleanair.databases.mixins import DBConnectionMixin
 
 
 def pytest_addoption(parser):

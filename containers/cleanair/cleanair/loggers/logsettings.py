@@ -29,7 +29,10 @@ def get_logger(name):
     except KeyError:
         disable_colours = False
     # Enable either coloured or normal log levels (INFO is not coloured)
-    stream = logging.root.handlers[0]
+    try:
+        stream = logging.root.handlers[0]
+    except IndexError:
+        stream = logging.Handler()
     if disable_colours:
         stream.setFormatter(
             logging.Formatter(
