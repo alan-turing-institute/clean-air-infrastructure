@@ -3,7 +3,7 @@ Mixin for loading database loggin info and creating connection strings
 """
 import json
 import os
-from ..loggers import get_logger, green, red
+from ...loggers import get_logger, green, red
 
 
 class DBConnectionMixin:

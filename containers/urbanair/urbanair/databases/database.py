@@ -4,7 +4,7 @@ from fastapi import HTTPException
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Query, Session
 from sqlalchemy.ext.declarative import DeferredReflection
-from cleanair.mixins import DBConnectionMixin
+from cleanair.databases.mixins import DBConnectionMixin
 from ..config import get_settings
 
 
