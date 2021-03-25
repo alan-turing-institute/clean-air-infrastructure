@@ -237,8 +237,8 @@ class ScootFeatureExtractor(DateRangeMixin, DBWriter, FeatureExtractorMixin):
                         ScootForecast,
                         ScootForecast.detector_id == ScootDetector.detector_n,
                     )
-                    .filter(ScootForecast.measurement_start_utc > start_datetime)
-                    .filter(ScootForecast.measurement_start_utc <= end_datetime)
+                    .filter(ScootForecast.measurement_start_utc >= start_datetime)
+                    .filter(ScootForecast.measurement_start_utc < end_datetime)
                     .group_by(distances.c.point_id, ScootForecast.measurement_start_utc)
                 )
 
