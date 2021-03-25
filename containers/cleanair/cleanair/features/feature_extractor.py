@@ -1,32 +1,32 @@
 """
 Feature extraction Base  class
 """
+from typing import List
 import time
 from datetime import timedelta
 from math import ceil
-from typing import List
-
-import numpy as np
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dateutil.parser import isoparse
-from sqlalchemy import func, literal, or_, and_, case, column, String, text, Float
+from sqlalchemy import func, literal, or_, case, column, String, text, and_
 from sqlalchemy.sql.selectable import Alias as SUBQUERY_TYPE
-
-from .feature_conf import FEATURE_CONFIG_DYNAMIC
+import numpy as np
 from ..databases import DBWriter
-from ..databases.base import Values
 from ..databases.tables import (
     StaticFeature,
     DynamicFeature,
     UKMap,
     MetaPoint,
+    OSHighway,
+    ScootRoadMatch,
     ScootForecast,
     ScootReading,
-    ScootDetector,
 )
-from ..decorators import db_query
-from ..loggers import duration, green, red, get_logger
-from ..mixins import DBQueryMixin, DateRangeMixin
 from ..mixins.availability_mixins import StaticFeatureAvailabilityMixin
+from ..decorators import db_query
+from ..mixins import DBQueryMixin, DateRangeMixin
+from ..loggers import duration, green, red, get_logger
+from ..databases.base import Values
+from .feature_conf import FEATURE_CONFIG_DYNAMIC
 from ..types.enum_types import Source
 
 ONE_HOUR_INTERVAL = text("interval '1 hour'")
@@ -108,6 +108,41 @@ class ScootFeatureExtractor(DateRangeMixin, DBWriter, FeatureExtractorMixin):
         self.batch_size = batch_size
 
     @db_query()
+    def oshighway_intersection(self, point_ids: List[str]):
+        "Get intersection between oshighway and buffers"
+        buffers = self.query_meta_points(point_ids, output_type="subquery")
+
+        with self.dbcnxn.open_session() as session:
+
+            return session.query(
+                OSHighway.toid,
+                OSHighway.geom,
+                buffers.c.id,
+                func.ST_Intersects(OSHighway.geom, buffers.c.buff_geom_500).label(
+                    "intersects_500"
+                ),
+                func.ST_Intersects(OSHighway.geom, buffers.c.buff_geom_200).label(
+                    "intersects_200"
+                ),
+                func.ST_Intersects(OSHighway.geom, buffers.c.buff_geom_100).label(
+                    "intersects_100"
+                ),
+                func.ST_Intersects(OSHighway.geom, buffers.c.buff_geom_10).label(
+                    "intersects_10"
+                ),
+            ).filter(func.ST_Intersects(OSHighway.geom, buffers.c.buff_geom_1000))
+
+    @db_query()
+    def get_scoot_road_match(self, lookup_cte):
+        "Query scoot road match table"
+        with self.dbcnxn.open_session() as session:
+            return (
+                session.query(ScootRoadMatch)
+                .filter(ScootRoadMatch.road_toid.in_([lookup_cte.c.toid]))
+                .order_by(ScootRoadMatch.road_toid)
+            )
+
+    @db_query()
     def latest_forecast(self, start_datetime: str, end_datetime: str):
         "Get the latest scoot forecast that covers start_datetime and end_datetime"
 
@@ -145,12 +180,102 @@ class ScootFeatureExtractor(DateRangeMixin, DBWriter, FeatureExtractorMixin):
             )
 
     @db_query()
-    def generate_scoot_features(
+    def raw_scoot_readings(self, start_datetime: str, end_datetime: str):
+        "Fetch raw scoot reading from the database"
+        with self.dbcnxn.open_session() as session:
+
+            return (
+                session.query(self.table_per_detector)
+                .filter(
+                    self.table_per_detector.measurement_start_utc >= start_datetime,
+                    self.table_per_detector.measurement_start_utc < end_datetime,
+                )
+                .order_by(
+                    self.table_per_detector.detector_id,
+                    self.table_per_detector.measurement_start_utc,
+                )
+            )
+
+    @db_query()
+    def scoot_to_road(
         self, point_ids: List[str], start_datetime: str, end_datetime: str
     ):
-        """Generated scoot features for a set of points (no buffer used)"""
+        "Map scoot sensor readings to road"
+        intersection_lookup_cte = self.oshighway_intersection(point_ids=point_ids).cte(
+            "intersection_lookup"
+        )
 
-        self.logger.info("Currently populating all value columns with a fixed value")
+        scoot_road_match_sq = self.get_scoot_road_match(
+            intersection_lookup_cte, output_type="subquery"
+        )
+
+        if self.forecast:
+            detector_readings = self.latest_forecast(
+                start_datetime, end_datetime, output_type="subquery"
+            )
+        else:
+            detector_readings = self.raw_scoot_readings(
+                start_datetime, end_datetime, output_type="subquery"
+            )
+
+        with self.dbcnxn.open_session() as session:
+
+            per_road_forecasts_sq = (
+                session.query(
+                    scoot_road_match_sq.c.road_toid,
+                    detector_readings.c.measurement_start_utc,
+                    (
+                        func.sum(
+                            detector_readings.c.n_vehicles_in_interval
+                            * scoot_road_match_sq.c.weight
+                        )
+                        / func.sum(scoot_road_match_sq.c.weight)
+                    ).label("n_vehicles_in_interval"),
+                    (
+                        func.sum(
+                            detector_readings.c.occupancy_percentage
+                            * scoot_road_match_sq.c.weight
+                        )
+                        / func.sum(scoot_road_match_sq.c.weight)
+                    ).label("occupancy_percentage"),
+                    (
+                        func.sum(
+                            detector_readings.c.congestion_percentage
+                            * scoot_road_match_sq.c.weight
+                        )
+                        / func.sum(scoot_road_match_sq.c.weight)
+                    ).label("congestion_percentage"),
+                    (
+                        func.sum(
+                            detector_readings.c.saturation_percentage
+                            * scoot_road_match_sq.c.weight
+                        )
+                        / func.sum(scoot_road_match_sq.c.weight)
+                    ).label("saturation_percentage"),
+                )
+                .join(
+                    detector_readings,
+                    scoot_road_match_sq.c.detector_n == detector_readings.c.detector_id,
+                )
+                .group_by(
+                    detector_readings.c.measurement_start_utc,
+                    scoot_road_match_sq.c.road_toid,
+                )
+            ).subquery()
+
+            return session.query(intersection_lookup_cte, per_road_forecasts_sq).join(
+                intersection_lookup_cte,
+                intersection_lookup_cte.c.toid == per_road_forecasts_sq.c.road_toid,
+            )
+
+    @db_query()
+    def get_scoot_features(
+        self, point_ids: List[str], start_datetime: str, end_datetime: str,
+    ):
+        "Extract scoot features"
+        scoot_road_readings = self.scoot_to_road(
+            point_ids, start_datetime, end_datetime
+        ).cte()
 
         with self.dbcnxn.open_session() as session:
 
@@ -158,91 +283,48 @@ class ScootFeatureExtractor(DateRangeMixin, DBWriter, FeatureExtractorMixin):
             for feature in self.features:
 
                 feature_name = feature.value
+                column_name = list(
+                    self.feature_map[feature.value]["feature_dict"].keys()
+                )[0]
                 agg_func = self.feature_map[feature.value]["aggfunc"]
 
-                points = (
+                all_queries.append(
                     session.query(
-                        MetaPoint.id.label("point_id"),
-                        MetaPoint.location.label("point_location"),
-                    )
-                    .filter(MetaPoint.id.in_(point_ids))
-                    .subquery()
-                    .lateral()
-                )
-
-                nearest_detectors = (
-                    session.query(
-                        MetaPoint.id.label("detector_id"),
-                        MetaPoint.location.label("detector_location"),
-                    )
-                    .filter(MetaPoint.source == "scoot")
-                    .order_by(
-                        func.ST_Distance(points.c.point_location, MetaPoint.location)
-                    )
-                    .limit(5)
-                    .subquery()
-                    .lateral()
-                )
-
-                maps = session.query(
-                    points.join(nearest_detectors, literal(True))
-                ).subquery()
-
-                distances = session.query(
-                    maps.c.point_id.label("point_id"),
-                    maps.c.detector_id.label("detector_id"),
-                    func.ST_Distance(
-                        func.Geography(maps.c.point_location),
-                        func.Geography(maps.c.detector_location),
-                    ).label("distance"),
-                ).subquery()
-
-                readings = (
-                    session.query(
-                        distances.c.point_id.label("point_id"),
-                        ScootForecast.measurement_start_utc.label(
-                            "measurement_start_utc"
-                        ),
+                        scoot_road_readings.c.id,
+                        scoot_road_readings.c.measurement_start_utc,
                         literal(feature_name).label("feature_name"),
                         func.coalesce(
-                            agg_func(ScootForecast.n_vehicles_in_interval), 0.0
-                        )
-                        .label("value_1000")
-                        .cast(Float),
+                            agg_func(getattr(scoot_road_readings.c, column_name)), 0.0
+                        ).label("values_1000"),
                         func.coalesce(
-                            agg_func(ScootForecast.n_vehicles_in_interval), 0.0
-                        )
-                        .label("value_500")
-                        .cast(Float),
+                            agg_func(
+                                getattr(scoot_road_readings.c, column_name)
+                            ).filter(scoot_road_readings.c.intersects_500),
+                            0.0,
+                        ).label("values_500"),
                         func.coalesce(
-                            agg_func(ScootForecast.n_vehicles_in_interval), 0.0
-                        )
-                        .label("value_200")
-                        .cast(Float),
+                            agg_func(
+                                getattr(scoot_road_readings.c, column_name)
+                            ).filter(scoot_road_readings.c.intersects_200),
+                            0.0,
+                        ).label("values_200"),
                         func.coalesce(
-                            agg_func(ScootForecast.n_vehicles_in_interval), 0.0
-                        )
-                        .label("value_100")
-                        .cast(Float),
+                            agg_func(
+                                getattr(scoot_road_readings.c, column_name)
+                            ).filter(scoot_road_readings.c.intersects_100),
+                            0.0,
+                        ).label("values_100"),
                         func.coalesce(
-                            agg_func(ScootForecast.n_vehicles_in_interval), 0.0
-                        )
-                        .label("value_10")
-                        .cast(Float),
+                            agg_func(
+                                getattr(scoot_road_readings.c, column_name)
+                            ).filter(scoot_road_readings.c.intersects_10),
+                            0.0,
+                        ).label("values_10"),
+                    ).group_by(
+                        scoot_road_readings.c.id,
+                        scoot_road_readings.c.measurement_start_utc,
                     )
-                    .join(
-                        ScootDetector, ScootDetector.point_id == distances.c.detector_id
-                    )
-                    .join(
-                        ScootForecast,
-                        ScootForecast.detector_id == ScootDetector.detector_n,
-                    )
-                    .filter(ScootForecast.measurement_start_utc >= start_datetime)
-                    .filter(ScootForecast.measurement_start_utc < end_datetime)
-                    .group_by(distances.c.point_id, ScootForecast.measurement_start_utc)
                 )
-
-                all_queries.append(readings)
 
             return all_queries[0].union(*all_queries[1:])
 
@@ -382,20 +464,65 @@ class ScootFeatureExtractor(DateRangeMixin, DBWriter, FeatureExtractorMixin):
             self.logger.info("No interest points require processing")
             return
 
-        self.logger.info(f"Generating features for {len(missing_point_ids)} points..")
+        n_point_ids = len(missing_point_ids)
+        batch_size = self.batch_size
+        n_batches = ceil(n_point_ids / min(batch_size, n_point_ids))
 
-        sq_select_and_insert = self.generate_scoot_features(
-            point_ids=missing_point_ids,
-            start_datetime=self.start_datetime.isoformat(),
-            end_datetime=self.end_datetime.isoformat(),
-            output_type="subquery",
+        self.logger.info(
+            "Processing %s interest points from sources %s in %s batches of max size %s",
+            n_point_ids,
+            [src.value for src in self.sources],
+            n_batches,
+            batch_size,
         )
 
-        self.commit_records(
-            sq_select_and_insert, on_conflict="overwrite", table=self.output_table
-        )
+        missing_point_id_batches = np.array_split(missing_point_ids, n_batches)
 
-        self.logger.info(f"Done in {time.time()-update_start:.2f}s")
+        def process_batch(
+            point_id_batch, batch_i, n_batches, start_datetime, end_datetime
+        ):
+
+            self.logger.info("Processing batch %s of %s", batch_i, n_batches)
+
+            sq_select_and_insert = self.get_scoot_features(
+                point_ids=point_id_batch.tolist(),
+                start_datetime=start_datetime.isoformat(),
+                end_datetime=end_datetime.isoformat(),
+                output_type="subquery",
+            )
+
+            self.commit_records(
+                sq_select_and_insert, on_conflict="overwrite", table=self.output_table
+            )
+
+            self.logger.info("Batch %s finished", batch_i)
+
+        with ThreadPoolExecutor(max_workers=self.n_workers) as executor:
+            self.logger.info(
+                "Processing %s on %s database cores", n_batches, self.n_workers
+            )
+            threads = []
+            for batch_no, point_id_batch in enumerate(
+                missing_point_id_batches, start=1
+            ):
+                threads.append(
+                    executor.submit(
+                        process_batch,
+                        point_id_batch=point_id_batch,
+                        batch_i=batch_no,
+                        n_batches=n_batches,
+                        start_datetime=self.start_datetime,
+                        end_datetime=self.end_datetime,
+                    )
+                )
+
+            for thread in as_completed(threads):
+                thread.result()
+
+        self.logger.info(
+            "Finished adding records after %s",
+            green(duration(update_start, time.time())),
+        )
 
 
 class FeatureExtractor(
