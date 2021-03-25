@@ -7,6 +7,7 @@ from uuid import UUID
 import numpy as np
 import pandas as pd
 import pytest
+from cleanair.experiment import AirQualityResult
 from cleanair.metrics import AirQualityMetrics
 from cleanair.types import Source, Species
 from nptyping import NDArray, Float64
@@ -21,7 +22,7 @@ def point_ids(laqn_svgp_instance) -> List[UUID]:
     return laqn_svgp_instance.data_config.train_interest_points[Source.laqn]
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="class")
 def timestamps(dataset_start_date: datetime, dataset_end_date: datetime) -> List:
     """List of timestamps for each data point."""
     num_periods = (dataset_end_date - dataset_start_date).days * 24
@@ -29,7 +30,7 @@ def timestamps(dataset_start_date: datetime, dataset_end_date: datetime) -> List
     return pd.date_range(start=dataset_start_date, freq="H", periods=num_periods)
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="class")
 def num_training_data_points(point_ids, timestamps) -> int:
     """Number of data points."""
     return len(point_ids) * len(timestamps)
@@ -65,7 +66,7 @@ def observation_df(model_data, metrics_calculator):
     return metrics_calculator.load_observation_df(model_data)
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="class")
 def result_df(
     num_training_data_points,
     point_ids: List[UUID],
@@ -74,10 +75,13 @@ def result_df(
 ) -> pd.DataFrame:
     """A dataframe of predictions for the mean and variance."""
     point_array = []
+    timestamp_array = []
     for pid in point_ids:
         point_array.extend(np.repeat(str(pid), len(timestamps)).tolist())
+        timestamp_array.extend(timestamps)
     dframe = pd.DataFrame()
-    dframe["measurement_start_utc"] = np.repeat(timestamps, len(point_ids))
+    # dframe["measurement_start_utc"] = np.repeat(timestamps, len(point_ids))
+    dframe["measurement_start_utc"] = timestamp_array
     print("len of time vs points:", len(dframe.measurement_start_utc), len(point_array))
     dframe["point_id"] = point_array
     dframe["NO2_mean"] = 2 * np.ones(num_training_data_points)
@@ -108,6 +112,18 @@ def metrics_calculator(laqn_svgp_instance, secretfile, connection_class):
     laqn_svgp_instance.update_remote_tables()
     return AirQualityMetrics(
         laqn_svgp_instance.instance_id,
+        secretfile=secretfile,
+        connection=connection_class,
+    )
+
+
+@pytest.fixture(scope="class")
+def svgp_result(secretfile, connection_class, result_df, laqn_svgp_instance):
+    """Result fixture for svgp"""
+    return AirQualityResult(
+        laqn_svgp_instance.instance_id,
+        laqn_svgp_instance.data_id,
+        result_df=result_df,
         secretfile=secretfile,
         connection=connection_class,
     )
