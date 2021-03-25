@@ -201,8 +201,6 @@ class ModelConfig(
             if feature.value not in available_features:
                 unavailable_features.append(feature)
 
-        print(unavailable_features)
-
         if unavailable_features:
             raise MissingFeatureError(
                 """The following features are not available the cleanair database: {}.
