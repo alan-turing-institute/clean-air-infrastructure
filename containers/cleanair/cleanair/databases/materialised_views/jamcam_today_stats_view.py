@@ -18,7 +18,7 @@ class JamcamTodayStatsView(Base):
     __table__ = create_materialized_view(
         name="today_stats_view",
         schema="jamcam",
-        owner="jamcamwriter",
+        owner="refresher",
         selectable=union(
             select(
                 [
