@@ -1,5 +1,5 @@
 """AQE input CLI"""
-from datetime import datetime, timedelta
+from datetime import timedelta
 import typer
 from ....processors import ScootPerDetectorForecaster
 from ..shared_args import (
