@@ -43,7 +43,6 @@ class FeatureExtractorMixin:
         """
 
         with self.dbcnxn.open_session() as session:
-
             q_meta_point = session.query(
                 MetaPoint.id,
                 MetaPoint.source,
@@ -112,7 +111,6 @@ class ScootFeatureExtractor(DateRangeMixin, DBWriter, FeatureExtractorMixin):
         "Get the latest scoot forecast that covers start_datetime and end_datetime"
 
         with self.dbcnxn.open_session() as session:
-
             forecast_cte = (
                 session.query(self.table_per_detector)
                 .filter(
@@ -146,17 +144,19 @@ class ScootFeatureExtractor(DateRangeMixin, DBWriter, FeatureExtractorMixin):
 
     @db_query()
     def generate_scoot_features(
-        self, point_ids: List[str], start_datetime: str, end_datetime: str
+        self,
+        point_ids: List[str],
+        start_datetime: str,
+        end_datetime: str,
+        n_detectors: int,
     ):
         """Generated scoot features for a set of points (no buffer used)"""
 
         self.logger.info("Currently populating all value columns with a fixed value")
 
         with self.dbcnxn.open_session() as session:
-
             all_queries = []
             for feature in self.features:
-
                 feature_name = feature.value
                 agg_func = self.feature_map[feature.value]["aggfunc"]
 
@@ -179,7 +179,7 @@ class ScootFeatureExtractor(DateRangeMixin, DBWriter, FeatureExtractorMixin):
                     .order_by(
                         func.ST_Distance(points.c.point_location, MetaPoint.location)
                     )
-                    .limit(5)
+                    .limit(n_detectors)
                     .subquery()
                     .lateral()
                 )
@@ -260,7 +260,6 @@ class ScootFeatureExtractor(DateRangeMixin, DBWriter, FeatureExtractorMixin):
         sources = [source.value for source in sources]
 
         with self.dbcnxn.open_session() as session:
-
             in_data = (
                 session.query(
                     DynamicFeature.point_id,
@@ -344,7 +343,6 @@ class ScootFeatureExtractor(DateRangeMixin, DBWriter, FeatureExtractorMixin):
         )
 
         with self.dbcnxn.open_session() as session:
-
             return session.query(
                 func.distinct(available_sq.c.point_id).label("point_id")
             )
@@ -366,36 +364,42 @@ class ScootFeatureExtractor(DateRangeMixin, DBWriter, FeatureExtractorMixin):
 
         update_start = time.time()
 
-        # Check which point ids dont have a full dataset
-        missing_point_ids = self.get_scoot_feature_ids(
-            self.features,
-            self.sources,
-            self.start_datetime.isoformat(),
-            self.end_datetime.isoformat(),
-            exclude_has_data=self.exclude_has_data,
-            output_type="list",
-        )
+        n_detectors = 5
+        while n_detectors <= 50:
 
-        missing_point_ids = [str(p) for p in missing_point_ids]
+            # Check which point ids dont have a full dataset
+            missing_point_ids = self.get_scoot_feature_ids(
+                self.features,
+                self.sources,
+                self.start_datetime.isoformat(),
+                self.end_datetime.isoformat(),
+                exclude_has_data=self.exclude_has_data,
+                output_type="list",
+            )
+            missing_point_ids = [str(p) for p in missing_point_ids]
 
-        if not missing_point_ids:
-            self.logger.info("No interest points require processing")
-            return
+            if not missing_point_ids:
+                break
 
-        self.logger.info(f"Generating features for {len(missing_point_ids)} points..")
+            self.logger.info(
+                f"Generating features for {len(missing_point_ids)} points.."
+            )
 
-        sq_select_and_insert = self.generate_scoot_features(
-            point_ids=missing_point_ids,
-            start_datetime=self.start_datetime.isoformat(),
-            end_datetime=self.end_datetime.isoformat(),
-            output_type="subquery",
-        )
+            sq_select_and_insert = self.generate_scoot_features(
+                point_ids=missing_point_ids,
+                start_datetime=self.start_datetime.isoformat(),
+                end_datetime=self.end_datetime.isoformat(),
+                output_type="subquery",
+                n_detectors=n_detectors,
+            )
 
-        self.commit_records(
-            sq_select_and_insert, on_conflict="overwrite", table=self.output_table
-        )
+            self.commit_records(
+                sq_select_and_insert, on_conflict="overwrite", table=self.output_table
+            )
 
-        self.logger.info(f"Done in {time.time()-update_start:.2f}s")
+            n_detectors += 5
+
+        self.logger.info(f"Done in {time.time() - update_start:.2f}s")
 
 
 class FeatureExtractor(
