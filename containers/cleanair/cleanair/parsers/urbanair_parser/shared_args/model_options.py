@@ -8,7 +8,7 @@ from ....params import (
     LIKELIHOOD_VARIANCE,
     KERNEL_VARIANCE,
     MINIBATCH_SIZE,
-    MAXITER,
+    SVGP_MAXITER,
     MRDGP_NUM_INDUCING_POINTS,
     SVGP_NUM_INDUCING_POINTS,
 )
@@ -59,5 +59,5 @@ SVGPNumInducingPoints = typer.Option(
     help=ModelHelp.num_inducing_points.value,
     show_default=True,
 )
-MaxIter = typer.Option(MAXITER, help=ModelHelp.maxiter.value, show_default=True,)
+MaxIter = typer.Option(SVGP_MAXITER, help=ModelHelp.maxiter.value, show_default=True,)
 Refresh = typer.Option(default=10, help=ModelHelp.refresh.value, show_default=True)

@@ -4,7 +4,6 @@ from typing import List, Optional
 from .shared_params import (
     LENGTHSCALES,
     LIKELIHOOD_VARIANCE,
-    MAXITER,
     MINIBATCH_SIZE,
     KERNEL_VARIANCE,
 )
@@ -13,6 +12,7 @@ from ..types import KernelParams, KernelType, Source, Species, SVGPParams
 JITTER: float = 1e-5
 SVGP_NUM_INDUCING_POINTS = 2000
 SVGP_INPUT_DIM = 3
+SVGP_MAXITER = 10000
 
 # production data config settings for the svgp
 PRODUCTION_SVGP_TRAIN_DAYS = 5
@@ -51,7 +51,7 @@ def default_svgp_model_params(
     lengthscales: float = LENGTHSCALES,
     likelihood_variance: float = LIKELIHOOD_VARIANCE,
     num_inducing_points: int = SVGP_NUM_INDUCING_POINTS,
-    maxiter: int = MAXITER,
+    maxiter: int = SVGP_MAXITER,
     minibatch_size: int = MINIBATCH_SIZE,
     variance: float = KERNEL_VARIANCE,
     active_dims: Optional[List[int]] = None,

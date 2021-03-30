@@ -4,22 +4,21 @@ from typing import List
 from .shared_params import (
     LENGTHSCALES,
     LIKELIHOOD_VARIANCE,
-    MAXITER,
     MINIBATCH_SIZE,
     KERNEL_VARIANCE,
 )
 from ..types import (
     BaseModelParams,
-    FeatureBufferSize,
     KernelParams,
     KernelType,
     MRDGPParams,
     Source,
     Species,
-    StaticFeatureNames,
 )
 
 MRDGP_NUM_INDUCING_POINTS = 500
+MRDGP_MAXITER: int = 5000
+
 
 # production data config settings for the mrdgp
 PRODUCTION_MRDGP_TRAIN_DAYS = 3
@@ -52,7 +51,7 @@ def default_base_laqn_model_params(
     lengthscales: float = LENGTHSCALES,
     likelihood_variance: float = LIKELIHOOD_VARIANCE,
     num_inducing_points: int = MRDGP_NUM_INDUCING_POINTS,
-    maxiter: int = MAXITER,
+    maxiter: int = MRDGP_MAXITER,
     minibatch_size: int = MINIBATCH_SIZE,
     variance: float = KERNEL_VARIANCE,
 ) -> BaseModelParams:
@@ -92,7 +91,7 @@ def default_base_sat_model_params(
     lengthscales: float = LENGTHSCALES,
     likelihood_variance: float = LIKELIHOOD_VARIANCE,
     num_inducing_points: int = MRDGP_NUM_INDUCING_POINTS,
-    maxiter: int = MAXITER,
+    maxiter: int = MRDGP_MAXITER,
     minibatch_size: int = MINIBATCH_SIZE,
     variance: float = KERNEL_VARIANCE,
 ) -> BaseModelParams:
@@ -147,7 +146,7 @@ def default_dgp_sat_model_params(
     lengthscales: float = LENGTHSCALES,
     likelihood_variance: float = LIKELIHOOD_VARIANCE,
     num_inducing_points: int = MRDGP_NUM_INDUCING_POINTS,
-    maxiter: int = MAXITER,
+    maxiter: int = MRDGP_MAXITER,
     minibatch_size: int = MINIBATCH_SIZE,
     variance: float = KERNEL_VARIANCE,
 ) -> BaseModelParams:
@@ -170,7 +169,7 @@ def default_mrdgp_model_params(
     lengthscales: float = LENGTHSCALES,
     likelihood_variance: float = LIKELIHOOD_VARIANCE,
     num_inducing_points: int = MRDGP_NUM_INDUCING_POINTS,
-    maxiter: int = MAXITER,
+    maxiter: int = MRDGP_MAXITER,
     minibatch_size: int = MINIBATCH_SIZE,
     variance: float = KERNEL_VARIANCE,
 ) -> MRDGPParams:
