@@ -1,7 +1,7 @@
 #!/bin/bash
 
 DATE=`date +"%Y_%m_%d_%T"`
-LOGFILE="${DATE}_scoot_forecast.log"
+LOGFILE="${DATE}_mrdgp_dynamic.log"
 
 check_exit() {
 	if [ $1 -ne 0 ];
@@ -12,6 +12,7 @@ check_exit() {
 
 # set the secretfile filepath (if on own machine, use 'init production' to write to the production database)
 urbanair init local --secretfile "$DB_SECRET_FILE" >> $LOGFILE 2>&1
+check_exit $?
 
 # generate the data config
 urbanair model data generate-config \
@@ -30,19 +31,24 @@ urbanair model data generate-config \
     --feature-buffer 100 \
     --overwrite \
 	>> $LOGFILE 2>&1
+check_exit $?
 
 # check the data exists in the DB
 urbanair model data generate-full-config >> $LOGFILE 2>&1
+check_exit $?
 
 # download the data using the config
 urbanair model data download --training-data --prediction-data --output-csv >> $LOGFILE 2>&1
+check_exit $?
 
 # create the model parameters
 urbanair model setup mrdgp --maxiter 5000 --num-inducing-points 500 >> $LOGFILE 2>&1
+check_exit $?
 
 # fit the model and predict
 urbanair model fit mrdgp --refresh 10 >> $LOGFILE 2>&1
+check_exit $?
 
 # push the results to the database
 urbanair model update results mrdgp --tag production --cluster-id kubernetes >> $LOGFILE 2>&1
-
+check_exit $?
