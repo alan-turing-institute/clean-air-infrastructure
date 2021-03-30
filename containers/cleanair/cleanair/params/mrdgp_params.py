@@ -8,9 +8,26 @@ from .shared_params import (
     MINIBATCH_SIZE,
     KERNEL_VARIANCE,
 )
-from ..types import BaseModelParams, KernelParams, KernelType, MRDGPParams
+from ..types import (
+    BaseModelParams,
+    FeatureBufferSize,
+    KernelParams,
+    KernelType,
+    MRDGPParams,
+    Source,
+    Species,
+    StaticFeatureNames,
+)
 
 MRDGP_NUM_INDUCING_POINTS = 500
+
+# production data config settings for the mrdgp
+PRODUCTION_MRDGP_TRAIN_DAYS = 3
+PRODUCTION_MRDGP_TRAIN_SOURCES = [Source.laqn, Source.satellite]
+PRODUCTION_MRDGP_FORECAST_SOURCES = [Source.laqn, Source.hexgrid]
+PRODUCTION_MRDGP_TRAIN_INTEREST_POINTS = {Source.laqn: "all", Source.satellite: "all"}
+PRODUCTION_MRDGP_FORECAST_INTEREST_POINTS = {Source.laqn: "all", Source.hexgrid: "all"}
+PRODUCTION_MRDGP_SPECIES = [Species.NO2]
 
 
 def default_base_laqn_kernel(
