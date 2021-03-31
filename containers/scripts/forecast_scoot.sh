@@ -25,6 +25,7 @@ check_exit $?
 urbanair features scoot fill --ndays 7 --upto thirdmorrow \
     --source laqn \
     --source satellite \
+    --source hexgrid \
     --insert-method missing \
     --nworkers 6 \
     >> $LOGFILE 2>&1

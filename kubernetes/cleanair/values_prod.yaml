@@ -177,7 +177,7 @@ cronjobs:
         cpu: "3"
 
   - name: air-forecast-svgp-gpu-static
-    schedule: "30 0 * * *"
+    schedule: "30 2 * * *"
     concurrencyPolicy: Allow
     restartPolicy: OnFailure
     failedJobsHistoryLimit: 10
@@ -214,7 +214,7 @@ cronjobs:
           nvidia.com/gpu: 1
 
   - name: air-forecast-svgp-gpu-dynamic
-    schedule: "30 0 * * *"
+    schedule: "30 2 * * *"
     concurrencyPolicy: Allow
     restartPolicy: OnFailure
     failedJobsHistoryLimit: 10
@@ -251,7 +251,7 @@ cronjobs:
           nvidia.com/gpu: 1
 
   - name: air-forecast-mrdgp-gpu
-    schedule: "30 2 * * *"
+    schedule: "30 0 * * *"
     concurrencyPolicy: Allow
     restartPolicy: OnFailure
     failedJobsHistoryLimit: 10
