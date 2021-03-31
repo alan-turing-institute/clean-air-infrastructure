@@ -15,9 +15,7 @@ ACCOUNT_URL = "https://cleanairlogs.blob.core.windows.net/"
 
 
 @app.command()
-def upload(
-        filepath: Path
-) -> None:
+def upload(filepath: Path) -> None:
     """Upload a log file to blob storage"""
 
     typer.echo("Upload logfile to blob storage")
@@ -25,7 +23,7 @@ def upload(
     sas_token = blob_storage.generate_sas_token(
         resource_group=RESOURCE_GROUP,
         storage_account_name=STORAGE_ACCOUNT_NAME,
-        permit_write=True
+        permit_write=True,
     )
 
     blob_storage.upload_blob(
@@ -39,16 +37,12 @@ def upload(
 
 # pylint: disable=C0103
 @app.command()
-def ls(
-        start: datetime = None,
-        end: datetime = None,
-        like: str = None,
-) -> None:
+def ls(start: datetime = None, end: datetime = None, like: str = None,) -> None:
     """List the logs (within daterange if specified)"""
     sas_token = blob_storage.generate_sas_token(
         resource_group=RESOURCE_GROUP,
         storage_account_name=STORAGE_ACCOUNT_NAME,
-        permit_write=True
+        permit_write=True,
     )
 
     blobs = blob_storage.list_blobs(
@@ -57,7 +51,7 @@ def ls(
         sas_token=sas_token,
         start=start,
         end=end,
-        name_starts_with=like
+        name_starts_with=like,
     )
 
     for blob in blobs:
@@ -66,12 +60,10 @@ def ls(
 
 @app.command()
 def download(
-        directory: Path = typer.Option(
-            ".", help="Download logs to this directory"
-        ),
-        name: str = None,
-        start: datetime = None,
-        end: datetime = None
+    directory: Path = typer.Option(".", help="Download logs to this directory"),
+    name: str = None,
+    start: datetime = None,
+    end: datetime = None,
 ) -> None:
     """Upload a log file to blob storage"""
 
@@ -80,16 +72,16 @@ def download(
     sas_token = blob_storage.generate_sas_token(
         resource_group=RESOURCE_GROUP,
         storage_account_name=STORAGE_ACCOUNT_NAME,
-        permit_write=True
+        permit_write=True,
     )
 
     for blob in blob_storage.list_blobs(
-            storage_container_name=STORAGE_CONTAINER_NAME,
-            account_url=ACCOUNT_URL,
-            sas_token=sas_token,
-            start=start,
-            end=end,
-            name_starts_with=name,
+        storage_container_name=STORAGE_CONTAINER_NAME,
+        account_url=ACCOUNT_URL,
+        sas_token=sas_token,
+        start=start,
+        end=end,
+        name_starts_with=name,
     ):
         filepath = directory / blob.name
         filepath.suffix = "log"
@@ -98,7 +90,7 @@ def download(
             target_file=filepath,
             storage_container_name=STORAGE_CONTAINER_NAME,
             account_url=ACCOUNT_URL,
-            sas_token=sas_token
+            sas_token=sas_token,
         )
 
 
