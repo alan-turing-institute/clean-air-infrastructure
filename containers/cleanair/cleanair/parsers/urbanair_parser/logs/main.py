@@ -37,7 +37,11 @@ def upload(filepath: Path) -> None:
 
 # pylint: disable=C0103
 @app.command()
-def ls(start: datetime = None, end: datetime = None, like: str = None,) -> None:
+def ls(
+    start: datetime = None,
+    end: datetime = None,
+    like: str = typer.Option(None, help="The log prefix, e.g. 'svgp'"),
+) -> None:
     """List the logs (within daterange if specified)"""
     sas_token = blob_storage.generate_sas_token(
         resource_group=RESOURCE_GROUP,
