@@ -53,3 +53,5 @@ check_exit $?
 # push the results to the database
 urbanair model update results mrdgp --tag production --cluster-id kubernetes >> $LOGFILE 2>&1
 check_exit $?
+
+urbanair logs  upload $LOGFILE

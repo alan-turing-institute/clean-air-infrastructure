@@ -52,3 +52,5 @@ check_exit $?
 # push the results to the database
 urbanair model update results svgp --tag production --cluster-id nc6 >> $LOGFILE 2>&1
 check_exit $?
+
+urbanair logs  upload $LOGFILE

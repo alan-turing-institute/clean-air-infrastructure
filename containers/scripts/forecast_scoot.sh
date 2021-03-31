@@ -30,3 +30,5 @@ urbanair features scoot fill --ndays 7 --upto thirdmorrow \
     >> $LOGFILE 2>&1
 check_exit $?
 
+urbanair logs  upload $LOGFILE
+
