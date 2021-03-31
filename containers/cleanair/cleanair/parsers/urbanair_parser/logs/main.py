@@ -25,12 +25,10 @@ def upload(
     sas_token = blob_storage.generate_sas_token(
         resource_group=RESOURCE_GROUP,
         storage_account_name=STORAGE_ACCOUNT_NAME,
-        suffix=None,
         permit_write=True
     )
 
     blob_storage.upload_blob(
-        resource_group=RESOURCE_GROUP,
         storage_container_name=STORAGE_CONTAINER_NAME,
         blob_name=filepath.stem,
         account_url=ACCOUNT_URL,
@@ -39,16 +37,17 @@ def upload(
     )
 
 
+# pylint: disable=C0103
 @app.command()
 def ls(
         start: datetime = None,
         end: datetime = None,
         like: str = None,
 ) -> None:
+    """List the logs (within daterange if specified)"""
     sas_token = blob_storage.generate_sas_token(
         resource_group=RESOURCE_GROUP,
         storage_account_name=STORAGE_ACCOUNT_NAME,
-        suffix=None,
         permit_write=True
     )
 
@@ -81,7 +80,6 @@ def download(
     sas_token = blob_storage.generate_sas_token(
         resource_group=RESOURCE_GROUP,
         storage_account_name=STORAGE_ACCOUNT_NAME,
-        suffix=None,
         permit_write=True
     )
 
@@ -100,7 +98,6 @@ def download(
             target_file=filepath,
             storage_container_name=STORAGE_CONTAINER_NAME,
             account_url=ACCOUNT_URL,
-            resource_group=RESOURCE_GROUP,
             sas_token=sas_token
         )
 

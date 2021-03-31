@@ -1,23 +1,23 @@
 """Util functions for interacting with Azure blob storage"""
-from typing import Optional, List
 from datetime import datetime, timedelta
+from typing import Optional, List
+
 from azure.common.client_factory import get_client_from_cli_profile
+from azure.mgmt.storage import StorageManagementClient
 from azure.storage.blob import (
     BlobServiceClient,
     generate_account_sas,
     ResourceTypes,
     AccountSasPermissions, BlobProperties,
 )
-from azure.mgmt.storage import StorageManagementClient
 
 
 def generate_sas_token(
-    resource_group: str,
-    storage_account_name: str,
-    days: int = 1,
-    hours: int = 0,
-    suffix: Optional[str] = "?",
-    permit_write: Optional[bool] = False
+        resource_group: str,
+        storage_account_name: str,
+        days: int = 1,
+        hours: int = 0,
+        permit_write: Optional[bool] = False
 ):
     """Generate a SAS token when logged in using az login
     
@@ -46,12 +46,11 @@ def generate_sas_token(
 
 
 def download_blob(
-    resource_group: str,
-    storage_container_name: str,
-    blob_name: str,
-    account_url: str,
-    target_file: str,
-    sas_token: str = None,
+        storage_container_name: str,
+        blob_name: str,
+        account_url: str,
+        target_file: str,
+        sas_token: str = None,
 ) -> None:
     """Download a blob from a storge container
     
@@ -87,13 +86,13 @@ def download_blob(
     with open(target_file, "wb") as my_blob:
         blob_data.readinto(my_blob)
 
+
 def upload_blob(
-    resource_group: str,
-    storage_container_name: str,
-    blob_name: str,
-    account_url: str,
-    source_file: str,
-    sas_token: str = None,
+        storage_container_name: str,
+        blob_name: str,
+        account_url: str,
+        source_file: str,
+        sas_token: str = None,
 ) -> None:
     """Upload a file as a blob to a storge container
     
@@ -125,7 +124,7 @@ def upload_blob(
     )
 
     with open(source_file, "rb") as data:
-        blob_client = blob_container_client.upload_blob(name=blob_name, data=data)
+        blob_container_client.upload_blob(name=blob_name, data=data)
 
 
 def list_blobs(
@@ -136,6 +135,7 @@ def list_blobs(
         end: datetime = None,
         name_starts_with: str = None,
 ) -> List[BlobProperties]:
+    """List the blobs in a given storage container"""
     blob_service_client = BlobServiceClient(
         account_url=account_url, credential=sas_token
     )
@@ -155,15 +155,12 @@ def list_blobs(
 
 
 if __name__ == "__main__":
-
     SAS_TOKEN = generate_sas_token(
         resource_group="Datasets",
-        storage_container_name="londonaqdatasets",
-        suffix=None,
+        storage_account_name="londonaqdatasets",
     )
 
     download_blob(
-        resource_group="Datasets",
         storage_container_name="glahexgrid",
         blob_name="Hex350_grid_GLA.zip",
         account_url="https://londonaqdatasets.blob.core.windows.net",
