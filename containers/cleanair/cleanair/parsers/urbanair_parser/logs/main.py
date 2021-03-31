@@ -9,7 +9,7 @@ from ....utils.azure import blob_storage
 app = typer.Typer(help="Accessing logs in blob storage")
 
 RESOURCE_GROUP = "RG_CLEANAIR_INFRASTRUCTURE"
-STORAGE_CONTAINER_NAME = "logs"
+STORAGE_CONTAINER_NAME = "cleanairlogs"
 ACCOUNT_URL = ""  # TODO get a url
 
 

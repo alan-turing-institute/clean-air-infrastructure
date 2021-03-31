@@ -7,7 +7,7 @@ module "configuration" {
 # Create storage account for logs
 # -------------------------------------------
 resource "azurerm_storage_account" "this" {
-  name                     = "cleanairlogging"
+  name                     = "cleanairlogs"
   resource_group_name      = "${var.resource_group}"
   location                 = "${var.location}"
   account_tier             = "Standard"
