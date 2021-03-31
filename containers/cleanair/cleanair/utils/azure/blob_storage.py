@@ -13,7 +13,7 @@ from azure.mgmt.storage import StorageManagementClient
 
 def generate_sas_token(
     resource_group: str,
-    storage_container_name: str,
+    storage_account_name: str,
     days: int = 1,
     hours: int = 0,
     suffix: Optional[str] = "?",
@@ -23,21 +23,21 @@ def generate_sas_token(
     
     Args:
         resource_group: The Azure Resource group
-        storage_container_name: The name of the storage container
+        storage_account_name: The name of the storage account
         days: Number of days until SAS token expires. Shorter is better
         hours: Number of hours until SAS token expires. Shorter is better
     """
 
     storage_mgmt_client = get_client_from_cli_profile(StorageManagementClient)
     storage_key_list = storage_mgmt_client.storage_accounts.list_keys(
-        resource_group, storage_container_name,
+        resource_group, storage_account_name,
     )
     storage_account_key = [
         k.value for k in storage_key_list.keys if k.key_name == "key1"
     ][0]
 
     return "?" + generate_account_sas(
-        storage_container_name,
+        storage_account_name,
         account_key=storage_account_key,
         resource_types=ResourceTypes(service=True, container=True, object=True),
         permission=AccountSasPermissions(read=True, list=True, write=permit_write),

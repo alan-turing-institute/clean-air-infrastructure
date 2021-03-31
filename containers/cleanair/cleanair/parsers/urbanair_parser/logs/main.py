@@ -9,8 +9,9 @@ from ....utils.azure import blob_storage
 app = typer.Typer(help="Accessing logs in blob storage")
 
 RESOURCE_GROUP = "RG_CLEANAIR_INFRASTRUCTURE"
-STORAGE_CONTAINER_NAME = "cleanairlogs"
-ACCOUNT_URL = ""  # TODO get a url
+STORAGE_CONTAINER_NAME = "logs"
+STORAGE_ACCOUNT_NAME = "cleanairlogs"
+ACCOUNT_URL = "https://cleanairlogs.blob.core.windows.net/"
 
 
 @app.command()
@@ -23,7 +24,7 @@ def upload(
 
     sas_token = blob_storage.generate_sas_token(
         resource_group=RESOURCE_GROUP,
-        storage_container_name=STORAGE_CONTAINER_NAME,
+        storage_account_name=STORAGE_ACCOUNT_NAME,
         suffix=None,
         permit_write=True
     )
@@ -46,7 +47,7 @@ def ls(
 ) -> None:
     sas_token = blob_storage.generate_sas_token(
         resource_group=RESOURCE_GROUP,
-        storage_container_name=STORAGE_CONTAINER_NAME,
+        storage_account_name=STORAGE_ACCOUNT_NAME,
         suffix=None,
         permit_write=True
     )
@@ -79,7 +80,7 @@ def download(
 
     sas_token = blob_storage.generate_sas_token(
         resource_group=RESOURCE_GROUP,
-        storage_container_name=STORAGE_CONTAINER_NAME,
+        storage_account_name=STORAGE_ACCOUNT_NAME,
         suffix=None,
         permit_write=True
     )
