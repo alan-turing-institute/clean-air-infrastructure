@@ -1,12 +1,12 @@
 """Util functions for interacting with Azure blob storage"""
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime, timedelta
 from azure.common.client_factory import get_client_from_cli_profile
 from azure.storage.blob import (
     BlobServiceClient,
     generate_account_sas,
     ResourceTypes,
-    AccountSasPermissions,
+    AccountSasPermissions, BlobProperties,
 )
 from azure.mgmt.storage import StorageManagementClient
 
@@ -128,7 +128,32 @@ def upload_blob(
         blob_client = blob_container_client.upload_blob(name=blob_name, data=data)
 
 
-        
+def list_blobs(
+        storage_container_name: str,
+        account_url: str,
+        sas_token: str = None,
+        start: datetime = None,
+        end: datetime = None,
+        name_starts_with: str = None,
+) -> List[BlobProperties]:
+    blob_service_client = BlobServiceClient(
+        account_url=account_url, credential=sas_token
+    )
+
+    blob_container_client = blob_service_client.get_container_client(
+        storage_container_name
+    )
+
+    blobs = list(blob_container_client.list_blobs(name_starts_with=name_starts_with))
+
+    if start:
+        blobs = [blob for blob in blobs if blob.creation_time >= start]
+    if end:
+        blobs = [blob for blob in blobs if blob.creation_time <= end]
+
+    return blobs
+
+
 if __name__ == "__main__":
 
     SAS_TOKEN = generate_sas_token(

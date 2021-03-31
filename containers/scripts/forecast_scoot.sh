@@ -3,7 +3,7 @@
 # Script to forecast scoot readings, and process into features
 
 DATE=`date +"%Y_%m_%d_%T"`
-LOGFILE="${DATE}_scoot_forecast.log"
+LOGFILE="scoot_forecast_${DATE}.log"
 
 check_exit() {
 	if [ $1 -ne 0 ];

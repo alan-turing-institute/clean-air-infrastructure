@@ -1,7 +1,7 @@
 #!/bin/bash
 
 DATE=`date +"%Y_%m_%d_%T"`
-LOGFILE="${DATE}_mrdgp_dynamic.log"
+LOGFILE="mrdgp_dynamic_${DATE}.log"
 
 check_exit() {
 	if [ $1 -ne 0 ];

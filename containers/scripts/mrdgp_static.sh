@@ -1,7 +1,7 @@
 #!/bin/bash
 
 DATE=`date +"%Y_%m_%d_%T"`
-LOGFILE="${DATE}_mrdpg_static.log"
+LOGFILE="mrdpg_static_${DATE}.log"
 
 check_exit() {
 	if [ $1 -ne 0 ];

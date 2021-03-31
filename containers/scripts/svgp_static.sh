@@ -1,7 +1,7 @@
 #!/bin/bash
 
 DATE=`date +"%Y_%m_%d_%T"`
-LOGFILE="${DATE}_svgp_static.log"
+LOGFILE="svgp_static_${DATE}.log"
 
 check_exit() {
 	if [ $1 -ne 0 ];
