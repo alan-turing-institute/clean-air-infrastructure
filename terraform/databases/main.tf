@@ -24,6 +24,7 @@ module "postgres" {
   key_vault_id   = var.infrastructure.key_vault.id
   location       = "${azurerm_resource_group.this.location}"
   resource_group = "${azurerm_resource_group.this.name}"
+  sku            = "MO_Gen5_2"
 }
 
 
@@ -36,4 +37,5 @@ module "postgres_2021" {
   key_vault_id   = var.infrastructure.key_vault.id
   location       = "${azurerm_resource_group.this.location}"
   resource_group = "${azurerm_resource_group.this.name}"
+  sku            = "MO_Gen5_8"
 }
