@@ -14,11 +14,11 @@ from azure.storage.blob import (
 
 
 def generate_sas_token(
-        resource_group: str,
-        storage_account_name: str,
-        days: int = 1,
-        hours: int = 0,
-        permit_write: Optional[bool] = False,
+    resource_group: str,
+    storage_account_name: str,
+    days: int = 1,
+    hours: int = 0,
+    permit_write: Optional[bool] = False,
 ):
     """Generate a SAS token when logged in using az login
 
@@ -47,11 +47,11 @@ def generate_sas_token(
 
 
 def download_blob(
-        storage_container_name: str,
-        blob_name: str,
-        account_url: str,
-        target_file: str,
-        sas_token: str = None,
+    storage_container_name: str,
+    blob_name: str,
+    account_url: str,
+    target_file: str,
+    sas_token: str = None,
 ) -> None:
     """Download a blob from a storge container
 
@@ -88,11 +88,11 @@ def download_blob(
 
 
 def upload_blob(
-        storage_container_name: str,
-        blob_name: str,
-        account_url: str,
-        source_file: str,
-        sas_token: str = None,
+    storage_container_name: str,
+    blob_name: str,
+    account_url: str,
+    source_file: str,
+    sas_token: str = None,
 ) -> None:
     """Upload a file as a blob to a storge container
 
@@ -127,12 +127,12 @@ def upload_blob(
 
 
 def list_blobs(
-        storage_container_name: str,
-        account_url: str,
-        sas_token: str = None,
-        start: datetime = None,
-        end: datetime = None,
-        name_starts_with: str = None,
+    storage_container_name: str,
+    account_url: str,
+    sas_token: str = None,
+    start: datetime = None,
+    end: datetime = None,
+    name_starts_with: str = None,
 ) -> List[BlobProperties]:
     """List the blobs in a given storage container"""
     blob_service_client = BlobServiceClient(
