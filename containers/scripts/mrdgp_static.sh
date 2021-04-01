@@ -1,18 +1,8 @@
 #!/bin/bash
 
-DATE=`date +"%Y_%m_%d_%T"`
-LOGFILE="mrdpg_static_${DATE}.log"
-
-check_exit() {
-    if [ $1 -ne 0 ];
-    then
-        exit 1
-    fi
-}
 
 # set the secretfile filepath (if on own machine, use 'init production' to write to the production database)
-urbanair init local --secretfile "$DB_SECRET_FILE" >> $LOGFILE 2>&1
-check_exit $?
+urbanair init local --secretfile "$DB_SECRET_FILE"
 
 # generate the data config
 # TODO add hexgrid as a pred-source 
@@ -28,30 +18,20 @@ urbanair model data generate-config \
     --static-features flat \
     --feature-buffer 500 \
     --feature-buffer 100 \
-    --overwrite \
-    >> $LOGFILE 2>&1
-check_exit $?
+    --overwrite
 
 # check the data exists in the DB
-urbanair model data generate-full-config >> $LOGFILE 2>&1
-check_exit $?
+urbanair model data generate-full-config
 
 # download the data using the config
-urbanair model data download --training-data --prediction-data --output-csv >> $LOGFILE 2>&1
-check_exit $?
+urbanair model data download --training-data --prediction-data --output-csv
 
 # create the model parameters
 # TODO increase number of maxiter and inducing points
 # urbanair model setup mrdgp --maxiter 5000 --num-inducing-points 500
-urbanair model setup mrdgp --maxiter 1000 --num-inducing-points 200 >> $LOGFILE 2>&1
-check_exit $?
+urbanair model setup mrdgp --maxiter 1000 --num-inducing-points 200
 
 # fit the model and predict
-urbanair model fit mrdgp --refresh 10 >> $LOGFILE 2>&1
-check_exit $?
-
+urbanair model fit mrdgp --refresh 10
 # push the results to the database
-urbanair model update results mrdgp --tag production --cluster-id kubernetes >> $LOGFILE 2>&1
-check_exit $?
-
-urbanair logs  upload $LOGFILE
+urbanair model update results mrdgp --tag production --cluster-id kubernetes
