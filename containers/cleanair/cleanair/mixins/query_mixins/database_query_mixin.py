@@ -39,7 +39,7 @@ class DBQueryMixin:
 
     @db_query()
     def get_laqn_readings(
-            self, start_date: datetime, end_date: datetime, species: List[Species]
+        self, start_date: datetime, end_date: datetime, species: List[Species]
     ):
         """Get LAQN readings from database"""
 
@@ -53,8 +53,8 @@ class DBQueryMixin:
                     LAQNReading.species_code,
                     LAQNReading.value,
                 )
-                    .join(LAQNSite)
-                    .filter(
+                .join(LAQNSite)
+                .filter(
                     LAQNReading.measurement_start_utc >= start_date.isoformat(),
                     LAQNReading.measurement_start_utc < end_date.isoformat(),
                     LAQNReading.species_code.in_(species),
@@ -65,7 +65,7 @@ class DBQueryMixin:
 
     @db_query()
     def get_aqe_readings(
-            self, start_date: datetime, end_date: datetime, species: List[Species]
+        self, start_date: datetime, end_date: datetime, species: List[Species]
     ):
         """Get AQE readings from database"""
 
@@ -79,8 +79,8 @@ class DBQueryMixin:
                     AQEReading.species_code,
                     AQEReading.value,
                 )
-                    .join(AQESite)
-                    .filter(
+                .join(AQESite)
+                .filter(
                     AQEReading.measurement_start_utc >= start_date.isoformat(),
                     AQEReading.measurement_start_utc < end_date.isoformat(),
                     AQEReading.species_code.in_(species),
@@ -106,9 +106,13 @@ class DBQueryMixin:
         with self.dbcnxn.open_session() as session:
             # Get the latest forecast date
 
-            latest_forecast = session.query(
-                SatelliteForecast.reference_start_utc
-            ).distinct().order_by(desc(SatelliteForecast.reference_start_utc)).limit(1).all()[0]
+            latest_forecast = (
+                session.query(SatelliteForecast.reference_start_utc)
+                .distinct()
+                .order_by(desc(SatelliteForecast.reference_start_utc))
+                .limit(1)
+                .all()[0]
+            )
 
             # The sort by is very important for creating numpy arrays
             sat_q = (
@@ -119,18 +123,19 @@ class DBQueryMixin:
                     SatelliteForecast.value,
                     SatelliteGrid.point_id,
                 )
-                    .filter(
+                .filter(
                     SatelliteForecast.measurement_start_utc >= start_date.isoformat(),
                     SatelliteForecast.measurement_start_utc < end_date.isoformat(),
                     or_(
-                        func.date(SatelliteForecast.measurement_start_utc) == func.date(
-                            SatelliteForecast.reference_start_utc),
-                        func.date(latest_forecast) == func.date(SatelliteForecast.reference_start_utc),
+                        func.date(SatelliteForecast.measurement_start_utc)
+                        == func.date(SatelliteForecast.reference_start_utc),
+                        func.date(latest_forecast)
+                        == func.date(SatelliteForecast.reference_start_utc),
                     ),
                     SatelliteForecast.species_code.in_(all_species),
                 )
-                    .join(SatelliteGrid, SatelliteForecast.box_id == SatelliteGrid.box_id)
-                    .order_by(
+                .join(SatelliteGrid, SatelliteForecast.box_id == SatelliteGrid.box_id)
+                .order_by(
                     SatelliteForecast.box_id,
                     SatelliteForecast.measurement_start_utc,
                     SatelliteGrid.point_id,
