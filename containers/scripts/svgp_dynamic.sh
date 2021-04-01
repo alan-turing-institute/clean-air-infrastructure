@@ -6,7 +6,6 @@ LOGFILE="svgp_dynamic_${DATE}.log"
 check_exit() {
     if [ $1 -ne 0 ];
     then
-        urbanair logs  upload $LOGFILE
         exit 1
     fi
 }
