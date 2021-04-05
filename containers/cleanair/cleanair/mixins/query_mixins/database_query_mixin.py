@@ -1,10 +1,11 @@
 """
 Mixin for useful database queries
 """
-from typing import List
 from datetime import datetime
+from typing import List
+
 from sqlalchemy import func, or_, desc
-from ...decorators import db_query
+
 from ...databases.materialised_views import LondonBoundaryView
 from ...databases.tables import (
     AQEReading,
@@ -14,8 +15,8 @@ from ...databases.tables import (
     SatelliteForecast,
     SatelliteGrid,
 )
+from ...decorators import db_query
 from ...loggers import get_logger
-from ...timestamps import as_datetime
 from ...types import Species
 
 
