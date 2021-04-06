@@ -320,7 +320,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
                 green(source),
                 green(training_data),
             )
-            # Satellite data is only a training option  and gets all data from training to prediction
+            # Satellite data is only a training option and gets all data from training to prediction
             _end_date = (
                 end_date if source != Source.satellite else full_config.pred_end_date
             )
