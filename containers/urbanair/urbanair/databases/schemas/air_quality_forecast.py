@@ -1,5 +1,5 @@
 """Return schemas for air quality forecast routes"""
-from typing import List, Dict
+from typing import List, Dict, Optional
 import json
 from pydantic import BaseModel
 from geojson import Feature
@@ -92,8 +92,8 @@ class ForecastResultJson(UTCTime):
 
     # Schema attributes
     point_id: str
-    NO2_mean: float
-    NO2_var: float
+    NO2_mean: Optional[float]
+    NO2_var: Optional[float]
 
     class Config:
         """Pydantic configuration"""
