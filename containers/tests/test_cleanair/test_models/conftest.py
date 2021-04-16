@@ -1,5 +1,4 @@
 """Fixtures for modelling."""
-
 import numpy as np
 from nptyping import NDArray, Float
 import pytest
@@ -84,3 +83,29 @@ def x_train(x_features) -> FeaturesDict:
 def y_train(y_observations: NDArray[Float]) -> TargetDict:
     """Small number of observations in dictionary structure"""
     return {Source.laqn: {Species.NO2: y_observations,}}
+
+
+@pytest.fixture(scope="function")
+def y_cleaning_array() -> np.array:
+    return np.array(
+        [[1.0], [2.0], [3.0], [4.0], [np.nan], [np.nan], [np.nan], [np.nan], [9.0]],
+        np.float64,
+    )
+
+
+@pytest.fixture(scope="function")
+def x_cleaning_array() -> np.array:
+    return np.array(
+        [
+            [1.0, 1.0],
+            [2.0, np.nan],
+            [np.nan, 3.0],
+            [np.nan, np.nan],
+            [5.0, 5.0],
+            [6.0, np.nan],
+            [np.nan, 7.0],
+            [np.nan, np.nan],
+            [9.0, 9.0],
+        ],
+        np.float64,
+    )
