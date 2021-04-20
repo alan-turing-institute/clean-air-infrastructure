@@ -6,6 +6,7 @@ from pathlib import Path
 import typer
 from ..shared_args import ClusterIdOption, InputDir, TagOption
 from ..state import state
+from ....databases.queries import AirQualityInstanceQuery
 from ....experiment import AirQualityInstance, AirQualityResult
 from ....loggers import get_logger
 
@@ -113,3 +114,16 @@ def metrics(instance_id: str):
     instance_metrics.evaluate_spatial_metrics(observation_df, result_df)
     instance_metrics.evaluate_temporal_metrics(observation_df, result_df)
     instance_metrics.update_remote_tables()
+
+@app.command()
+def recent(limit: int) -> None:
+    """Get the most recent instances
+
+    Args:
+        limit: Number of most recent instances to get
+    """
+    secretfile: str = state["secretfile"]
+    query = AirQualityInstanceQuery(secretfile)
+    tabular = query.most_recent_instances(limit, output_type="tabulate")
+    print(tabular)
+
