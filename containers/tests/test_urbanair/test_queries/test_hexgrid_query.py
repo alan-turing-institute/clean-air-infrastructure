@@ -1,5 +1,7 @@
+"""Test the API's query for data"""
 from datetime import datetime, timedelta
-from uuid import uuid1, uuid4
+from math import nan
+
 from cleanair.databases import DBWriter
 from cleanair.databases.tables import (
     AirQualityDataTable,
@@ -7,7 +9,6 @@ from cleanair.databases.tables import (
     AirQualityResultTable,
     AirQualityModelTable,
 )
-from cleanair.experiment import AirQualityResult
 from urbanair.databases.queries.air_quality_forecast import query_forecasts_hexgrid
 
 from containers.tests.test_urbanair.conftest import MODEL_DATA_ID, MODEL_INSTANCE_ID
@@ -21,7 +22,7 @@ def test_hexgrid_query(
     mock_air_quality_model,
     sample_hexgrid_points,
 ):
-    # Create tables
+    """Test that the query for the API will convert NaNs into Nones"""
 
     start_time = datetime.now().replace(minute=0, second=0, microsecond=0)
     end_time = start_time + timedelta(hours=2)
@@ -46,6 +47,8 @@ def test_hexgrid_query(
                 instance_id=MODEL_INSTANCE_ID,
                 point_id=sample_hexgrid_points[0]["point_id"],
                 measurement_start_utc=start_time,
+                NO2_mean=nan,
+                NO2_var=nan,
             ),
             AirQualityResultTable(
                 data_id=MODEL_DATA_ID,

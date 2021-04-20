@@ -2,6 +2,8 @@
 import logging
 from datetime import datetime
 from typing import Optional, List, Tuple
+from sqlalchemy import func
+from sqlalchemy.orm import Session, Query
 
 from cachetools import cached, LRUCache, TTLCache
 from cachetools.keys import hashkey
@@ -11,8 +13,6 @@ from cleanair.databases.tables import (
     HexGrid,
 )
 from cleanair.decorators import db_query
-from sqlalchemy import func
-from sqlalchemy.orm import Session, Query
 
 from ..database import all_or_404
 from ..schemas.air_quality_forecast import ForecastResultGeoJson, GeometryGeoJson
