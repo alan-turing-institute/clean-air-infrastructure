@@ -121,16 +121,16 @@ def query_forecasts_hexgrid(
         query = db.query(
             AirQualityResultTable.point_id,
             AirQualityResultTable.measurement_start_utc,
-            func.nullif(AirQualityResultTable.NO2_mean, 'NaN').label("NO2_mean"),
-            func.nullif(AirQualityResultTable.NO2_var, 'NaN').label("NO2_var"),
+            func.nullif(AirQualityResultTable.NO2_mean, "NaN").label("NO2_mean"),
+            func.nullif(AirQualityResultTable.NO2_var, "NaN").label("NO2_var"),
             func.ST_AsText(func.ST_Transform(HexGrid.geom, 4326)).label("geom"),
         )
     else:
         query = db.query(
             AirQualityResultTable.point_id,
             AirQualityResultTable.measurement_start_utc,
-            func.nullif(AirQualityResultTable.NO2_mean, 'NaN').label("NO2_mean"),
-            func.nullif(AirQualityResultTable.NO2_var, 'NaN').label("NO2_var"),
+            func.nullif(AirQualityResultTable.NO2_mean, "NaN").label("NO2_mean"),
+            func.nullif(AirQualityResultTable.NO2_var, "NaN").label("NO2_var"),
         )
 
     # Restrict to hexgrid points for the given instance and times

@@ -2,7 +2,10 @@ from datetime import datetime, timedelta
 from uuid import uuid1, uuid4
 from cleanair.databases import DBWriter
 from cleanair.databases.tables import (
-    AirQualityDataTable, AirQualityInstanceTable, AirQualityResultTable, AirQualityModelTable,
+    AirQualityDataTable,
+    AirQualityInstanceTable,
+    AirQualityResultTable,
+    AirQualityModelTable,
 )
 from cleanair.experiment import AirQualityResult
 from urbanair.databases.queries.air_quality_forecast import query_forecasts_hexgrid
@@ -10,8 +13,14 @@ from urbanair.databases.queries.air_quality_forecast import query_forecasts_hexg
 from containers.tests.test_urbanair.conftest import MODEL_DATA_ID, MODEL_INSTANCE_ID
 
 
-def test_hexgrid_query(secretfile, connection, mock_air_quality_instance, mock_air_quality_data,
-                       mock_air_quality_model, sample_hexgrid_points):
+def test_hexgrid_query(
+    secretfile,
+    connection,
+    mock_air_quality_instance,
+    mock_air_quality_data,
+    mock_air_quality_model,
+    sample_hexgrid_points,
+):
     # Create tables
 
     start_time = datetime.now().replace(minute=0, second=0, microsecond=0)
@@ -22,36 +31,30 @@ def test_hexgrid_query(secretfile, connection, mock_air_quality_instance, mock_a
     )
 
     db_instance.commit_records(
-        mock_air_quality_data,
-        on_conflict='ignore',
-        table=AirQualityDataTable
+        mock_air_quality_data, on_conflict="ignore", table=AirQualityDataTable
     )
     db_instance.commit_records(
-        mock_air_quality_model,
-        on_conflict='ignore',
-        table=AirQualityModelTable
+        mock_air_quality_model, on_conflict="ignore", table=AirQualityModelTable
     )
     db_instance.commit_records(
-        mock_air_quality_instance,
-        on_conflict='ignore',
-        table=AirQualityInstanceTable
+        mock_air_quality_instance, on_conflict="ignore", table=AirQualityInstanceTable
     )
     db_instance.commit_records(
         [
             AirQualityResultTable(
                 data_id=MODEL_DATA_ID,
                 instance_id=MODEL_INSTANCE_ID,
-                point_id=sample_hexgrid_points[0]['point_id'],
+                point_id=sample_hexgrid_points[0]["point_id"],
                 measurement_start_utc=start_time,
             ),
             AirQualityResultTable(
                 data_id=MODEL_DATA_ID,
                 instance_id=MODEL_INSTANCE_ID,
-                point_id=sample_hexgrid_points[1]['point_id'],
+                point_id=sample_hexgrid_points[1]["point_id"],
                 measurement_start_utc=start_time,
                 NO2_mean=1.0,
                 NO2_var=1.0,
-            )
+            ),
         ],
         on_conflict="ignore",
         table=AirQualityResultTable,
@@ -64,7 +67,7 @@ def test_hexgrid_query(secretfile, connection, mock_air_quality_instance, mock_a
             instance_id=MODEL_INSTANCE_ID,
             start_datetime=start_time,
             end_datetime=end_time,
-            with_geometry=False
+            with_geometry=False,
         )
 
         results = output.all()
