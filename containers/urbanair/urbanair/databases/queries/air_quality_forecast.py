@@ -1,17 +1,19 @@
 """Air quality forecast database queries and external api calls"""
-from datetime import datetime
 import logging
+from datetime import datetime
 from typing import Optional, List, Tuple
-from cachetools import cached, LRUCache, TTLCache
-from cachetools.keys import hashkey
 from sqlalchemy import func
 from sqlalchemy.orm import Session, Query
+
+from cachetools import cached, LRUCache, TTLCache
+from cachetools.keys import hashkey
 from cleanair.databases.tables import (
     AirQualityInstanceTable,
     AirQualityResultTable,
     HexGrid,
 )
 from cleanair.decorators import db_query
+
 from ..database import all_or_404
 from ..schemas.air_quality_forecast import ForecastResultGeoJson, GeometryGeoJson
 
@@ -119,16 +121,16 @@ def query_forecasts_hexgrid(
         query = db.query(
             AirQualityResultTable.point_id,
             AirQualityResultTable.measurement_start_utc,
-            AirQualityResultTable.NO2_mean,
-            AirQualityResultTable.NO2_var,
+            func.nullif(AirQualityResultTable.NO2_mean, "NaN").label("NO2_mean"),
+            func.nullif(AirQualityResultTable.NO2_var, "NaN").label("NO2_var"),
             func.ST_AsText(func.ST_Transform(HexGrid.geom, 4326)).label("geom"),
         )
     else:
         query = db.query(
             AirQualityResultTable.point_id,
             AirQualityResultTable.measurement_start_utc,
-            AirQualityResultTable.NO2_mean,
-            AirQualityResultTable.NO2_var,
+            func.nullif(AirQualityResultTable.NO2_mean, "NaN").label("NO2_mean"),
+            func.nullif(AirQualityResultTable.NO2_var, "NaN").label("NO2_var"),
         )
 
     # Restrict to hexgrid points for the given instance and times
