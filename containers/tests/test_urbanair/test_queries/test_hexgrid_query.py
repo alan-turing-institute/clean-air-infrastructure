@@ -79,3 +79,18 @@ def test_hexgrid_query(
         assert results[0][1] == start_time
         assert results[1][1] == start_time
         assert (results[0][2] is None) ^ (results[1][2] is None)
+
+        output = query_forecasts_hexgrid(
+            db=session,
+            instance_id=MODEL_INSTANCE_ID,
+            start_datetime=start_time,
+            end_datetime=end_time,
+            with_geometry=True,
+        )
+
+        results = output.all()
+        print(output.all())
+        assert len(results) == 2
+        assert results[0][1] == start_time
+        assert results[1][1] == start_time
+        assert (results[0][2] is None) ^ (results[1][2] is None)
