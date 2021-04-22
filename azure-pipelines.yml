@@ -111,7 +111,7 @@ stages:
       inputs:
         azureSubscription: 'urbanair-scn'
         KeyVaultName: 'cleanair-secrets'
-        SecretsFilter: 'scoot-aws-key,scoot-aws-key-id,satellite-copernicus-key,cleanair-inputs-db-name,cleanair-inputs-2021-db-cluster-password,cleanair-inputs-2021-db-cluster-username,cleanair-inputs-2021-db-server-name, container-registry-admin-password,container-registry-admin-username,container-registry-login-server,sentry-dsn,tomtom-api-key'
+        SecretsFilter: 'scoot-aws-key,scoot-aws-key-id,satellite-copernicus-key,cleanair-inputs-db-name,cleanair-inputs-2021-db-cluster-password,cleanair-inputs-2021-db-cluster-username,cleanair-inputs-2021-db-server-name, container-registry-admin-password,container-registry-admin-username,container-registry-login-server,sentry-dsn,tomtom-api-key,cleanair-log-storage-key,cleanair-log-storage-connection-string'
     # Install matching Kubectl version
     - task: KubectlInstaller@0
       displayName: 'Install matching Kubectl version'
