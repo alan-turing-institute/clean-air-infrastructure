@@ -115,6 +115,7 @@ def metrics(instance_id: str):
     instance_metrics.evaluate_temporal_metrics(observation_df, result_df)
     instance_metrics.update_remote_tables()
 
+
 @app.command()
 def recent(limit: int) -> None:
     """Get the most recent instances
@@ -126,4 +127,3 @@ def recent(limit: int) -> None:
     query = AirQualityInstanceQuery(secretfile)
     tabular = query.most_recent_instances(limit, output_type="tabulate")
     print(tabular)
-
