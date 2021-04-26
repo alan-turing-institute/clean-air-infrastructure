@@ -49,20 +49,8 @@ cd ../../
 #Every instance is acting as a 'mini-cache' folder, we have to push each individually
 if [ "$PUSH" == '1' ]; then
     urbanair init production
-    i=0
     for EXPERIMENT_NAME in ${EXPERIMENT_NAMES[@]}; do
-        model=${MODELS[$i]}
-        for INSTANCE in $LOCAL_EXPERIMENT_FOLDER_PATH/$EXPERIMENT_NAME/*/; do
-
-            #check if results exists
-            if [ -f $INSTANCE/result/pred_forecast.pkl ]; then
-                echo "Pushing $INSTANCE"
-                urbanair model update results $model $INSTANCE --cluster-id $CLUSTER_NAME
-            else
-                echo "No results found in $INSTANCE"
-            fi
-            
-        done
-        i=$(($i+1))
+        urbanair experiment update EXPERIMENT_NAME --experiment-root $LOCAL_EXPERIMENT_FOLDER_PATH
+        urbanair experiment metrics EXPERIMENT_NAME --experiment-root $LOCAL_EXPERIMENT_FOLDER_PATH
     done
 fi
