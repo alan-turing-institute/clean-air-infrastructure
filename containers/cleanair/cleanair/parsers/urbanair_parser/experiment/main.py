@@ -4,6 +4,7 @@ import logging
 from typing import Callable, List, Optional
 from pathlib import Path
 import typer
+from ....databases.queries import AirQualityInstanceQuery
 from ....experiment import (
     ExperimentMixin,
     RunnableAirQualityExperiment,
@@ -132,3 +133,11 @@ def update(
     update_experiment.add_instances_from_file(experiment_config.instance_id_list)
     update_experiment.update_remote_tables()
     update_experiment.update_result_tables()
+
+@app.command()
+def recent(limit: int) -> None:
+    """Get the most recent instances"""
+    secretfile: str = state["secretfile"]
+    query = AirQualityInstanceQuery(secretfile)
+    tabular = query.most_recent_instances(limit, output_type="tabulate")
+    print(tabular)
