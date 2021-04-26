@@ -9,6 +9,7 @@ variables:
   helm_release: "cleanair"
   kubernetes_cluster_name: "cleanair-kubernetes"
   kubernetes_cluster_resource_group: "RG_CLEANAIR_KUBERNETES_CLUSTER"
+  urbanair_version: $(git tag --sort=creatordate | head -1 | sed 's/^.//')
 
 stages:
 - stage: Docker
@@ -32,7 +33,7 @@ stages:
 
     # CleanAir Package (inputs, feature processing)
     - script: |
-        docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/cleanair:$(Build.SourceVersion) -f containers/dockerfiles/cleanair.Dockerfile containers
+        docker build --build-arg urbanair_version=$(urbanair_version) -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/cleanair:$(Build.SourceVersion) -f containers/dockerfiles/cleanair.Dockerfile containers
       displayName: 'Build a docker image for inputs and feature processing'
 
     # Urbanair API
