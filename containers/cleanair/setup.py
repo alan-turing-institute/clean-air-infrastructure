@@ -53,6 +53,8 @@ setuptools.setup(
         "traffic": ["pystan==2.19.1.1", "fbprophet==0.6",],
         "models": ["gpflow==1.5.1", "tensorflow==1.15.0"],
     },
+    setup_requires=["setuptools_scm"],
+    use_scm_version={"root": "../.."},
     python_requires=">=3.6",
     scripts=["cli/urbanair"],
 )
