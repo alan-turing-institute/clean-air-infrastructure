@@ -4,7 +4,7 @@ from datetime import timedelta
 from typing import Dict, List, Optional
 import pandas as pd
 import sklearn
-from ..databases import DBWriter, get_columns_of_table
+from ..databases import DBReader, DBWriter, get_columns_of_table
 from ..databases.tables import (
     AirQualityDataTable,
     AirQualityInstanceTable,
@@ -15,7 +15,11 @@ from ..databases.tables import (
 )
 from ..loggers import get_logger
 from ..models import ModelData
-from ..mixins import InstanceQueryMixin, ResultQueryMixin
+from ..mixins import (
+    InstanceQueryMixin,
+    ResultQueryMixin,
+    SpatioTemporalMetricsQueryMixin,
+)
 from ..types import FullDataConfig, Source, Species
 
 
@@ -215,6 +219,40 @@ class AirQualityMetrics(DBWriter, InstanceQueryMixin, ResultQueryMixin):
             on_conflict="overwrite",
             table=AirQualityTemporalMetricsTable,
         )
+
+
+class AirQualityMetricsQuery(DBReader, SpatioTemporalMetricsQueryMixin):
+    """Query spatial and temporal metrics for air quality models"""
+
+    @property
+    def result_table(self) -> AirQualityResultTable:
+        """The air quality result table."""
+        return AirQualityResultTable
+
+    @property
+    def model_table(self) -> AirQualityModelTable:
+        """The air quality model parameters table."""
+        return AirQualityModelTable
+
+    @property
+    def data_table(self) -> AirQualityDataTable:
+        """The air quality data config table."""
+        return AirQualityDataTable
+
+    @property
+    def instance_table(self) -> AirQualityInstanceTable:
+        """The air quality instance table."""
+        return AirQualityInstanceTable
+
+    @property
+    def spatial_metrics_table(self) -> AirQualitySpatialMetricsTable:
+        """Spatial metrics table"""
+        return AirQualitySpatialMetricsTable
+
+    @property
+    def temporal_metrics_table(self) -> AirQualityTemporalMetricsTable:
+        """Temporal metrics table"""
+        return AirQualityTemporalMetricsTable
 
 
 def remove_rows_with_nans(joined_df: pd.DataFrame, species: List[Species]):

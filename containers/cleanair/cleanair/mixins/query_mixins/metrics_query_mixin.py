@@ -1,54 +1,46 @@
 """Queries for metrics"""
 
-from ...databases import DBReader
-from ...databases.tables import (
-    AirQualityDataTable,
-    AirQualityInstanceTable,
-    AirQualityModelTable,
-    AirQualityResultTable,
-    AirQualitySpatialMetricsTable,
-    AirQualityTemporalMetricsTable,
-    MetaPoint,
+from ...databases.mixins import (
+    DataTableMixin,
+    InstanceTableMixin,
+    MetricsTableMixin,
+    ModelTableMixin,
+    ResultTableMixin,
 )
+from ...databases.tables import MetaPoint
 from ...decorators import db_query
-from . import InstanceQueryMixin, ResultQueryMixin
+from .result_query_mixin import ResultQueryMixin
 from ...types import Source
 
 
-class SpatioTemporalMetricsQueryMixin(DBReader, InstanceQueryMixin, ResultQueryMixin):
+class SpatioTemporalMetricsQueryMixin(ResultQueryMixin):
     """Query metrics in space and time"""
 
     # TODO this class can be generalised to scoot modelling & air quality modelling
 
     @property
-    def result_table(self) -> AirQualityResultTable:
+    def result_table(self) -> ResultTableMixin:
         """The air quality result table."""
-        return AirQualityResultTable
 
     @property
-    def model_table(self) -> AirQualityModelTable:
+    def model_table(self) -> ModelTableMixin:
         """The air quality model parameters table."""
-        return AirQualityModelTable
 
     @property
-    def data_table(self) -> AirQualityDataTable:
+    def data_table(self) -> DataTableMixin:
         """The air quality data config table."""
-        return AirQualityDataTable
 
     @property
-    def instance_table(self) -> AirQualityInstanceTable:
+    def instance_table(self) -> InstanceTableMixin:
         """The air quality instance table."""
-        return AirQualityInstanceTable
 
     @property
-    def spatial_metrics_table(self) -> AirQualitySpatialMetricsTable:
+    def spatial_metrics_table(self) -> MetricsTableMixin:
         """Spatial metrics table"""
-        return AirQualitySpatialMetricsTable
 
     @property
-    def temporal_metrics_table(self) -> AirQualityTemporalMetricsTable:
+    def temporal_metrics_table(self) -> MetricsTableMixin:
         """Temporal metrics table"""
-        return AirQualitySpatialMetricsTable
 
     @db_query()
     def query_spatial_metrics(
@@ -73,14 +65,20 @@ class SpatioTemporalMetricsQueryMixin(DBReader, InstanceQueryMixin, ResultQueryM
         """Query the temporal metrics for an air quality model."""
         with self.dbcnxn.open_session() as session:
             readings = (
-                session.query(AirQualityTemporalMetricsTable)
-                .filter(AirQualityTemporalMetricsTable.instance_id == instance_id)
-                .filter(AirQualityTemporalMetricsTable.source == source.value)
+                session.query(self.temporal_metrics_table)
+                .filter(self.temporal_metrics_table.instance_id == instance_id)
+                .filter(self.temporal_metrics_table.source == source.value)
             )
 
             return readings
 
-    @db_query()
-    def query_training_spatial_metrics(self, instance_id: str) -> None:
-        """Query only the training spatial metrics for an air quality model."""
-        raise NotImplementedError()
+    # ToDo: implement train/test spatial metrics query
+    # @db_query()
+    # def query_training_spatial_metrics(self, instance_id: str) -> Any:
+    #     """Query only the training spatial metrics for an air quality model."""
+    #     raise NotImplementedError("Todo: restrict spatial query to only training points")
+
+    # @db_query()
+    # def query_test_spatial_metrics(self, instance_id: str) -> Any:
+    #     """Query only the test spatial metrics for an air quality model"""
+    #     raise NotImplementedError("ToDo: implement spatial query for test points")
