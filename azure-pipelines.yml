@@ -9,7 +9,6 @@ variables:
   helm_release: "cleanair"
   kubernetes_cluster_name: "cleanair-kubernetes"
   kubernetes_cluster_resource_group: "RG_CLEANAIR_KUBERNETES_CLUSTER"
-  urbanair_version: $(git tag --sort=creatordate | head -1 | sed 's/^.//')
 
 stages:
 - stage: Docker
