@@ -31,6 +31,11 @@ stages:
         echo "$(CONTAINER-REGISTRY-ADMIN-PASSWORD)" | docker login -u "$(CONTAINER-REGISTRY-ADMIN-USERNAME)" --password-stdin "$(CONTAINER-REGISTRY-LOGIN-SERVER)"
       displayName: 'Login to ACR'
 
+    # Set cleanair version
+    - bash: |
+        echo "##vso[task.setvariable variable=urbanair_version]$(git tag --sort=creatordate | head -1 | sed 's/^.//')"
+      displayName: 'Set cleanair version'
+
     # CleanAir Package (inputs, feature processing)
     - script: |
         docker build --build-arg urbanair_version=$(urbanair_version) -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/cleanair:$(Build.SourceVersion) -f containers/dockerfiles/cleanair.Dockerfile containers
@@ -38,12 +43,12 @@ stages:
 
     # Urbanair API
     - script: |
-        docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/urbanairapi:$(Build.SourceVersion) -f containers/dockerfiles/urbanairapi.Dockerfile containers
+        docker build --build-arg urbanair_version=$(urbanair_version) -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/urbanairapi:$(Build.SourceVersion) -f containers/dockerfiles/urbanairapi.Dockerfile containers
       displayName: 'Build urbanair API image'
 
     # JamCam cronjobs (Both Cleanair and UrbanAir packages)
     - script: |
-        docker build --build-arg git_hash=$(git show -s --format=%H) -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/jamcamcron:$(Build.SourceVersion) -f containers/dockerfiles/jamcam.Dockerfile containers
+        docker build --build-arg urbanair_version=$(urbanair_version) --build-arg git_hash=$(git show -s --format=%H) -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/jamcamcron:$(Build.SourceVersion) -f containers/dockerfiles/jamcam.Dockerfile containers
       displayName: "Build jamcam cronjob image"
 
     # Push CleanAir and UrbanAir to ACR and remove local images
@@ -70,11 +75,11 @@ stages:
     #     docker build --build-arg git_hash=$(git show -s --format=%H) -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/model_fitting:$(Build.SourceVersion) -f containers/dockerfiles/model_fitting.Dockerfile containers
     #   displayName: "Build model fitting image"
     - script: | 
-        docker build --build-arg git_hash=$(git show -s --format=%H) -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/model_fitting_gpu:$(Build.SourceVersion) -f containers/dockerfiles/model_fitting_gpu.Dockerfile containers
+        docker build --build-arg urbanair_version=$(urbanair_version) --build-arg git_hash=$(git show -s --format=%H) -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/model_fitting_gpu:$(Build.SourceVersion) -f containers/dockerfiles/model_fitting_gpu.Dockerfile containers
       displayName: "Build gpu model fitting image"
     # Odysseus
     - script: |
-         docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/odysseus:$(Build.SourceVersion) -f containers/dockerfiles/odysseus.Dockerfile containers
+         docker build --build-arg urbanair_version=$(urbanair_version) -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/odysseus:$(Build.SourceVersion) -f containers/dockerfiles/odysseus.Dockerfile containers
       displayName: 'Building the Odysseus image'
     # List available images
     - script: |
