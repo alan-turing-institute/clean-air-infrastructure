@@ -577,3 +577,25 @@ def svgp_small_inducing_and_maxiter(secretfile: str) -> List[InstanceMixin]:
         instance_list.append(instance)
 
     return instance_list
+
+
+def dryrun_svgp(secretfile: str) -> List[InstanceMixin]:
+    """SVGP on just one day of training/test data with small
+    inducing points and maxiter to make it run very fast"""
+    model_config = ModelConfig(secretfile=secretfile)
+    data_config = default_laqn_data_config()
+    data_config.static_features = []
+    data_config.dynamic_features = []
+    data_config.train_sources = [Source.laqn]
+    data_config.pred_sources = [Source.laqn]
+    input_dim = total_num_features(data_config)
+    active_dims = list(range(input_dim))  # explicitly calculate active dims
+    data_config = __static_features_fix(data_config)
+    full_data_config = model_config.generate_full_config(data_config)
+    model_params = default_svgp_model_params(
+        num_inducing_points=100,
+        maxiter=100,
+        active_dims=active_dims,
+        input_dim=input_dim,
+    )
+    return [InstanceMixin(full_data_config, ModelName.svgp, model_params, tag=Tag.test)]
