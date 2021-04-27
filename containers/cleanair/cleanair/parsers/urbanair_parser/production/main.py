@@ -3,7 +3,7 @@
 from enum import Enum
 from pathlib import Path
 import typer
-from ..experiment.main import run, setup, update
+from ..experiment.main import metrics, run, setup, update
 from ....types import ExperimentName
 from ..shared_args import ExperimentDir
 
@@ -29,6 +29,7 @@ def svgp(
     setup(experiment_name, experiment_root=experiment_root)
     run(experiment_name, experiment_root=experiment_root)
     update(experiment_name, experiment_root=experiment_root)
+    metrics(experiment_name, experiment_root=experiment_root)
 
 
 @app.command()
@@ -43,3 +44,4 @@ def mrdgp(
     setup(experiment_name, experiment_root=experiment_root)
     run(experiment_name, experiment_root=experiment_root)
     update(experiment_name, experiment_root=experiment_root)
+    metrics(experiment_name, experiment_root=experiment_root)

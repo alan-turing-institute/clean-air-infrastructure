@@ -5,7 +5,7 @@ from ..models import ModelConfig
 from ..types import DataConfig, FeatureBufferSize, Source, Species
 
 FORECAST_DAYS = 2
-TRAIN_UPTO = datetime(2020, 11, 5)
+TRAIN_UPTO = datetime(2021, 4, 15)
 TRAIN_DAYS = 3
 
 
