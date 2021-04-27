@@ -160,6 +160,9 @@ cronjobs:
     env:
       - name: DB_SECRET_FILE
         value: "/secrets/db_secrets.json"
+    envFrom:
+      - secretRef:
+          name: cleanair-log-storage-connection-string
     volumeMounts:
     - name: secrets
       mountPath: "/secrets/"

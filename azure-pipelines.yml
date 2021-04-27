@@ -165,6 +165,12 @@ stages:
         if [ "$(kubectl get secret --namespace cleanair 2> /dev/null | grep tomtom-api-key)" == "" ]; then
           kubectl create secret generic --namespace cleanair tomtom-api-key --from-literal=TOMTOM_API_KEY='$(TOMTOM-API-KEY)'
         fi
+        if [ "$(kubectl get secret --namespace cleanair 2> /dev/null | grep cleanair-log-storage-connection-string)" == "" ]; then
+              kubectl create secret generic --namespace cleanair cleanair-log-storage-connection-string --from-literal=CLEANAIR_LOG_STORAGE_CONNECTION_STRING='$(CLEANAIR-LOG-STORAGE-CONNECTION-STRING)'
+        fi
+        if [ "$(kubectl get secret --namespace cleanair 2> /dev/null | grep cleanair-log-storage-key)" == "" ]; then
+              kubectl create secret generic --namespace cleanair cleanair-log-storage-key --from-literal=CLEANAIR_LOG_STORAGE_KEY='$(CLEANAIR-LOG-STORAGE-KEY)'
+        fi
       displayName: 'Add secrets to Kubernetes'
     # Prepare Helm chart
     - script: |
