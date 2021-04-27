@@ -10,6 +10,7 @@ from .query_mixins import (
     InstanceQueryMixin,
     ResultQueryMixin,
     ScootQueryMixin,
+    SpatioTemporalMetricsQueryMixin,
 )
 from .parser_mixins import (
     CopernicusMixin,
@@ -35,6 +36,7 @@ __all__ = [
     "ScootQueryMixin",
     "SecretFileParserMixin",
     "SourcesMixin",
+    "SpatioTemporalMetricsQueryMixin",
     "UpdateInstanceMixin",
     "VerbosityMixin",
     "WebMixin",
