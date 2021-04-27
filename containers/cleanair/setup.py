@@ -53,7 +53,11 @@ setuptools.setup(
         "models": ["gpflow==1.5.1", "tensorflow==1.15.0"],
     },
     setup_requires=["setuptools_scm"],
-    use_scm_version={"root": "../.."},
+    use_scm_version={
+        "root": "../..",
+        "relative_to": __file__,
+        "fallback_version": "0.0.3",
+    },
     python_requires=">=3.6",
     scripts=["cli/urbanair"],
 )
