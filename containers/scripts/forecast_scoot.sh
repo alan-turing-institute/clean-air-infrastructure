@@ -5,7 +5,7 @@
 
 # Function to upload logs to blob storage
 DATE=`date +"%Y_%m_%d_%T"`
-LOGFILE="mrdpg_static_${DATE}.log"
+LOGFILE="forecast_scoot_${DATE}.log"
 
 check_exit() {
     if [ $1 -ne 0 ];
