@@ -21,8 +21,8 @@ jobs:
 
       install:
         - pip install -r containers/requirements.txt
-        - pip install 'containers/cleanair[models,traffic,dashboard]'
-        - pip install 'containers/urbanair'
+        - pip install -e 'containers/cleanair[models,traffic,dashboard]'
+        - pip install -e 'containers/urbanair'
 
       before_script:
         - sh .travis/before_script.sh
@@ -52,8 +52,8 @@ jobs:
 
       install:
         - pip install -r containers/requirements.txt
-        - pip install 'containers/cleanair'
-        - pip install 'containers/odysseus'
+        - pip install -e 'containers/cleanair'
+        - pip install -e 'containers/odysseus'
 
       before_script:
         - sh .travis/before_script.sh
@@ -74,7 +74,7 @@ jobs:
 
       install:
         - pip install -r containers/requirements.txt
-        - pip install 'containers/cleanair'
+        - pip install -e 'containers/cleanair'
         - pip install -e 'containers/urbanair'
 
       before_script:

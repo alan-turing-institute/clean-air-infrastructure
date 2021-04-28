@@ -3,7 +3,12 @@ import setuptools
 
 setuptools.setup(
     name="odysseus",
-    version="0.0.1",
+    setup_requires=["setuptools_scm"],
+    use_scm_version={
+        "root": "../..",
+        "relative_to": __file__,
+        "fallback_version": "0.0.3",
+    },
     author="Oscar Giles, James Robinson, Patrick O'Hara, Ollie Hamelijnck",
     author_email="ogiles@turing.ac.uk, jrobinson@turing.ac.uk, pohara@turing.ac.uk, ohamelijnck@turing.ac.uk",
     description="CleanAir Traffic module for CleanAir traffic modules",

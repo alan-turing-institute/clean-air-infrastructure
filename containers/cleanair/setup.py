@@ -3,7 +3,6 @@ import setuptools
 
 setuptools.setup(
     name="cleanair",
-    version="0.0.1",
     author="Oscar Giles, James Robinson, Patrick O'Hara, Ollie Hamelijnck",
     author_email="ogiles@turing.ac.uk, jrobinson@turing.ac.uk, pohara@turing.ac.uk, ohamelijnck@turing.ac.uk",
     description="CleanAir",
@@ -52,6 +51,12 @@ setuptools.setup(
     extras_require={
         "traffic": ["pystan==2.19.1.1", "fbprophet==0.6",],
         "models": ["gpflow==1.5.1", "tensorflow==1.15.0"],
+    },
+    setup_requires=["setuptools_scm"],
+    use_scm_version={
+        "root": "../..",
+        "relative_to": __file__,
+        "fallback_version": "0.0.3",
     },
     python_requires=">=3.6",
     scripts=["cli/urbanair"],
