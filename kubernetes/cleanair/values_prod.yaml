@@ -4,6 +4,19 @@ imageTag: 6bff12839805f29382aa91206140bd6a81cbdbed
 
 jobs:
 
+  - name: log-test
+    concurrencyPolicy: Allow
+    restartPolicy: Never
+    image:
+        repository: cleanairdocker.azurecr.io/cleanair
+        imagePullPolicy: IfNotPresent
+    args: [ "bash", "/app/scripts/test_logs.sh" ]
+    envFrom:
+      - secretRef:
+          name: cleanair-log-storage-key
+    imagePullSecrets:
+        - name: regcred
+
 
 cronjobs:
 
@@ -162,7 +175,7 @@ cronjobs:
         value: "/secrets/db_secrets.json"
     envFrom:
       - secretRef:
-          name: cleanair-log-storage-connection-string
+          name: cleanair-log-storage-key
     volumeMounts:
     - name: secrets
       mountPath: "/secrets/"
@@ -193,7 +206,7 @@ cronjobs:
         value: "/secrets/db_secrets.json"
     envFrom:
       - secretRef:
-          name: cleanair-log-storage-connection-string
+          name: cleanair-log-storage-key
     volumeMounts:
     - name: secrets
       mountPath: "/secrets/"
@@ -233,7 +246,7 @@ cronjobs:
         value: "/secrets/db_secrets.json"
     envFrom:
       - secretRef:
-          name: cleanair-log-storage-connection-string
+          name: cleanair-log-storage-key
     volumeMounts:
     - name: secrets
       mountPath: "/secrets/"
@@ -273,7 +286,7 @@ cronjobs:
         value: "/secrets/db_secrets.json"
     envFrom:
       - secretRef:
-          name: cleanair-log-storage-connection-string
+          name: cleanair-log-storage-key
     volumeMounts:
     - name: secrets
       mountPath: "/secrets/"
@@ -313,7 +326,7 @@ cronjobs:
         value: "/secrets/db_secrets.json"
     envFrom:
       - secretRef:
-          name: cleanair-log-storage-connection-string
+          name: cleanair-log-storage-key
     volumeMounts:
     - name: secrets
       mountPath: "/secrets/"
