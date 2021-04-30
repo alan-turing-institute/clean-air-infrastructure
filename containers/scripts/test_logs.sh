@@ -4,6 +4,10 @@
 DATE=`date +"%Y_%m_%d_%T"`
 LOGFILE="test_logs_${DATE}.log"
 
+printenv
+
+echo $CLEANAIR_LOG_STORAGE_KEY
+
 touch $LOGFILE
 
 urbanair logs upload $LOGFILE

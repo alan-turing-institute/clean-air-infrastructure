@@ -21,6 +21,8 @@ def upload(filepath: Path) -> None:
 
     typer.echo("Upload logfile to blob storage")
 
+    print(get_settings().cleanair_log_storage_key)
+
     sas_token = blob_storage.generate_sas_token(
         resource_group=RESOURCE_GROUP,
         storage_account_name=STORAGE_ACCOUNT_NAME,
