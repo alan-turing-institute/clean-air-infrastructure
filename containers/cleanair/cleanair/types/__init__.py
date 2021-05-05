@@ -31,6 +31,7 @@ from .model_types import (
     KernelParams,
     MRDGPParams,
     SVGPParams,
+    model_params_from_dict,
 )
 
 

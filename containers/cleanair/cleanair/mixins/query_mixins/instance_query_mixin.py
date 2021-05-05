@@ -9,6 +9,14 @@ from ...databases.mixins import (
     InstanceTableMixin,
     ModelTableMixin,
 )
+from ..instance_mixins import InstanceMixin
+from ...types import (
+    FullDataConfig,
+    ModelName,
+    SVGPParams,
+    MRDGPParams,
+    model_params_from_dict,
+)
 
 
 class InstanceQueryMixin:
@@ -42,6 +50,49 @@ class InstanceQueryMixin:
     def model_table(self) -> ModelTableMixin:
         """Model params table."""
         return ModelTableMixin
+
+    def query_instance(self, instance_id: str) -> InstanceMixin:
+        """Get the instance with the given instance id"""
+        with self.dbcnxn.open_session() as session:
+            instance_reading = (
+                session.query(
+                    self.instance_table.cluster_id,
+                    self.instance_table.data_id,
+                    self.instance_table.fit_start_time,
+                    self.instance_table.git_hash,
+                    self.instance_table.instance_id,
+                    self.instance_table.model_name,
+                    self.instance_table.param_id,
+                    self.instance_table.tag,
+                    self.model_table.model_params,
+                    self.data_table.data_config,
+                    self.data_table.preprocessing,
+                )
+                .filter(self.instance_table.instance_id == instance_id)
+                .join(
+                    self.model_table,
+                    and_(
+                        self.model_table.model_name == self.instance_table.model_name,
+                        self.model_table.param_id == self.instance_table.param_id,
+                    ),
+                )
+                .join(
+                    self.data_table,
+                    self.data_table.data_id == self.instance_table.data_id,
+                )
+                .one()
+            )
+            data_config = FullDataConfig(**instance_reading.data_config)
+            model_name = ModelName[instance_reading.model_name]
+            model_params = model_params_from_dict(
+                model_name, instance_reading.model_params
+            )
+            instance = InstanceMixin(
+                data_config=data_config,
+                model_name=model_name,
+                model_params=model_params,
+            )
+            return instance
 
     @db_query()
     def get_instances(  # pylint: disable=too-many-arguments
