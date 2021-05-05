@@ -27,4 +27,3 @@ def test_query_instance(
         == instance.data_config.train_end_date
     )
     assert queried_instance.model_name == instance.model_name
-    assert queried_instance.model_params.maxiter == instance.model_params.maxiter
