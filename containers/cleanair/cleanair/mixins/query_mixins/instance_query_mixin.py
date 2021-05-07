@@ -1,8 +1,8 @@
 """Mixin class for querying instances."""
-
+import datetime
 from abc import abstractmethod
 from typing import Any
-from sqlalchemy import and_
+from sqlalchemy import and_, func, DATE
 from ...decorators import db_query
 from ...databases.mixins import (
     DataTableMixin,
@@ -52,6 +52,7 @@ class InstanceQueryMixin:
         param_ids: list = None,
         models: list = None,
         fit_start_time: str = None,
+        fit_on_date: datetime.date = None,
     ):
         """
         Get traffic instances and optionally filter by parameters.
@@ -63,6 +64,7 @@ class InstanceQueryMixin:
             param_ids: Filter by model parameter ids in the list.
             models: Filter by names of models in the list.
             fit_start_time: Filter by models that were fit on or after this timestamp.
+            fit_on_date: Filter to models that were run on this date.
         """
         with self.dbcnxn.open_session() as session:
             readings = session.query(self.instance_table)
@@ -88,6 +90,11 @@ class InstanceQueryMixin:
                 readings = readings.filter(
                     self.instance_table.fit_start_time >= fit_start_time
                 )
+            if fit_on_date:
+                readings = readings.filter(
+                    func.cast(self.instance_table.fit_start_time, DATE) == fit_on_date
+                )
+
             return readings
 
     @db_query()
@@ -99,6 +106,7 @@ class InstanceQueryMixin:
         param_ids: list = None,
         models: list = None,
         fit_start_time: str = None,
+        fit_on_date: datetime.date = None,
     ):
         """
         Get all traffic instances and join the json parameters.
@@ -110,6 +118,7 @@ class InstanceQueryMixin:
             param_ids: Filter by model parameter ids in the list.
             models: Filter by names of models in the list.
             fit_start_time: Filter by models that were fit on or after this timestamp.
+            fit_on_date: Filter to models that were run on this date.
         """
         instance_subquery = self.get_instances(
             tag=tag,
@@ -118,6 +127,7 @@ class InstanceQueryMixin:
             param_ids=param_ids,
             models=models,
             fit_start_time=fit_start_time,
+            fit_on_date=fit_on_date,
             output_type="subquery",
         )
         with self.dbcnxn.open_session() as session:
