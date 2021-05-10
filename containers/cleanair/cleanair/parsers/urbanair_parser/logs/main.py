@@ -79,7 +79,7 @@ def download(
 ) -> None:
     """Upload a log file to blob storage"""
 
-    typer.echo("Upload logfile to blob storage")
+    typer.echo("Download a logfile from blob storage")
 
     sas_token = blob_storage.generate_sas_token(
         resource_group=RESOURCE_GROUP,
@@ -97,7 +97,7 @@ def download(
         name_starts_with=name,
     ):
         filepath = directory / blob.name
-        filepath.suffix = "log"
+        filepath = filepath.with_suffix(".log")
         blob_storage.download_blob(
             blob_name=blob.name,
             target_file=filepath,
