@@ -16,6 +16,7 @@ from azure.storage.blob import (
 def generate_sas_token(
     resource_group: str,
     storage_account_name: str,
+    storage_account_key: str = None,
     days: int = 1,
     hours: int = 0,
     permit_write: Optional[bool] = False,
@@ -25,17 +26,18 @@ def generate_sas_token(
     Args:
         resource_group: The Azure Resource group
         storage_account_name: The name of the storage account
+        storage_account_key: Optionally give the key, if not given, it will be loaded from az cli profile
         days: Number of days until SAS token expires. Shorter is better
         hours: Number of hours until SAS token expires. Shorter is better
     """
-
-    storage_mgmt_client = get_client_from_cli_profile(StorageManagementClient)
-    storage_key_list = storage_mgmt_client.storage_accounts.list_keys(
-        resource_group, storage_account_name,
-    )
-    storage_account_key = [
-        k.value for k in storage_key_list.keys if k.key_name == "key1"
-    ][0]
+    if not storage_account_key:
+        storage_mgmt_client = get_client_from_cli_profile(StorageManagementClient)
+        storage_key_list = storage_mgmt_client.storage_accounts.list_keys(
+            resource_group, storage_account_name,
+        )
+        storage_account_key = [
+            k.value for k in storage_key_list.keys if k.key_name == "key1"
+        ][0]
 
     return "?" + generate_account_sas(
         storage_account_name,

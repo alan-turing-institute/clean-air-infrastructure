@@ -14,6 +14,7 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ],
     install_requires=[
+        "azure-cli-core==2.22.1",
         "azure-storage-blob==12.3.0",
         "azure-mgmt-storage==9.0.0",
         "azure-common==1.1.25",
