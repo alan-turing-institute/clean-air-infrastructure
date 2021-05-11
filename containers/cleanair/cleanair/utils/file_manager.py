@@ -3,6 +3,7 @@
 from __future__ import annotations
 from datetime import datetime
 from pathlib import Path
+from shutil import make_archive
 from typing import Any, Callable, Dict, List, Optional, Union, TYPE_CHECKING
 import json
 import pickle
@@ -90,6 +91,9 @@ class FileManager:
 
         with pickle_path.open("rb") as pickle_f:
             return pickle.load(pickle_f)
+
+    def archive(self):
+        return make_archive(self.input_dir, "zip", self.input_dir)
 
     def load_data_config(self, full: bool = False) -> Union[DataConfig, FullDataConfig]:
         """Load an existing configuration file"""

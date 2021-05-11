@@ -1,12 +1,11 @@
 """Setup, run and update experiments"""
 
 import logging
-from datetime import datetime
-from shutil import make_archive
 from typing import Callable, List, Optional
 from pathlib import Path
 import typer
 from cleanair.parsers.urbanair_parser.environment_settings import get_settings
+from cleanair.utils import FileManager
 from cleanair.utils.azure import blob_storage
 
 from ....experiment import (
@@ -166,16 +165,16 @@ def metrics(
 
 
 @app.command()
-def archive(
-    experiment_name: ExperimentName, experiment_root: Path = ExperimentDir
-) -> Path:
+def archive_instances(
+    experiment_name: ExperimentName,
+    experiment_root: Path = ExperimentDir
+) -> list:
     """Packs an experiement into a zip file"""
-    archive_name = Path(f"{experiment_name}_{datetime.today().strftime('%Y_%m_%d')}")
-    return make_archive(archive_name, "zip", experiment_root)
+    return [FileManager(file).archive() for file in (experiment_root / Path(experiment_name.value)).iterdir() if file.is_dir()]
 
 
 @app.command()
-def upload(filepath: Path) -> None:
+def upload(filepaths: List[Path]) -> None:
     """Uploads a file to the experiment archive"""
     sas_token = blob_storage.generate_sas_token(
         resource_group="RG_CLEANAIR_INFRASTRUCTURE",
@@ -184,10 +183,12 @@ def upload(filepath: Path) -> None:
         permit_write=True,
     )
 
-    blob_storage.upload_blob(
-        storage_container_name="experiments",
-        blob_name=filepath.stem,
-        account_url="https://cleanairexperiments.blob.core.windows.net/",
-        source_file=str(filepath),
-        sas_token=sas_token,
-    )
+    for filepath in filepaths:
+
+        blob_storage.upload_blob(
+            storage_container_name="experiments",
+            blob_name=filepath.stem,
+            account_url="https://cleanairexperiments.blob.core.windows.net/",
+            source_file=str(filepath),
+            sas_token=sas_token,
+        )
