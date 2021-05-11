@@ -166,11 +166,14 @@ def metrics(
 
 @app.command()
 def archive_instances(
-    experiment_name: ExperimentName,
-    experiment_root: Path = ExperimentDir
+    experiment_name: ExperimentName, experiment_root: Path = ExperimentDir
 ) -> list:
     """Packs an experiement into a zip file"""
-    return [FileManager(file).archive() for file in (experiment_root / Path(experiment_name.value)).iterdir() if file.is_dir()]
+    return [
+        FileManager(file).archive()
+        for file in (experiment_root / Path(experiment_name.value)).iterdir()
+        if file.is_dir()
+    ]
 
 
 @app.command()
