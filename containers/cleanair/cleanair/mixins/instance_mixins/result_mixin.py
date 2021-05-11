@@ -1,14 +1,15 @@
 """Mixin class for predictions from a model."""
 
+from abc import abstractmethod
 from logging import Logger
 from typing import Optional
 import pandas as pd
 from sqlalchemy import inspect
+from ...databases.mixins import ResultTableMixin
 from ...loggers import get_logger
-from ..query_mixins import ResultQueryMixin
 
 
-class ResultMixin(ResultQueryMixin):  # pylint: disable=abstract-method
+class ResultMixin:
     """The predictions from an air quality model.
 
     Attributes:
@@ -21,7 +22,7 @@ class ResultMixin(ResultQueryMixin):  # pylint: disable=abstract-method
         self,
         instance_id: str,
         data_id: str,
-        result_df: Optional[pd.DataFrame] = None,
+        result_df: pd.DataFrame,
         secretfile: Optional[str] = None,
         logger: Logger = get_logger("result"),
         **kwargs,
@@ -30,14 +31,16 @@ class ResultMixin(ResultQueryMixin):  # pylint: disable=abstract-method
         self.instance_id = instance_id
         self.data_id = data_id
         self.logger = logger
-        if not result_df is None:
-            self.result_df = result_df
-            if "instance_id" not in self.result_df:
-                self.result_df["instance_id"] = self.instance_id
-            if "data_id" not in self.result_df:
-                self.result_df["data_id"] = self.data_id
-        else:
-            self.result_df = self.query_results(self.instance_id, self.data_id)
+        self.result_df = result_df
+        if "instance_id" not in self.result_df:
+            self.result_df["instance_id"] = self.instance_id
+        if "data_id" not in self.result_df:
+            self.result_df["data_id"] = self.data_id
+
+    @property
+    @abstractmethod
+    def result_table(self) -> ResultTableMixin:
+        """The sqlalchemy table to query. The table must extend ResultTableMixin."""
 
     def update_remote_tables(self):
         """Write air quality results to the database."""

@@ -17,6 +17,7 @@ from ..types import (
     Source,
     SVGPParams,
     TargetDict,
+    model_params_from_dict,
 )
 
 if TYPE_CHECKING:
@@ -361,14 +362,3 @@ class FileManager:
                 tag=instance_dict.get("tag"),
             )
             return instance
-
-
-def model_params_from_dict(
-    model_name: ModelName, params_dict: Dict
-) -> Union[SVGPParams, MRDGPParams]:
-    """Use the model name to return the right type of model params"""
-    if model_name == ModelName.svgp:
-        return SVGPParams(**params_dict)
-    if model_name == ModelName.mrdgp:
-        return MRDGPParams(**params_dict)
-    raise ValueError(f"{model_name} is not a valid model name")
