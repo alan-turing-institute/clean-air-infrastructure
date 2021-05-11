@@ -5,6 +5,7 @@ from pathlib import Path
 import typer
 
 from ....utils.azure import blob_storage
+from ..environment_settings.settings import get_settings
 
 app = typer.Typer(help="Accessing logs in blob storage")
 
@@ -20,9 +21,12 @@ def upload(filepath: Path) -> None:
 
     typer.echo("Upload logfile to blob storage")
 
+    print(get_settings().cleanair_log_storage_key)
+
     sas_token = blob_storage.generate_sas_token(
         resource_group=RESOURCE_GROUP,
         storage_account_name=STORAGE_ACCOUNT_NAME,
+        storage_account_key=get_settings().cleanair_log_storage_key,
         permit_write=True,
     )
 
@@ -43,9 +47,13 @@ def ls(
     like: str = typer.Option(None, help="The log prefix, e.g. 'svgp'"),
 ) -> None:
     """List the logs (within daterange if specified)"""
+
+    typer.echo("List logfiles in blob storage")
+
     sas_token = blob_storage.generate_sas_token(
         resource_group=RESOURCE_GROUP,
         storage_account_name=STORAGE_ACCOUNT_NAME,
+        storage_account_key=get_settings().cleanair_log_storage_key,
         permit_write=True,
     )
 
@@ -71,10 +79,11 @@ def download(
 ) -> None:
     """Upload a log file to blob storage"""
 
-    typer.echo("Upload logfile to blob storage")
+    typer.echo("Download a logfile from blob storage")
 
     sas_token = blob_storage.generate_sas_token(
         resource_group=RESOURCE_GROUP,
+        storage_account_key=get_settings().cleanair_log_storage_key,
         storage_account_name=STORAGE_ACCOUNT_NAME,
         permit_write=True,
     )
@@ -88,7 +97,7 @@ def download(
         name_starts_with=name,
     ):
         filepath = directory / blob.name
-        filepath.suffix = "log"
+        filepath = filepath.with_suffix(".log")
         blob_storage.download_blob(
             blob_name=blob.name,
             target_file=filepath,
