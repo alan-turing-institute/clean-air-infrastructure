@@ -23,6 +23,7 @@ python-virtual-environments/
 
 # Python package
 *.egg-info
+.eggs
 
 # Notebooks
 notebooks/

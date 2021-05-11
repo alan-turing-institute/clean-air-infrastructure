@@ -3,6 +3,7 @@
 from .data_config_query_mixin import AirQualityDataConfigQueryMixin
 from .database_query_mixin import DBQueryMixin
 from .instance_query_mixin import InstanceQueryMixin
+from .metrics_query_mixin import SpatioTemporalMetricsQueryMixin
 from .model_params_query_mixin import ModelParamsQueryMixin
 from .result_query_mixin import ResultQueryMixin
 from .scoot_query_mixin import ScootQueryMixin
@@ -14,4 +15,5 @@ __all__ = [
     "ModelParamsQueryMixin",
     "ResultQueryMixin",
     "ScootQueryMixin",
+    "SpatioTemporalMetricsQueryMixin",
 ]

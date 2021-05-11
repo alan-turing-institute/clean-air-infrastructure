@@ -12,7 +12,9 @@ from ....experiment import (
     UpdateAirQualityExperiment,
     generate_air_quality_experiment,
 )
+from ....metrics import AirQualityMetrics
 from ....mixins import InstanceMixin
+from ....models import ModelData
 from ..shared_args import ExperimentDir
 from ..state import state
 from ....types import ExperimentName
@@ -141,3 +143,26 @@ def recent(limit: int) -> None:
     query = AirQualityInstanceQuery(secretfile)
     tabular = query.most_recent_instances(limit, output_type="tabulate")
     print(tabular)
+
+@app.command()
+def metrics(
+    experiment_name: ExperimentName, experiment_root: Path = ExperimentDir
+) -> None:
+    """Update the metrics for the experiment"""
+    secretfile: str = state["secretfile"]
+    metrics_experiment = UpdateAirQualityExperiment(
+        experiment_name, experiment_root, secretfile=secretfile
+    )
+    experiment_config = metrics_experiment.read_experiment_config_from_json()
+    metrics_experiment.add_instances_from_file(experiment_config.instance_id_list)
+    model_data = ModelData(secretfile=secretfile)
+
+    for instance_id in metrics_experiment.get_instance_ids():
+        instance_metrics = AirQualityMetrics(
+            instance_id, secretfile=secretfile, connection=model_data.dbcnxn.connection
+        )
+        observation_df = instance_metrics.load_observation_df(model_data)
+        result_df = instance_metrics.load_result_df()
+        instance_metrics.evaluate_spatial_metrics(observation_df, result_df)
+        instance_metrics.evaluate_temporal_metrics(observation_df, result_df)
+        instance_metrics.update_remote_tables()

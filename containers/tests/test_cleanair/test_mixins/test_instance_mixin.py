@@ -1,50 +1,9 @@
 """Fixtures for mixins."""
 
-from datetime import datetime
-from typing import Any, List
-import pytest
+from typing import Any
 from pydantic import BaseModel
 from cleanair.experiment import AirQualityInstance
 from cleanair.types import ModelName
-
-
-class SimpleConfig(BaseModel):
-    """Oversimplified data config class"""
-
-    start: datetime
-    upto: datetime
-    sensors: List[str]
-
-
-class SimpleParams(BaseModel):
-    """Oversimplified model params class"""
-
-    maxiter: int
-    likelihood: str
-
-
-class SimplePreprocessing(BaseModel):
-    """Oversimplified preprocessing class"""
-
-    normalise: bool
-
-
-@pytest.fixture(scope="function")
-def simple_config(dataset_start_date, dataset_end_date) -> SimpleConfig:
-    """Oversimplified data config fixture"""
-    return SimpleConfig(start=dataset_start_date, upto=dataset_end_date, sensors=["A"])
-
-
-@pytest.fixture(scope="function")
-def simple_params() -> SimpleParams:
-    """Oversimplified model parameters fixture"""
-    return SimpleParams(maxiter=10, likelihood="gaussian")
-
-
-@pytest.fixture(scope="function")
-def simple_preprocessing() -> SimplePreprocessing:
-    """Oversimplified preprocessing fixture"""
-    return SimplePreprocessing(normalise=True)
 
 
 # pylint: disable=redefined-outer-name
@@ -72,9 +31,11 @@ def test_update_remote_tables(
         assert instance_row.count() == 1
         assert model_row.count() == 1
         assert data_row.count() == 1
-        loaded_config = SimpleConfig(**data_row.one().data_config)
-        loaded_preprocessing = SimplePreprocessing(**data_row.one().preprocessing)
-        loaded_params = SimpleParams(**model_row.one().model_params)
+        loaded_config = simple_config.__class__(**data_row.one().data_config)
+        loaded_preprocessing = simple_preprocessing.__class__(
+            **data_row.one().preprocessing
+        )
+        loaded_params = simple_params.__class__(**model_row.one().model_params)
 
         # check keys and value of loaded data config
         for key, value in loaded_config:

@@ -2,7 +2,7 @@
 
 from typing import Dict, List, Optional, Union
 from pydantic import BaseModel
-from .enum_types import KernelType
+from .enum_types import KernelType, ModelName
 
 
 class KernelParams(BaseModel):
@@ -42,3 +42,14 @@ class MRDGPParams(BaseModel):
     mixing_weight: Dict[str, Union[str, None]]
     num_prediction_samples: int
     num_samples_between_layers: int
+
+
+def model_params_from_dict(
+    model_name: ModelName, params_dict: Dict
+) -> Union[SVGPParams, MRDGPParams]:
+    """Use the model name to return the right type of model params"""
+    if model_name == ModelName.svgp:
+        return SVGPParams(**params_dict)
+    if model_name == ModelName.mrdgp:
+        return MRDGPParams(**params_dict)
+    raise ValueError(f"{model_name} is not a valid model name")

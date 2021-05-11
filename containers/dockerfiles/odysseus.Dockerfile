@@ -8,6 +8,10 @@ WORKDIR /app
 COPY cleanair /app/cleanair/
 COPY odysseus /app/odysseus/
 
+# set the version of cleanair
+ARG urbanair_version
+ENV SETUPTOOLS_SCM_PRETEND_VERSION ${urbanair_version}
+
 # Install any needed packages specified in requirements.txt
 RUN pip install /app/cleanair
 RUN pip install /app/odysseus

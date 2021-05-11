@@ -14,6 +14,10 @@ RUN apt-get -y install gcc g++
 # Set the working directory to /app
 WORKDIR /app
 
+# set the version of cleanair
+ARG urbanair_version
+ENV SETUPTOOLS_SCM_PRETEND_VERSION ${urbanair_version}
+
 # Copy the cleanair directory contents into the container
 COPY cleanair /app/cleanair
 COPY scripts/ /app/scripts
