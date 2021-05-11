@@ -58,10 +58,22 @@ class LAQNAvailabilityMixin:
 
     @db_query()
     def get_raw_laqn_data(
-        self, species: List[str], start_date: str, end_date: Optional[str] = None, point_ids: List[str] = None, site_codes: List[str] = None
+        self,
+        species: List[str],
+        start_date: str,
+        end_date: Optional[str] = None,
+        point_ids: List[str] = None,
+        site_codes: List[str] = None,
     ):
 
         """Get raw LAQN sensor data between a start_date and end_date for a particular species
+
+        Args:
+            species: List of pollutants
+            start_date: Date of first reading
+            end_date: Readings upto but not including this date
+            point_ids: List of interest points to get readings for
+            side_codes: List of site codes to get readings for
         """
 
         with self.dbcnxn.open_session() as session:

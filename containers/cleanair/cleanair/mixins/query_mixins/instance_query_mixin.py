@@ -13,8 +13,6 @@ from ..instance_mixins import InstanceMixin
 from ...types import (
     FullDataConfig,
     ModelName,
-    SVGPParams,
-    MRDGPParams,
     model_params_from_dict,
 )
 
@@ -91,6 +89,10 @@ class InstanceQueryMixin:
                 data_config=data_config,
                 model_name=model_name,
                 model_params=model_params,
+                cluster_id=instance_reading.cluster_id,
+                fit_start_time=instance_reading.fit_start_time,
+                git_hash=instance_reading.git_hash,
+                tag=instance_reading.tag,
             )
             return instance
 
