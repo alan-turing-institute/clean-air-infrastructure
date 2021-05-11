@@ -194,6 +194,8 @@ cronjobs:
     envFrom:
     - secretRef:
         name: cleanair-log-storage-key
+    - secretRef:
+        name: cleanair-experiment-archive-key
     volumeMounts:
     - name: secrets
       mountPath: "/secrets/"
@@ -234,6 +236,8 @@ cronjobs:
     envFrom:
     - secretRef:
         name: cleanair-log-storage-key
+    - secretRef:
+        name: cleanair-experiment-archive-key
     volumeMounts:
     - name: secrets
       mountPath: "/secrets/"
@@ -274,6 +278,8 @@ cronjobs:
     envFrom:
     - secretRef:
         name: cleanair-log-storage-key
+    - secretRef:
+        name: cleanair-experiment-archive-key
     volumeMounts:
     - name: secrets
       mountPath: "/secrets/"
@@ -314,6 +320,8 @@ cronjobs:
     envFrom:
     - secretRef:
         name: cleanair-log-storage-key
+    - secretRef:
+        name: cleanair-experiment-archive-key
     volumeMounts:
     - name: secrets
       mountPath: "/secrets/"

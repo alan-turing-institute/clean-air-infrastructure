@@ -1,9 +1,14 @@
 """Setup, run and update experiments"""
 
 import logging
+from datetime import datetime
+from shutil import make_archive
 from typing import Callable, List, Optional
 from pathlib import Path
 import typer
+from cleanair.parsers.urbanair_parser.environment_settings import get_settings
+from cleanair.utils.azure import blob_storage
+
 from ....experiment import (
     ExperimentMixin,
     RunnableAirQualityExperiment,
@@ -158,3 +163,29 @@ def metrics(
         instance_metrics.evaluate_spatial_metrics(observation_df, result_df)
         instance_metrics.evaluate_temporal_metrics(observation_df, result_df)
         instance_metrics.update_remote_tables()
+
+
+@app.command()
+def archive(
+    experiment_name: ExperimentName, experiment_root: Path = ExperimentDir
+) -> Path:
+    archive_name = Path(f"{experiment_name}_{datetime.today().strftime('%Y_%m_%d')}")
+    return make_archive(archive_name, 'zip', experiment_root)
+
+
+@app.command()
+def upload(filepath: Path) -> None:
+    sas_token = blob_storage.generate_sas_token(
+        resource_group="RG_CLEANAIR_INFRASTRUCTURE",
+        storage_account_name="cleanairexperiments",
+        storage_account_key=get_settings().cleanair_experiment_archive_key,
+        permit_write=True,
+    )
+
+    blob_storage.upload_blob(
+        storage_container_name="experiments",
+        blob_name=filepath.stem,
+        account_url="https://cleanairexperiments.blob.core.windows.net/",
+        source_file=str(filepath),
+        sas_token=sas_token,
+    )
