@@ -46,4 +46,4 @@ def mrdgp(
     run(experiment_name, experiment_root=experiment_root)
     update(experiment_name, experiment_root=experiment_root)
     metrics(experiment_name, experiment_root=experiment_root)
-    upload(archive_instances(experiment_root=experiment_root))
+    upload(archive_instances(experiment_name, experiment_root=experiment_root))
