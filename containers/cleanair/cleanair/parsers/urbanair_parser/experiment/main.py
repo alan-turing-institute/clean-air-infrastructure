@@ -1,5 +1,5 @@
 """Setup, run and update experiments"""
-
+import json
 import logging
 from typing import Callable, List, Optional
 from pathlib import Path
@@ -169,10 +169,16 @@ def archive_instances(
     experiment_name: ExperimentName, experiment_root: Path = ExperimentDir
 ) -> list:
     """Packs an experiement into a zip file"""
+    with open(
+        experiment_root / Path(experiment_name.value) / "experiment_config.json", "r"
+    ) as experiment_config_file:
+        instance_ids = json.loads(experiment_config_file.read())["instance_id_list"]
+
     return [
-        FileManager(file).archive()
-        for file in (experiment_root / Path(experiment_name.value)).iterdir()
-        if file.is_dir()
+        FileManager(
+            (experiment_root / Path(experiment_name.value) / Path(instance_id))
+        ).archive()
+        for instance_id in instance_ids
     ]
 
 
