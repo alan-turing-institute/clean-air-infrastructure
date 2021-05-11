@@ -93,6 +93,7 @@ class FileManager:
             return pickle.load(pickle_f)
 
     def archive(self):
+        """Zips the managed files"""
         return make_archive(self.input_dir, "zip", self.input_dir)
 
     def load_data_config(self, full: bool = False) -> Union[DataConfig, FullDataConfig]:
