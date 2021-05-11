@@ -1,11 +1,11 @@
 """An air quality result."""
 
 from ..databases import DBWriter
-from ..mixins import ResultMixin
+from ..mixins import ResultMixin, ResultQueryMixin
 from ..databases.tables import AirQualityResultTable
 
 
-class AirQualityResult(ResultMixin, DBWriter):
+class AirQualityResult(ResultMixin, ResultQueryMixin, DBWriter):
     """Air quality predictions from a trained model."""
 
     @property
