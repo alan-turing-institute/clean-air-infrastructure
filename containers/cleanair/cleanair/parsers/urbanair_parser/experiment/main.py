@@ -169,12 +169,14 @@ def metrics(
 def archive(
     experiment_name: ExperimentName, experiment_root: Path = ExperimentDir
 ) -> Path:
+    """Packs an experiement into a zip file"""
     archive_name = Path(f"{experiment_name}_{datetime.today().strftime('%Y_%m_%d')}")
     return make_archive(archive_name, 'zip', experiment_root)
 
 
 @app.command()
 def upload(filepath: Path) -> None:
+    """Uploads a file to the experiment archive"""
     sas_token = blob_storage.generate_sas_token(
         resource_group="RG_CLEANAIR_INFRASTRUCTURE",
         storage_account_name="cleanairexperiments",
