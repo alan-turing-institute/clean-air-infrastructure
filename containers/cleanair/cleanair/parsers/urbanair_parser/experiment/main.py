@@ -171,7 +171,7 @@ def archive(
 ) -> Path:
     """Packs an experiement into a zip file"""
     archive_name = Path(f"{experiment_name}_{datetime.today().strftime('%Y_%m_%d')}")
-    return make_archive(archive_name, 'zip', experiment_root)
+    return make_archive(archive_name, "zip", experiment_root)
 
 
 @app.command()
