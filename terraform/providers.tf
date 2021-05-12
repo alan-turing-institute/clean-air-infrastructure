@@ -1,6 +1,6 @@
 # Setup required providers
 provider "azuread" {
-  version = "~>1.1.0"
+  version = "~>0.7"
 }
 provider "azurerm" {
   version = "~>2.31.0"
