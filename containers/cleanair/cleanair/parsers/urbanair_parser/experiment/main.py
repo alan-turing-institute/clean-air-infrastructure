@@ -4,9 +4,7 @@ import logging
 from typing import Callable, List, Optional
 from pathlib import Path
 import typer
-from cleanair.parsers.urbanair_parser.environment_settings import get_settings
 from cleanair.utils import FileManager
-from cleanair.utils.azure import blob_storage
 
 from ....experiment import (
     ExperimentMixin,
@@ -165,39 +163,30 @@ def metrics(
 
 
 @app.command()
-def archive_instances(
+def upload(
     experiment_name: ExperimentName, experiment_root: Path = ExperimentDir
-) -> list:
-    """Packs an experiement into a zip file"""
+) -> None:
+    """Uploads the instances to the experiment archive"""
     with open(
         experiment_root / Path(experiment_name.value) / "experiment_config.json", "r"
     ) as experiment_config_file:
-        instance_ids = json.loads(experiment_config_file.read())["instance_id_list"]
+        instances = json.loads(experiment_config_file.read())["instance_id_list"]
 
-    return [
+    for instance in instances:
         FileManager(
-            (experiment_root / Path(experiment_name.value) / Path(instance_id))
-        ).archive()
-        for instance_id in instance_ids
-    ]
+            experiment_root / Path(experiment_name.value) / Path(instance)
+        ).upload()
 
 
 @app.command()
-def upload(filepaths: List[Path]) -> None:
-    """Uploads a file to the experiment archive"""
-    sas_token = blob_storage.generate_sas_token(
-        resource_group="RG_CLEANAIR_INFRASTRUCTURE",
-        storage_account_name="cleanairexperiments",
-        storage_account_key=get_settings().cleanair_experiment_archive_key,
-        permit_write=True,
+def download(
+    instance_id: str,
+    experiment_name: ExperimentName,
+    experiment_root: Path = ExperimentDir,
+) -> None:
+    """Downloads an instance from the experiment archive"""
+
+    FileManager(
+        experiment_root / Path(experiment_name.value) / Path(instance_id),
+        blob_id=instance_id,
     )
-
-    for filepath in filepaths:
-
-        blob_storage.upload_blob(
-            storage_container_name="experiments",
-            blob_name=filepath.stem,
-            account_url="https://cleanairexperiments.blob.core.windows.net/",
-            source_file=str(filepath),
-            sas_token=sas_token,
-        )
