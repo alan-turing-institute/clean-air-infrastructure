@@ -10,19 +10,14 @@ app = typer.Typer(help="Access the model instance archive")
 
 
 @app.command()
-def upload(
-    instance: Path = ExperimentDir
-) -> None:
+def upload(instance: Path = ExperimentDir) -> None:
     """Uploads an instance to the experiment archive"""
 
     FileManager(instance).upload()
 
 
 @app.command()
-def download(
-    instance_id: str,
-    target: Path = None
-) -> None:
+def download(instance_id: str, target: Path = None) -> None:
     """Downloads an instance from the experiment archive"""
 
     if not target:
