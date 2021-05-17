@@ -29,4 +29,3 @@ def download(
         target = Path(instance_id)
 
     FileManager(target, blob_id=instance_id)
-
