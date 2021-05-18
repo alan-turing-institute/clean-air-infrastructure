@@ -5,7 +5,7 @@ from pathlib import Path
 import typer
 
 from ....utils.azure import blob_storage
-from ..environment_settings.settings import get_settings
+from ....environment_settings.settings import get_settings
 
 app = typer.Typer(help="Accessing logs in blob storage")
 

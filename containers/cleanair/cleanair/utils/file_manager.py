@@ -3,10 +3,14 @@
 from __future__ import annotations
 from datetime import datetime
 from pathlib import Path
+from shutil import make_archive, unpack_archive
 from typing import Any, Callable, Dict, List, Optional, Union, TYPE_CHECKING
 import json
 import pickle
 import pandas as pd
+from cleanair.environment_settings import get_settings
+from cleanair.utils.azure import blob_storage
+
 from ..loggers import get_logger
 from ..mixins import InstanceMixin
 from ..types import (
@@ -54,7 +58,29 @@ class FileManager:
     PRED_FORECAST_PICKLE = RESULT / "pred_forecast.pkl"
     PRED_TRAINING_PICKLE = RESULT / "pred_training.pkl"
 
-    def __init__(self, input_dir: Path) -> None:
+    def __init__(self, input_dir: Path, blob_id: str = None) -> None:
+
+        # Download a zipped blob from storage if specified
+        if blob_id:
+            sas_token = blob_storage.generate_sas_token(
+                resource_group="RG_CLEANAIR_INFRASTRUCTURE",
+                storage_account_name="cleanairexperiments",
+                storage_account_key=get_settings().cleanair_experiment_archive_key,
+                permit_write=True,
+            )
+
+            zipfile_path = input_dir.with_suffix(".zip")
+
+            blob_storage.download_blob(
+                storage_container_name="instances",
+                blob_name=blob_id,
+                account_url="https://cleanairexperiments.blob.core.windows.net/",
+                target_file=str(zipfile_path),
+                sas_token=sas_token,
+            )
+
+            unpack_archive(zipfile_path, input_dir)
+
         if not hasattr(self, "logger"):
             self.logger = get_logger("file_manager")
         input_dir.mkdir(parents=False, exist_ok=True)
@@ -90,6 +116,31 @@ class FileManager:
 
         with pickle_path.open("rb") as pickle_f:
             return pickle.load(pickle_f)
+
+    def archive(self):
+        """Zips the managed files"""
+        return Path(make_archive(self.input_dir, "zip", self.input_dir))
+
+    def upload(self):
+        """Zips and uploads the files to blob storage"""
+        sas_token = blob_storage.generate_sas_token(
+            resource_group="RG_CLEANAIR_INFRASTRUCTURE",
+            storage_account_name="cleanairexperiments",
+            storage_account_key=get_settings().cleanair_experiment_archive_key,
+            permit_write=True,
+        )
+
+        zipfile = self.archive()
+
+        blob_storage.upload_blob(
+            storage_container_name="instances",
+            blob_name=self.input_dir.stem,
+            account_url="https://cleanairexperiments.blob.core.windows.net/",
+            source_file=str(zipfile),
+            sas_token=sas_token,
+        )
+
+        zipfile.unlink()
 
     def load_data_config(self, full: bool = False) -> Union[DataConfig, FullDataConfig]:
         """Load an existing configuration file"""

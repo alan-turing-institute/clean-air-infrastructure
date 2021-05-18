@@ -1,9 +1,11 @@
 """Setup, run and update experiments"""
-
+import json
 import logging
 from typing import Callable, List, Optional
 from pathlib import Path
 import typer
+from cleanair.utils import FileManager
+
 from ....experiment import (
     ExperimentMixin,
     RunnableAirQualityExperiment,
@@ -158,3 +160,33 @@ def metrics(
         instance_metrics.evaluate_spatial_metrics(observation_df, result_df)
         instance_metrics.evaluate_temporal_metrics(observation_df, result_df)
         instance_metrics.update_remote_tables()
+
+
+@app.command()
+def upload(
+    experiment_name: ExperimentName, experiment_root: Path = ExperimentDir
+) -> None:
+    """Uploads the instances to the experiment archive"""
+    with open(
+        experiment_root / Path(experiment_name.value) / "experiment_config.json", "r"
+    ) as experiment_config_file:
+        instances = json.loads(experiment_config_file.read())["instance_id_list"]
+
+    for instance in instances:
+        FileManager(
+            experiment_root / Path(experiment_name.value) / Path(instance)
+        ).upload()
+
+
+@app.command()
+def download(
+    instance_id: str,
+    experiment_name: ExperimentName,
+    experiment_root: Path = ExperimentDir,
+) -> None:
+    """Downloads an instance from the experiment archive"""
+
+    FileManager(
+        experiment_root / Path(experiment_name.value) / Path(instance_id),
+        blob_id=instance_id,
+    )
