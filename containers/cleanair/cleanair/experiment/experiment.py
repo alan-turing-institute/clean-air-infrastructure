@@ -16,6 +16,7 @@ from ..databases.mixins import (
     ModelTableMixin,
 )
 from ..loggers import get_logger
+from ..metrics import TrainingMetrics
 from ..mixins import InstanceMixin
 from ..types import ExperimentConfig, ExperimentName
 from ..utils import FileManager
@@ -193,6 +194,10 @@ class RunnableExperimentMixin(SetupExperimentMixin):
         """Save the result of the instance"""
 
     @abstractmethod
+    def save_training_metrics(self, instance_id) -> None:
+        """Save the training metrics of the instance"""
+
+    @abstractmethod
     def load_model(self, instance_id: str) -> Any:
         """Load the model using the instance id"""
 
@@ -213,14 +218,11 @@ class RunnableExperimentMixin(SetupExperimentMixin):
         # make sure to load the datasets first
         for instance_id, instance in self._instances.items():
             instance.fit_start_time = datetime.now()
-            training_metrics = TrainingMetrics()
-            # tf.compat.v1.reset_default_graph()
             with tf.compat.v1.Graph().as_default():
                 with tf.compat.v1.Session().as_default() as session:
-                    # session.reset(graph)
                     self.load_model(instance_id)
                     self.train_model(instance_id)
-                    training_metrics.fit_end_time = datetime.now()
+                    self.save_training_metrics(instance_id)
                     self.predict_on_training_set(instance_id)
                     self.predict_on_test_set(instance_id)
                     self.save_result(instance_id)

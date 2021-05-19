@@ -8,5 +8,6 @@ from .precision import confidence_interval
 from .precision import confidence_interval_50
 from .precision import confidence_interval_75
 from .precision import confidence_interval_95
+from .training_metrics import TrainingMetrics
 
-__all__ = ["AirQualityMetrics", "AirQualityMetricsQuery"]
+__all__ = ["AirQualityMetrics", "AirQualityMetricsQuery", "TrainingMetrics"]
