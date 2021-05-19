@@ -12,6 +12,7 @@ from cleanair.environment_settings import get_settings
 from cleanair.utils.azure import blob_storage
 
 from ..loggers import get_logger
+from ..metrics import TrainingMetrics
 from ..mixins import InstanceMixin
 from ..types import (
     DataConfig,
@@ -413,3 +414,11 @@ class FileManager:
                 tag=instance_dict.get("tag"),
             )
             return instance
+
+    def write_training_metrics_to_json(self, training_metrics: TrainingMetrics) -> None:
+        """Write the metrics to a json file"""
+        raise NotImplementedError()
+
+    def read_training_metrics_from_json(self) -> TrainingMetrics:
+        """Read metrics from json"""
+        raise NotImplementedError()

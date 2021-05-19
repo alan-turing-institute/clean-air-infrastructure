@@ -1,6 +1,7 @@
 """Experiments for air quality model validation"""
 
 from __future__ import annotations
+from datetime import datetime
 from logging import Logger
 from pathlib import Path
 from typing import Any, Dict, List, Optional, TYPE_CHECKING
@@ -19,6 +20,7 @@ from .experiment import (
     UpdateExperimentMixin,
 )
 from ..loggers import get_logger
+from ..metrics import TrainingMetrics
 from ..models import ModelData, ModelDataExtractor, MRDGP, SVGP
 from ..types import ExperimentName, IndexedDatasetDict, ModelName, Source, TargetDict
 from ..utils import FileManager
@@ -206,6 +208,7 @@ class RunnableAirQualityExperiment(RunnableExperimentMixin):
         self._models: Dict[str, Model] = dict()
         self._training_result: Dict[str, TargetDict] = dict()
         self._test_result: Dict[str, TargetDict] = dict()
+        self._training_metrics: Dict[str, TrainingMetrics] = dict()
 
     def find_instance_id_from_data_id(self, data_id: str) -> str:
         """Search through instances to find the instance id matching the data id"""
@@ -252,7 +255,20 @@ class RunnableAirQualityExperiment(RunnableExperimentMixin):
         instance = self._instances[instance_id]
         model = self._models[instance_id]
         X_train, Y_train, _ = self._training_dataset[instance.data_id]
+        fit_start_time = datetime.now()
         model.fit(X_train, Y_train)
+        fit_end_time = datetime.now()
+        self._training_metrics[instance_id] = TrainingMetrics(
+            fit_end_time=fit_end_time,
+            fit_start_time=fit_start_time,
+            instance_id=instance_id,
+        )
+
+    def save_training_metrics(self, instance_id) -> None:
+        """Save the training metrics of the instance"""
+        file_manager = self.get_file_manager(instance_id)
+        training_metrics = self._training_metrics[instance_id]
+        file_manager.write_training_metrics_to_json(training_metrics)
 
     def predict_on_training_set(self, instance_id: str) -> TargetDict:
         """Predict on the training set"""
