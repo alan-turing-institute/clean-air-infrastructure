@@ -8,6 +8,7 @@ from typing import Any, Callable, Dict, List, Optional, Union, TYPE_CHECKING
 import json
 import pickle
 import pandas as pd
+from azure.core.exceptions import ResourceNotFoundError
 from cleanair.environment_settings import get_settings
 from cleanair.utils.azure import blob_storage
 
@@ -33,6 +34,14 @@ if TYPE_CHECKING:
     tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
     import gpflow  # pylint: disable=wrong-import-position,wrong-import-order
     from pydantic import BaseModel
+
+
+class ExperimentInstanceNotFoundError(Exception):
+    """Error for when a blob is not found"""
+
+    def __init__(self, instance_id):
+        super().__init__(f"Blob for {instance_id} not found in storage container")
+
 
 # pylint: disable=R0904
 class FileManager:
@@ -62,22 +71,26 @@ class FileManager:
 
         # Download a zipped blob from storage if specified
         if blob_id:
-            sas_token = blob_storage.generate_sas_token(
-                resource_group="RG_CLEANAIR_INFRASTRUCTURE",
-                storage_account_name="cleanairexperiments",
-                storage_account_key=get_settings().cleanair_experiment_archive_key,
-                permit_write=True,
-            )
 
-            zipfile_path = input_dir.with_suffix(".zip")
+            try:
+                sas_token = blob_storage.generate_sas_token(
+                    resource_group="RG_CLEANAIR_INFRASTRUCTURE",
+                    storage_account_name="cleanairexperiments",
+                    storage_account_key=get_settings().cleanair_experiment_archive_key,
+                    permit_write=True,
+                )
 
-            blob_storage.download_blob(
-                storage_container_name="instances",
-                blob_name=blob_id,
-                account_url="https://cleanairexperiments.blob.core.windows.net/",
-                target_file=str(zipfile_path),
-                sas_token=sas_token,
-            )
+                zipfile_path = input_dir.with_suffix(".zip")
+
+                blob_storage.download_blob(
+                    storage_container_name="instances",
+                    blob_name=blob_id,
+                    account_url="https://cleanairexperiments.blob.core.windows.net/",
+                    target_file=str(zipfile_path),
+                    sas_token=sas_token,
+                )
+            except ResourceNotFoundError:
+                raise ExperimentInstanceNotFoundError(blob_id)
 
             unpack_archive(zipfile_path, input_dir)
 
