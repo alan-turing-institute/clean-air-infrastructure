@@ -38,8 +38,6 @@ if TYPE_CHECKING:
 
 class ExperimentInstanceNotFoundError(Exception):
     """Error for when a blob is not found"""
-    def __init__(self, message):
-        super().__init__(message)
 
 
 # pylint: disable=R0904
