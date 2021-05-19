@@ -38,6 +38,8 @@ if TYPE_CHECKING:
 
 class ExperimentInstanceNotFoundError(Exception):
     """Error for when a blob is not found"""
+    def __init__(self, instance_id):
+        super().__init__(f"Blob for {instance_id} not found in storage container")
 
 
 # pylint: disable=R0904
@@ -87,7 +89,7 @@ class FileManager:
                     sas_token=sas_token,
                 )
             except ResourceNotFoundError:
-                raise ExperimentInstanceNotFoundError(f"Blob for {blob_id} not found in storage container")
+                raise ExperimentInstanceNotFoundError(blob_id)
 
             unpack_archive(zipfile_path, input_dir)
 
