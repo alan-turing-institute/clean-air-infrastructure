@@ -38,6 +38,7 @@ if TYPE_CHECKING:
 
 class ExperimentInstanceNotFoundError(Exception):
     """Error for when a blob is not found"""
+
     def __init__(self, instance_id):
         super().__init__(f"Blob for {instance_id} not found in storage container")
 
