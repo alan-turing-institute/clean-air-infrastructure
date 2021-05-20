@@ -1,12 +1,14 @@
 """Tests for saving and loading files for an air quality model."""
 
 from __future__ import annotations
-from datetime import datetime
+from datetime import datetime, timedelta
+from json import load
 from typing import List, TYPE_CHECKING
 import numpy as np
 import tensorflow as tf
 import gpflow
 import pandas as pd
+from cleanair.metrics import TrainingMetrics
 from cleanair.types import ModelName, Source
 from cleanair.utils import FileManager
 from cleanair.utils.tf1 import load_gpflow1_model_from_file, save_gpflow1_model_to_file
@@ -237,3 +239,18 @@ def test_read_write_instance(input_dir: Path, laqn_svgp_instance) -> None:
     assert instance.data_id == laqn_svgp_instance.data_id
     assert instance.param_id == laqn_svgp_instance.param_id
     assert isinstance(instance.fit_start_time, datetime)
+
+
+def test_read_write_training_metrics(input_dir: Path) -> None:
+    """Test reading and writing training metrics"""
+    training_metrics = TrainingMetrics(
+        instance_id="instanceid",
+        fit_start_time=datetime.now(),
+        fit_end_time=datetime.now() + timedelta(hours=1),
+    )
+    file_manager = FileManager(input_dir)
+    file_manager.write_training_metrics_to_json(training_metrics)
+    assert (file_manager.input_dir / file_manager.MODEL_TRAINING_METRICS_JSON).exists()
+    loaded_metrics = file_manager.read_training_metrics_from_json()
+    assert training_metrics.instance_id == loaded_metrics.instance_id
+    assert training_metrics.fit_end_time == loaded_metrics.fit_end_time

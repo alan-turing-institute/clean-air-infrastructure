@@ -16,7 +16,6 @@ from ..databases.mixins import (
     ModelTableMixin,
 )
 from ..loggers import get_logger
-from ..metrics import TrainingMetrics
 from ..mixins import InstanceMixin
 from ..types import ExperimentConfig, ExperimentName
 from ..utils import FileManager
