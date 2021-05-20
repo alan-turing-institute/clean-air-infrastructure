@@ -62,6 +62,7 @@ class FileManager:
     MODEL = Path("model")
     MODEL_PARAMS = MODEL / "model_params.json"
     MODEL_ELBO_JSON = MODEL / "elbo.json"
+    MODEL_TRAINING_METRICS_JSON = MODEL / "training_metrics.json"
 
     # forecasts / results / predictions
     RESULT = Path("result")
@@ -430,8 +431,10 @@ class FileManager:
 
     def write_training_metrics_to_json(self, training_metrics: TrainingMetrics) -> None:
         """Write the metrics to a json file"""
-        raise NotImplementedError()
+        with (self.input_dir / self.MODEL_TRAINING_METRICS_JSON).open("w") as json_file:
+            json_file.write(training_metrics.json(indent=4))
 
     def read_training_metrics_from_json(self) -> TrainingMetrics:
         """Read metrics from json"""
-        raise NotImplementedError()
+        with open(self.input_dir / self.MODEL_TRAINING_METRICS_JSON, "r") as json_file:
+            return TrainingMetrics(**json.load(json_file))
