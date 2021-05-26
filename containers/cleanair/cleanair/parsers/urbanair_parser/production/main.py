@@ -28,9 +28,9 @@ def svgp(
         experiment_name = ExperimentName.production_svgp_static
     setup(experiment_name, experiment_root=experiment_root)
     run(experiment_name, experiment_root=experiment_root)
-    update(experiment_name, experiment_root=experiment_root)
-    metrics(experiment_name, experiment_root=experiment_root)
-    upload(experiment_name, experiment_root=experiment_root)
+    # update(experiment_name, experiment_root=experiment_root)
+    # metrics(experiment_name, experiment_root=experiment_root)
+    # upload(experiment_name, experiment_root=experiment_root)
 
 
 @app.command()

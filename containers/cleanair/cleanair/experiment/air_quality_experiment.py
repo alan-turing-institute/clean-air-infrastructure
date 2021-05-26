@@ -196,7 +196,7 @@ class SetupAirQualityExperiment(SetupExperimentMixin):
         file_manager.save_data_config(self._data_config_lookup[data_id], full=True)
         file_manager.save_training_data(training_dataset)
         file_manager.save_test_data(test_dataset)
-        file_manager.save_model_params(instance.model_params)
+        file_manager.save_model_initial_params(instance.model_params)
         file_manager.write_instance_to_json(instance)
 
 
@@ -269,6 +269,10 @@ class RunnableAirQualityExperiment(RunnableExperimentMixin):
         file_manager = self.get_file_manager(instance_id)
         training_metrics = self._training_metrics[instance_id]
         file_manager.write_training_metrics_to_json(training_metrics)
+
+    def save_model_parameters(self, instance_id) -> None:
+        """Save the model parameters from the model object"""
+        self._file_managers[instance_id].save_model_final_params(self._models[instance_id].params())
 
     def predict_on_training_set(self, instance_id: str) -> TargetDict:
         """Predict on the training set"""

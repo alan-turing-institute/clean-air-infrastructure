@@ -3,7 +3,10 @@ Sparse Variational Gaussian Process (LAQN ONLY)
 """
 
 import os
+from typing import Union
+
 import numpy as np
+from cleanair.types import MRDGPParams, SVGPParams
 from scipy.cluster.vq import kmeans2
 import tensorflow as tf
 from nptyping import Float64, NDArray
@@ -14,7 +17,6 @@ from ..types import FeaturesDict, KernelType, Source, Species, TargetDict
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 import gpflow  # pylint: disable=wrong-import-position,wrong-import-order
-
 
 class SVGP(ModelMixin):
     """
@@ -122,3 +124,11 @@ class SVGP(ModelMixin):
         y_dict = self.predict_srcs(x_test, predict_fn)
 
         return y_dict
+
+    def params(self) -> Union[MRDGPParams, SVGPParams]:
+
+        params = self.model_params
+        params.kernel.variance = self.model.kern.variance.read_value().tolist()
+        params.kernel.lengthscales = self.model.kern.lengthscales.read_value().tolist()
+
+        return params

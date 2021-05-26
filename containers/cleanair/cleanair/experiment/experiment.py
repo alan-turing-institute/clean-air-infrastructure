@@ -197,6 +197,10 @@ class RunnableExperimentMixin(SetupExperimentMixin):
         """Save the training metrics of the instance"""
 
     @abstractmethod
+    def save_model_parameters(self, instance_id) -> None:
+        """Save the model parameters from the model object"""
+
+    @abstractmethod
     def load_model(self, instance_id: str) -> Any:
         """Load the model using the instance id"""
 
@@ -222,6 +226,7 @@ class RunnableExperimentMixin(SetupExperimentMixin):
                     self.load_model(instance_id)
                     self.train_model(instance_id)
                     self.save_training_metrics(instance_id)
+                    self.save_model_parameters(instance_id)
                     self.predict_on_training_set(instance_id)
                     self.predict_on_test_set(instance_id)
                     self.save_result(instance_id)
