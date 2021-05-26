@@ -272,7 +272,9 @@ class RunnableAirQualityExperiment(RunnableExperimentMixin):
 
     def save_model_parameters(self, instance_id) -> None:
         """Save the model parameters from the model object"""
-        self._file_managers[instance_id].save_model_final_params(self._models[instance_id].params())
+        self._file_managers[instance_id].save_model_final_params(
+            self._models[instance_id].params()
+        )
 
     def predict_on_training_set(self, instance_id: str) -> TargetDict:
         """Predict on the training set"""
