@@ -57,7 +57,8 @@ class TestSetupAirQualityExperiment:
             ).exists()
             assert not (file_manager.input_dir / file_manager.TEST_DATA_PICKLE).exists()
             assert not (file_manager.input_dir / file_manager.DATA_CONFIG_FULL).exists()
-            assert not (file_manager.input_dir / file_manager.MODEL_PARAMS).exists()
+            assert not (file_manager.input_dir / file_manager.INITIAL_MODEL_PARAMS).exists()
+            assert not (file_manager.input_dir / file_manager.FINAL_MODEL_PARAMS).exists()
 
             # write the instance files
             setup_aq_experiment.write_instance_to_file(instance_id)
@@ -66,4 +67,5 @@ class TestSetupAirQualityExperiment:
             assert (file_manager.input_dir / file_manager.TRAINING_DATA_PICKLE).exists()
             assert (file_manager.input_dir / file_manager.TEST_DATA_PICKLE).exists()
             assert (file_manager.input_dir / file_manager.DATA_CONFIG_FULL).exists()
-            assert (file_manager.input_dir / file_manager.MODEL_PARAMS).exists()
+            assert (file_manager.input_dir / file_manager.INITIAL_MODEL_PARAMS).exists()
+            assert (file_manager.input_dir / file_manager.FINAL_MODEL_PARAMS).exists()

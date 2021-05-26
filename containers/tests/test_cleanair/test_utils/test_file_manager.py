@@ -123,7 +123,7 @@ def test_save_load_mrdgp_params(file_manager, mrdgp_model_params: MRDGPParams,) 
 
     # save the model params
     file_manager.save_model_params(mrdgp_model_params)
-    assert (file_manager.input_dir / FileManager.MODEL_PARAMS).exists()
+    assert (file_manager.input_dir / FileManager.INITIAL_MODEL_PARAMS).exists()
 
     # load svgp params
     loaded_mrdgp_params = file_manager.load_model_params(ModelName.mrdgp)
@@ -137,7 +137,7 @@ def test_save_load_svgp_params(file_manager, svgp_model_params: SVGPParams,) -> 
 
     # save the model params
     file_manager.save_model_params(svgp_model_params)
-    assert (file_manager.input_dir / FileManager.MODEL_PARAMS).exists()
+    assert (file_manager.input_dir / FileManager.INITIAL_MODEL_PARAMS).exists()
 
     # load svgp params
     loaded_svgp_params = file_manager.load_model_params(ModelName.svgp)

@@ -3,15 +3,13 @@ Sparse Variational Gaussian Process (LAQN ONLY)
 """
 
 import os
-from typing import Union
 
 import numpy as np
-from cleanair.types import MRDGPParams, SVGPParams
 from scipy.cluster.vq import kmeans2
 import tensorflow as tf
 from nptyping import Float64, NDArray
 from .model import ModelMixin
-from ..types import FeaturesDict, KernelType, Source, Species, TargetDict
+from ..types import FeaturesDict, KernelType, Source, Species, TargetDict, SVGPParams
 
 # turn off tensorflow warnings for gpflow
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
@@ -126,7 +124,7 @@ class SVGP(ModelMixin):
 
         return y_dict
 
-    def params(self) -> Union[MRDGPParams, SVGPParams]:
+    def params(self) -> SVGPParams:
 
         params = self.model_params
         params.kernel.variance = self.model.kern.variance.read_value().tolist()
