@@ -8,6 +8,7 @@ import numpy as np
 from scipy.cluster.vq import kmeans2
 import tensorflow as tf
 from nptyping import Float64, NDArray
+from copy import deepcopy
 from .model import ModelMixin
 from ..types import FeaturesDict, KernelType, Source, Species, TargetDict, SVGPParams
 
@@ -126,7 +127,7 @@ class SVGP(ModelMixin):
 
     def params(self) -> SVGPParams:
 
-        params = self.model_params
+        params = deepcopy(self.model_params)
         params.kernel.variance = self.model.kern.variance.read_value().tolist()
         params.kernel.lengthscales = self.model.kern.lengthscales.read_value().tolist()
 

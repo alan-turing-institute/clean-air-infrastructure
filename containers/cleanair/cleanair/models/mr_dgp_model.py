@@ -1,6 +1,7 @@
 """
 Multi-resolution DGP (LAQN + Satellite)
 """
+from copy import deepcopy
 from typing import Dict, Optional, List
 import os
 from nptyping import NDArray
@@ -47,7 +48,7 @@ class MRDGP(ModelMixin):
     """
 
     def params(self) -> MRDGPParams:
-        params = self.model_params
+        params = deepcopy(self.model_params)
         params.kernel.variance = self.model.kern.variance.read_value().tolist()
         params.kernel.lengthscales = self.model.kern.lengthscales.read_value().tolist()
 
