@@ -4,11 +4,11 @@ Sparse Variational Gaussian Process (LAQN ONLY)
 
 import os
 
+from copy import deepcopy
 import numpy as np
 from scipy.cluster.vq import kmeans2
 import tensorflow as tf
 from nptyping import Float64, NDArray
-from copy import deepcopy
 from .model import ModelMixin
 from ..types import FeaturesDict, KernelType, Source, Species, TargetDict, SVGPParams
 
