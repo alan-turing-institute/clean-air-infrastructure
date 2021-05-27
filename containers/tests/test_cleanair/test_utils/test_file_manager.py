@@ -122,7 +122,7 @@ def test_save_load_mrdgp_params(file_manager, mrdgp_model_params: MRDGPParams,) 
     """Test mrdgp params are loaded and saved."""
 
     # save the model params
-    file_manager.save_model_params(mrdgp_model_params)
+    file_manager.save_model_initial_params(mrdgp_model_params)
     assert (file_manager.input_dir / FileManager.INITIAL_MODEL_PARAMS).exists()
 
     # load svgp params
@@ -136,7 +136,7 @@ def test_save_load_svgp_params(file_manager, svgp_model_params: SVGPParams,) -> 
     """Test the model parameters are saved and loaded from json."""
 
     # save the model params
-    file_manager.save_model_params(svgp_model_params)
+    file_manager.save_model_initial_params(svgp_model_params)
     assert (file_manager.input_dir / FileManager.INITIAL_MODEL_PARAMS).exists()
 
     # load svgp params
