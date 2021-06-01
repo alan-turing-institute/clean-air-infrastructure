@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 from datetime import datetime, timedelta
-from json import load
 from typing import List, TYPE_CHECKING
 import numpy as np
 import tensorflow as tf
