@@ -1,5 +1,5 @@
 """Setup, run and update experiments"""
-
+import json
 import logging
 from typing import Callable, List, Optional
 from pathlib import Path
@@ -18,6 +18,7 @@ from ....models import ModelData
 from ..shared_args import ExperimentDir
 from ..state import state
 from ....types import ExperimentName
+from ....utils import FileManager
 
 app = typer.Typer(help="Experiment CLI")
 
@@ -136,6 +137,7 @@ def update(
     update_experiment.update_remote_tables()
     update_experiment.update_result_tables()
 
+
 @app.command()
 def recent(limit: int) -> None:
     """Get the most recent instances"""
@@ -143,6 +145,7 @@ def recent(limit: int) -> None:
     query = AirQualityInstanceQuery(secretfile)
     tabular = query.most_recent_instances(limit, output_type="tabulate")
     print(tabular)
+
 
 @app.command()
 def metrics(
@@ -166,3 +169,33 @@ def metrics(
         instance_metrics.evaluate_spatial_metrics(observation_df, result_df)
         instance_metrics.evaluate_temporal_metrics(observation_df, result_df)
         instance_metrics.update_remote_tables()
+
+
+@app.command()
+def upload(
+    experiment_name: ExperimentName, experiment_root: Path = ExperimentDir
+) -> None:
+    """Uploads the instances to the experiment archive"""
+    with open(
+        experiment_root / Path(experiment_name.value) / "experiment_config.json", "r"
+    ) as experiment_config_file:
+        instances = json.loads(experiment_config_file.read())["instance_id_list"]
+
+    for instance in instances:
+        FileManager(
+            experiment_root / Path(experiment_name.value) / Path(instance)
+        ).upload()
+
+
+@app.command()
+def download(
+    instance_id: str,
+    experiment_name: ExperimentName,
+    experiment_root: Path = ExperimentDir,
+) -> None:
+    """Downloads an instance from the experiment archive"""
+
+    FileManager(
+        experiment_root / Path(experiment_name.value) / Path(instance_id),
+        blob_id=instance_id,
+    )

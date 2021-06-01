@@ -16,12 +16,12 @@ from ..types import (
     Species,
 )
 
-MRDGP_NUM_INDUCING_POINTS = 500
+MRDGP_NUM_INDUCING_POINTS = 1000
 MRDGP_MAXITER: int = 5000
 
 
 # production data config settings for the mrdgp
-PRODUCTION_MRDGP_TRAIN_DAYS = 3
+PRODUCTION_MRDGP_TRAIN_DAYS = 5
 PRODUCTION_MRDGP_TRAIN_SOURCES = [Source.laqn, Source.satellite]
 PRODUCTION_MRDGP_FORECAST_SOURCES = [Source.laqn, Source.hexgrid]
 PRODUCTION_MRDGP_TRAIN_INTEREST_POINTS = {Source.laqn: "all", Source.satellite: "all"}

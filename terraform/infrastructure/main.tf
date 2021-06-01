@@ -31,6 +31,14 @@ module "logging" {
   resource_group = "${azurerm_resource_group.this.name}"
 }
 
+# Create experiment archive
+# -------------------------
+module "experiment_archive" {
+  source         = "./experiment_archive"
+  location       = "${azurerm_resource_group.this.location}"
+  resource_group = "${azurerm_resource_group.this.name}"
+}
+
 # Create keyvault
 # ---------------
 module "key_vault" {

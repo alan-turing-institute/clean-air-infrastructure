@@ -133,6 +133,10 @@ class ModelMixin:
         """
         ModelMixin.check_test_set_is_valid(x_test)
 
+    @abstractmethod
+    def params(self) -> Union[MRDGPParams, SVGPParams]:
+        """Get the model parameters"""
+
     @staticmethod
     def check_training_set_is_valid(x_train: FeaturesDict, y_train: TargetDict) -> None:
         """
