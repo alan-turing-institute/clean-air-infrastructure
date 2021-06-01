@@ -232,7 +232,7 @@ class RunnableExperimentMixin(SetupExperimentMixin):
                     self.predict_on_training_set(instance_id)
                     self.predict_on_test_set(instance_id)
                     self.save_result(instance_id)
-                session.close() # context manager doesn't close session
+                session.close()  # context manager doesn't close session
 
 
 class UpdateExperimentMixin(ExperimentMixin):

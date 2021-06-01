@@ -57,7 +57,9 @@ class ModelMixin:
             self.logger = get_logger(__name__)
 
     @abstractmethod
-    def fit(self, x_train: FeaturesDict, y_train: TargetDict, session: Any = None) -> None:
+    def fit(
+        self, x_train: FeaturesDict, y_train: TargetDict, session: Any = None
+    ) -> None:
         """
         Fit the model to some training data.
 

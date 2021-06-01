@@ -230,6 +230,8 @@ class MRDGP(ModelMixin):
         #     )
 
     def __complex_optimizing_scheme(self):
+        opt = AdamOptimizer(0.1)
+
         # train first layer and fix both noises
         self.model.disable_dgp_elbo()
         set_objective(AdamOptimizer, "base_elbo")

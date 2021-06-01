@@ -84,7 +84,7 @@ def set_objective(_class, objective_str):
         if session is None:
             try:
                 session = model.enquire_session()
-            except Exception:
+            except Exception:  # pylint: disable=broad-except
                 session = get_urbanair_tf_session()
 
         opt = self.make_optimize_action(
@@ -124,15 +124,14 @@ def set_objective(_class, objective_str):
         objective = getattr(model, objective_str)
         full_var_list = self._gen_var_list(model, var_list)
         # Create optimizer variables before initialization.
-        minimize = self.optimizer.minimize(
-            objective, var_list=full_var_list, **kwargs
-        )
+        minimize = self.optimizer.minimize(objective, var_list=full_var_list, **kwargs)
         model.initialize(session=session)
         self._initialize_optimizer(session)
         return minimize
 
     setattr(_class, "minimize", minimize)
     setattr(_class, "make_optimize_tensor", make_optimize_tensor)
+
 
 def get_urbanair_tf_session() -> tf.compat.v1.Session:
     """Get an urbanair tensorflow 1 session. Always remember to close your session."""
