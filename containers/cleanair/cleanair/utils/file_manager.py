@@ -13,6 +13,7 @@ from cleanair.environment_settings import get_settings
 from cleanair.utils.azure import blob_storage
 
 from ..loggers import get_logger
+from ..metrics import TrainingMetrics
 from ..mixins import InstanceMixin
 from ..types import (
     DataConfig,
@@ -59,8 +60,10 @@ class FileManager:
 
     # model filepaths
     MODEL = Path("model")
-    MODEL_PARAMS = MODEL / "model_params.json"
+    INITIAL_MODEL_PARAMS = MODEL / "initial_model_params.json"
+    FINAL_MODEL_PARAMS = MODEL / "final_model_params.json"
     MODEL_ELBO_JSON = MODEL / "elbo.json"
+    MODEL_TRAINING_METRICS_JSON = MODEL / "training_metrics.json"
 
     # forecasts / results / predictions
     RESULT = Path("result")
@@ -301,15 +304,23 @@ class FileManager:
         self.logger.debug(
             "Loading model parameters from a json file for %s", model_name
         )
-        params_fp = self.input_dir / FileManager.MODEL_PARAMS
+        params_fp = self.input_dir / FileManager.INITIAL_MODEL_PARAMS
         with open(params_fp, "r") as params_file:
             params_dict = json.load(params_file)
         return model_params_from_dict(model_name, params_dict)
 
-    def save_model_params(self, model_params: BaseModel) -> None:
-        """Load the model params from a json file"""
+    def save_model_initial_params(self, model_params: BaseModel) -> None:
+        """Load the initial model params from a json file"""
+        self.save_model_params(model_params, FileManager.INITIAL_MODEL_PARAMS)
+
+    def save_model_final_params(self, model_params: BaseModel) -> None:
+        """Load the final model params from a json file"""
+        self.save_model_params(model_params, FileManager.FINAL_MODEL_PARAMS)
+
+    def save_model_params(self, model_params: BaseModel, file: Path) -> None:
+        """Save the model params to a json file"""
         self.logger.debug("Saving model params to a json file")
-        params_fp = self.input_dir / FileManager.MODEL_PARAMS
+        params_fp = self.input_dir / file
         with open(params_fp, "w") as params_file:
             json.dump(model_params.dict(), params_file, indent=4)
 
@@ -426,3 +437,13 @@ class FileManager:
                 tag=instance_dict.get("tag"),
             )
             return instance
+
+    def write_training_metrics_to_json(self, training_metrics: TrainingMetrics) -> None:
+        """Write the metrics to a json file"""
+        with (self.input_dir / self.MODEL_TRAINING_METRICS_JSON).open("w") as json_file:
+            json_file.write(training_metrics.json(indent=4))
+
+    def read_training_metrics_from_json(self) -> TrainingMetrics:
+        """Read metrics from json"""
+        with open(self.input_dir / self.MODEL_TRAINING_METRICS_JSON, "r") as json_file:
+            return TrainingMetrics(**json.load(json_file))

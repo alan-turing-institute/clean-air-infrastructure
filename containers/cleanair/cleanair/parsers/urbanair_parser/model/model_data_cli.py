@@ -40,7 +40,8 @@ def delete_model_cache(overwrite: bool):
     cache_content = [
         DATA_CACHE / FileManager.DATA_CONFIG,
         DATA_CACHE / FileManager.DATA_CONFIG_FULL,
-        DATA_CACHE / FileManager.MODEL_PARAMS,
+        DATA_CACHE / FileManager.INITIAL_MODEL_PARAMS,
+        DATA_CACHE / FileManager.FINAL_MODEL_PARAMS,
         DATA_CACHE / FileManager.PRED_FORECAST_PICKLE,
         DATA_CACHE / FileManager.PRED_TRAINING_PICKLE,
         DATA_CACHE / FileManager.TEST_DATA_PICKLE,
