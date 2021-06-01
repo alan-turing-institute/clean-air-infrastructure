@@ -215,7 +215,9 @@ class RunnableExperimentMixin(SetupExperimentMixin):
             instance.fit_start_time = datetime.now()
             # tf.compat.v1.reset_default_graph()
             with tf.compat.v1.Graph().as_default():
-                with tf.compat.v1.Session().as_default() as session:
+                tfconfig = tf.ConfigProto()
+                tfconfig.gpu_options.allow_growth = True
+                with tf.compat.v1.Session(config=tfconfig).as_default() as session:
                     # session.reset(graph)
                     self.load_model(instance_id)
                     self.train_model(instance_id)
