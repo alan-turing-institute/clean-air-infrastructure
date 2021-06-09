@@ -26,6 +26,7 @@ setuptools.setup(
         "cachetools",
         "geojson",
         "sentry_sdk",
+        "livereload",
     ],
     python_requires=">=3.7",
 )
