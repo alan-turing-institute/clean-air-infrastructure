@@ -228,7 +228,6 @@ class RunnableExperimentMixin(SetupExperimentMixin):
                     self.load_model(instance_id)
                     self.train_model(instance_id, session=session)
                     self.save_training_metrics(instance_id)
-                    self.save_model_parameters(instance_id)
                     self.predict_on_training_set(instance_id)
                     self.predict_on_test_set(instance_id)
                     self.save_result(instance_id)
