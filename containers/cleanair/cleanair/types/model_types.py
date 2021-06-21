@@ -45,6 +45,7 @@ class MRDGPParams(BaseModel):
 
 
 class CompiledMRDGPParams(BaseModel):
+    """Expanded deep GP parameters, to hold trained model"""
 
     base_laqn: List[KernelParams]
     base_sat: List[KernelParams]

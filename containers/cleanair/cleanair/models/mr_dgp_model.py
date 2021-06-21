@@ -1,7 +1,6 @@
 """
 Multi-resolution DGP (LAQN + Satellite)
 """
-from copy import deepcopy
 from typing import Dict, Optional, List
 import os
 from nptyping import NDArray
