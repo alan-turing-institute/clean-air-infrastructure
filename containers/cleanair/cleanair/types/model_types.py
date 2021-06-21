@@ -44,6 +44,16 @@ class MRDGPParams(BaseModel):
     num_samples_between_layers: int
 
 
+class CompiledMRDGPParams(BaseModel):
+
+    base_laqn: List[KernelParams]
+    base_sat: List[KernelParams]
+    dgp_sat: List[KernelParams]
+    mixing_weight: Dict[str, Union[str, None]]
+    num_prediction_samples: int
+    num_samples_between_layers: int
+
+
 def model_params_from_dict(
     model_name: ModelName, params_dict: Dict
 ) -> Union[SVGPParams, MRDGPParams]:
