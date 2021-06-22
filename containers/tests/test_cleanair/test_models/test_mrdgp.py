@@ -44,3 +44,4 @@ class TestMRDGP:
         )
         model.fit(X_train, Y_train)
         params = model.params()
+        assert params
