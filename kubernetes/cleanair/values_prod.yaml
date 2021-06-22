@@ -382,11 +382,6 @@ cronjobs:
         - name: regcred
     nodeSelector:
         agentpool: jamcambf
-    tolerations:
-      - key: "group"
-        operator: "Equal"
-        value: "gpu"
-        effect: "NoSchedule"
     resources:
       limits:
           cpu: "23"
@@ -456,11 +451,6 @@ cronjobs:
         - name: regcred
     nodeSelector:
         agentpool: jamcambf
-    tolerations:
-      - key: "group"
-        operator: "Equal"
-        value: "gpu"
-        effect: "NoSchedule"
     resources:
       limits:
         cpu: "23"
