@@ -4,7 +4,6 @@ from typing import List
 from .shared_params import (
     LENGTHSCALES,
     LIKELIHOOD_VARIANCE,
-    MINIBATCH_SIZE,
     KERNEL_VARIANCE,
 )
 from ..types import (
@@ -18,6 +17,7 @@ from ..types import (
 
 MRDGP_NUM_INDUCING_POINTS = 1000
 MRDGP_MAXITER: int = 5000
+MRGDP_MINIBATCH_SIZE: int = 50
 
 
 # production data config settings for the mrdgp
@@ -52,7 +52,7 @@ def default_base_laqn_model_params(
     likelihood_variance: float = LIKELIHOOD_VARIANCE,
     num_inducing_points: int = MRDGP_NUM_INDUCING_POINTS,
     maxiter: int = MRDGP_MAXITER,
-    minibatch_size: int = MINIBATCH_SIZE,
+    minibatch_size: int = MRGDP_MINIBATCH_SIZE,
     variance: float = KERNEL_VARIANCE,
 ) -> BaseModelParams:
     """Default model parameters for the base LAQN GP"""
@@ -92,7 +92,7 @@ def default_base_sat_model_params(
     likelihood_variance: float = LIKELIHOOD_VARIANCE,
     num_inducing_points: int = MRDGP_NUM_INDUCING_POINTS,
     maxiter: int = MRDGP_MAXITER,
-    minibatch_size: int = MINIBATCH_SIZE,
+    minibatch_size: int = MRGDP_MINIBATCH_SIZE,
     variance: float = KERNEL_VARIANCE,
 ) -> BaseModelParams:
     """Default base model params for Satellite GP"""
@@ -147,7 +147,7 @@ def default_dgp_sat_model_params(
     likelihood_variance: float = LIKELIHOOD_VARIANCE,
     num_inducing_points: int = MRDGP_NUM_INDUCING_POINTS,
     maxiter: int = MRDGP_MAXITER,
-    minibatch_size: int = MINIBATCH_SIZE,
+    minibatch_size: int = MRGDP_MINIBATCH_SIZE,
     variance: float = KERNEL_VARIANCE,
 ) -> BaseModelParams:
     """Default model parameters for the Deep GP satellite model"""
@@ -170,7 +170,7 @@ def default_mrdgp_model_params(
     likelihood_variance: float = LIKELIHOOD_VARIANCE,
     num_inducing_points: int = MRDGP_NUM_INDUCING_POINTS,
     maxiter: int = MRDGP_MAXITER,
-    minibatch_size: int = MINIBATCH_SIZE,
+    minibatch_size: int = MRGDP_MINIBATCH_SIZE,
     variance: float = KERNEL_VARIANCE,
 ) -> MRDGPParams:
     """Get default values for model params"""

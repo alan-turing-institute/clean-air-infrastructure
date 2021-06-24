@@ -250,13 +250,13 @@ class RunnableAirQualityExperiment(RunnableExperimentMixin):
         self._models[instance_id] = model
         return model
 
-    def train_model(self, instance_id: str) -> None:
+    def train_model(self, instance_id: str, session: Any = None) -> None:
         """Train the model"""
         instance = self._instances[instance_id]
         model = self._models[instance_id]
         X_train, Y_train, _ = self._training_dataset[instance.data_id]
         fit_start_time = datetime.now()
-        model.fit(X_train, Y_train)
+        model.fit(X_train, Y_train, session)
         fit_end_time = datetime.now()
         self._training_metrics[instance_id] = TrainingMetrics(
             fit_end_time=fit_end_time,

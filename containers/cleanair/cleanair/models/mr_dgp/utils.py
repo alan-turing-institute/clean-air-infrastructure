@@ -80,6 +80,13 @@ def set_objective(_class, objective_str):
         if model is None or not isinstance(model, gpflow.models.Model):
             raise ValueError("The `model` argument must be a GPflow model.")
 
+        # get the tensorflow session
+        if session is None:
+            try:
+                session = model.enquire_session()
+            except Exception:  # pylint: disable=broad-except
+                session = get_urbanair_tf_session()
+
         opt = self.make_optimize_action(
             model, session=session, var_list=var_list, feed_dict=feed_dict, **kwargs
         )
@@ -87,16 +94,14 @@ def set_objective(_class, objective_str):
         self._model = opt.model
         self._minimize_operation = opt.optimizer_tensor
 
-        session = model.enquire_session(session)
-        with session.as_default():
-            for step in range(maxiter):
-                try:
-                    opt()
-                    if step_callback is not None:
-                        step_callback(step)
-                except (KeyboardInterrupt, SystemExit):
-                    print("STOPPING EARLY at {step}".format(step=step))
-                    break
+        for step in range(maxiter):
+            try:
+                opt()
+                if step_callback is not None:
+                    step_callback(step)
+            except (KeyboardInterrupt, SystemExit):
+                print("STOPPING EARLY at {step}".format(step=step))
+                break
 
         print("anchoring")
         if anchor:
@@ -114,18 +119,23 @@ def set_objective(_class, objective_str):
                 optimizer's minimize method.
             :return: Tensorflow optimization tensor or operation.
         """
-
-        session = model.enquire_session(session)
+        if session is None:
+            session = model.enquire_session(session)
         objective = getattr(model, objective_str)
         full_var_list = self._gen_var_list(model, var_list)
         # Create optimizer variables before initialization.
-        with session.as_default():
-            minimize = self.optimizer.minimize(
-                objective, var_list=full_var_list, **kwargs
-            )
-            model.initialize(session=session)
-            self._initialize_optimizer(session)
-            return minimize
+        minimize = self.optimizer.minimize(objective, var_list=full_var_list, **kwargs)
+        model.initialize(session=session)
+        self._initialize_optimizer(session)
+        return minimize
 
     setattr(_class, "minimize", minimize)
     setattr(_class, "make_optimize_tensor", make_optimize_tensor)
+
+
+def get_urbanair_tf_session() -> tf.compat.v1.Session:
+    """Get an urbanair tensorflow 1 session. Always remember to close your session."""
+    config = tf.ConfigProto()
+    config.gpu_options.allow_growth = True
+    session = tf.compat.v1.Session(config=config)
+    return session

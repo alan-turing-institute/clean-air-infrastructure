@@ -2,7 +2,7 @@
 The interface for London air quality models.
 """
 
-from typing import Callable, List, Optional, Union
+from typing import Any, Callable, List, Optional, Union
 from abc import abstractmethod
 import numpy as np
 from nptyping import Float64, NDArray
@@ -57,7 +57,9 @@ class ModelMixin:
             self.logger = get_logger(__name__)
 
     @abstractmethod
-    def fit(self, x_train: FeaturesDict, y_train: TargetDict) -> None:
+    def fit(
+        self, x_train: FeaturesDict, y_train: TargetDict, session: Any = None
+    ) -> None:
         """
         Fit the model to some training data.
 

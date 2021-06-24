@@ -10,6 +10,7 @@ from scipy.cluster.vq import kmeans2
 import tensorflow as tf
 from nptyping import Float64, NDArray
 from .model import ModelMixin
+from .mr_dgp.utils import get_urbanair_tf_session
 from ..types import FeaturesDict, KernelType, Source, Species, TargetDict, SVGPParams
 
 # turn off tensorflow warnings for gpflow
@@ -47,9 +48,7 @@ class SVGP(ModelMixin):
         custom_config = gpflow.settings.get_settings()
         # jitter is added for numerically stability in cholesky operations.
         custom_config.jitter = self.model_params.jitter
-        with gpflow.settings.temp_settings(
-            custom_config
-        ), gpflow.session_manager.get_session().as_default():
+        with gpflow.settings.temp_settings(custom_config):
             kernel_dict = self.model_params.kernel.dict()
             kernel_type = kernel_dict.pop("type")
 
@@ -69,7 +68,12 @@ class SVGP(ModelMixin):
                 ),
             )
 
-    def fit(self, x_train: FeaturesDict, y_train: TargetDict) -> None:
+    def fit(
+        self,
+        x_train: FeaturesDict,
+        y_train: TargetDict,
+        session: tf.compat.v1.Session = None,
+    ) -> None:
         """Train the SVGP.
 
         Args:
@@ -81,6 +85,9 @@ class SVGP(ModelMixin):
         Notes:
             See `Model.fit` method in the base class for further details.
         """
+        if session is None:
+            session = get_urbanair_tf_session()
+
         self.check_training_set_is_valid(x_train, y_train)
 
         # With a standard GP only use LAQN data and collapse discrisation dimension
@@ -97,7 +104,7 @@ class SVGP(ModelMixin):
 
         # setup SVGP model
         self.setup_model(x_array, y_array, z_r)
-        self.model.compile()
+        self.model.compile(session=session)
 
         # optimize and setup elbo logging
         opt = gpflow.train.AdamOptimizer()  # pylint: disable=no-member
@@ -105,6 +112,7 @@ class SVGP(ModelMixin):
             self.model,
             step_callback=self.elbo_logger,
             maxiter=self.model_params.maxiter,
+            session=session,
         )
 
     def predict(self, x_test: FeaturesDict) -> TargetDict:

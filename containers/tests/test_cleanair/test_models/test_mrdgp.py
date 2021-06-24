@@ -29,5 +29,5 @@ class TestMRDGP:
         X_train, Y_train, _ = model_data.get_data_arrays(
             sat_full_config, sat_training_data, prediction=False,
         )
-        model.fit(X_train, Y_train)
+        model.fit(X_train, Y_train, session=tf_session)
         # assert model.epoch == mrdgp_model_params

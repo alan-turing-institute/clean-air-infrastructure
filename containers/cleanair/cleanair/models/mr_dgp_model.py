@@ -20,7 +20,7 @@ from .mr_dgp.mr_mixing_weights import (
     MR_Variance_Mixing_1,
 )
 
-from .mr_dgp.utils import set_objective
+from .mr_dgp.utils import set_objective, get_urbanair_tf_session
 
 from .model import ModelMixin
 from ..types import (
@@ -149,11 +149,14 @@ class MRDGP(ModelMixin):
         self,
         x_train: FeaturesDict,
         y_train: TargetDict,
+        session: tf.compat.v1.Session = None,
         mask: Optional[Dict[Source, List[bool]]] = None,
     ) -> None:
         """
             Fit MR_DGP to the multi resolution x_train and y_train
         """
+        if session is None:
+            session = get_urbanair_tf_session()
 
         self.logger.info(self.model_params.json(sort_keys=True, indent=3))
 
@@ -184,7 +187,7 @@ class MRDGP(ModelMixin):
         model_dgp = self.make_mixture(dataset, name_prefix="m1_")
         tf.local_variables_initializer()
         tf.global_variables_initializer()
-        model_dgp.compile()
+        model_dgp.compile(session=session)
         self.model = model_dgp
 
         # tf_session = self.model.enquire_session()
@@ -201,61 +204,17 @@ class MRDGP(ModelMixin):
         #     )
 
         try:
-            # if self.experiment_config["train"]:
             opt = AdamOptimizer(0.1)
-            simple_optimizing_scheme = True
-
-            if simple_optimizing_scheme:
-                set_objective(AdamOptimizer, "elbo")
-                opt.minimize(
-                    self.model,
-                    step_callback=self.elbo_logger,
-                    maxiter=self.model_params.base_laqn.maxiter,
-                    anchor=True,
-                )
-            else:
-                # train first layer and fix both noises
-                self.model.disable_dgp_elbo()
-                set_objective(AdamOptimizer, "base_elbo")
-                self.model.set_base_gp_noise(False)
-                self.model.set_dgp_gp_noise(False)
-                opt.minimize(
-                    self.model,
-                    step_callback=self.elbo_logger,
-                    maxiter=self.model_params.base_laqn.maxiter,
-                )
-
-                # train 2nd layer
-                self.model.disable_base_elbo()
-                self.model.enable_dgp_elbo()
-                set_objective(AdamOptimizer, "elbo")
-                opt.minimize(
-                    self.model,
-                    step_callback=self.elbo_logger,
-                    maxiter=self.model_params.base_laqn.maxiter,
-                )
-
-                # jointly train both layers
-                self.model.enable_base_elbo()
-                set_objective(AdamOptimizer, "elbo")
-                opt.minimize(
-                    self.model,
-                    step_callback=self.elbo_logger,
-                    maxiter=self.model_params.base_laqn.maxiter,
-                )
-
-                # release likelihood noises
-                self.model.set_base_gp_noise(True)
-                self.model.set_dgp_gp_noise(True)
-
-                # jointly train both layers
-                self.model.enable_base_elbo()
-                set_objective(AdamOptimizer, "elbo")
-                opt.minimize(
-                    self.model,
-                    step_callback=self.elbo_logger,
-                    maxiter=self.model_params.base_laqn.maxiter,
-                )
+            set_objective(AdamOptimizer, "elbo")
+            opt.minimize(
+                self.model,
+                step_callback=self.elbo_logger,
+                maxiter=self.model_params.base_laqn.maxiter,
+                anchor=True,
+                session=session,
+            )
+            # TODO: Test that the complex optimizing scheme works
+            # self.__complex_optimizing_scheme()
 
         except KeyboardInterrupt:
             self.logger.info("Keyboard interrupt. Ending training of model early.")
@@ -269,6 +228,52 @@ class MRDGP(ModelMixin):
         #             name=self.experiment_config["name"],
         #         ),
         #     )
+
+    def __complex_optimizing_scheme(self):
+        opt = AdamOptimizer(0.1)
+
+        # train first layer and fix both noises
+        self.model.disable_dgp_elbo()
+        set_objective(AdamOptimizer, "base_elbo")
+        self.model.set_base_gp_noise(False)
+        self.model.set_dgp_gp_noise(False)
+        opt.minimize(
+            self.model,
+            step_callback=self.elbo_logger,
+            maxiter=self.model_params.base_laqn.maxiter,
+        )
+
+        # train 2nd layer
+        self.model.disable_base_elbo()
+        self.model.enable_dgp_elbo()
+        set_objective(AdamOptimizer, "elbo")
+        opt.minimize(
+            self.model,
+            step_callback=self.elbo_logger,
+            maxiter=self.model_params.base_laqn.maxiter,
+        )
+
+        # jointly train both layers
+        self.model.enable_base_elbo()
+        set_objective(AdamOptimizer, "elbo")
+        opt.minimize(
+            self.model,
+            step_callback=self.elbo_logger,
+            maxiter=self.model_params.base_laqn.maxiter,
+        )
+
+        # release likelihood noises
+        self.model.set_base_gp_noise(True)
+        self.model.set_dgp_gp_noise(True)
+
+        # jointly train both layers
+        self.model.enable_base_elbo()
+        set_objective(AdamOptimizer, "elbo")
+        opt.minimize(
+            self.model,
+            step_callback=self.elbo_logger,
+            maxiter=self.model_params.base_laqn.maxiter,
+        )
 
     def _predict(self, x_test: NDArray) -> NDArrayTuple:
         ys_mean, ys_var = self.model.predict_y_experts(
