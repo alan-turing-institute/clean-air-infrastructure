@@ -699,3 +699,9 @@ letsencryptIssuer:
       email: ogiles@turing.ac.uk
       server: https://acme-v02.api.letsencrypt.org/directory
       secretName: cleanair-certs-prod
+
+ingress-nginx:
+  controller:
+    service:
+      externalTrafficPolicy: Local
+    replicaCount: 1
