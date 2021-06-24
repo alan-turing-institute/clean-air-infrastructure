@@ -381,12 +381,7 @@ cronjobs:
     imagePullSecrets:
         - name: regcred
     nodeSelector:
-        agentpool: jamcam
-    tolerations:
-      - key: "group"
-        operator: "Equal"
-        value: "gpu"
-        effect: "NoSchedule"
+        agentpool: jamcambf
     resources:
       limits:
           cpu: "23"
@@ -455,12 +450,7 @@ cronjobs:
     imagePullSecrets:
         - name: regcred
     nodeSelector:
-        agentpool: jamcam
-    tolerations:
-      - key: "group"
-        operator: "Equal"
-        value: "gpu"
-        effect: "NoSchedule"
+        agentpool: jamcambf
     resources:
       limits:
         cpu: "23"
