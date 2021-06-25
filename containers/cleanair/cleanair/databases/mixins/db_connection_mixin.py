@@ -51,6 +51,8 @@ class DBConnectionMixin:
             "options": "keepalives=1&keepalives_idle=10",
             **self.connection_info,
         }
+        if self.connection_info[ssl_mode]=="require":
+            self.connection_dict["options" += "&sslmode=require"
 
     @property
     def connection_keys(self):
