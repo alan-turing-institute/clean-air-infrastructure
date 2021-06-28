@@ -51,7 +51,7 @@ setuptools.setup(
     ],
     extras_require={
         "traffic": ["pystan==2.19.1.1", "fbprophet==0.6",],
-        "models": ["gpflow==1.5.1", "tensorflow==1.15.0"],
+        "models": ["gpflow==1.5.1", "tensorflow-gpu==1.15.0"],
     },
     setup_requires=["setuptools_scm"],
     use_scm_version={
