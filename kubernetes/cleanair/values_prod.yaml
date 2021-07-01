@@ -68,7 +68,7 @@ cronjobs:
       - name: regcred
 
   - name: input-aqe
-    schedule: "5 * * * *"
+    schedule: "4 * * * *"
     concurrencyPolicy: Allow
     restartPolicy: OnFailure
     failedJobsHistoryLimit: 10
@@ -88,7 +88,7 @@ cronjobs:
         - name: regcred
 
   - name: input-laqn
-    schedule: "5 * * * *"
+    schedule: "4 * * * *"
     concurrencyPolicy: Allow
     restartPolicy: OnFailure
     failedJobsHistoryLimit: 10
@@ -128,7 +128,7 @@ cronjobs:
         - name: regcred
 
   - name: input-scoot
-    schedule: "5 * * * *"
+    schedule: "4 * * * *"
     concurrencyPolicy: Allow
     restartPolicy: OnFailure
     failedJobsHistoryLimit: 10
