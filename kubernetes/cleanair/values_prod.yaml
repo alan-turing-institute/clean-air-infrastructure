@@ -68,7 +68,7 @@ cronjobs:
       - name: regcred
 
   - name: input-aqe
-    schedule: "5 * * * *"
+    schedule: "4 * * * *"
     concurrencyPolicy: Allow
     restartPolicy: OnFailure
     failedJobsHistoryLimit: 10
@@ -88,7 +88,7 @@ cronjobs:
         - name: regcred
 
   - name: input-laqn
-    schedule: "5 * * * *"
+    schedule: "4 * * * *"
     concurrencyPolicy: Allow
     restartPolicy: OnFailure
     failedJobsHistoryLimit: 10
@@ -128,7 +128,7 @@ cronjobs:
         - name: regcred
 
   - name: input-scoot
-    schedule: "5 * * * *"
+    schedule: "4 * * * *"
     concurrencyPolicy: Allow
     restartPolicy: OnFailure
     failedJobsHistoryLimit: 10
@@ -347,7 +347,7 @@ cronjobs:
           cpu: "3"
           nvidia.com/gpu: 1
 
-  - name: test-jamcam-cron-on-hour
+  - name: jamcam-cron-on-hour
     schedule: "0 4-19 * * *"
     concurrencyPolicy: Allow
     restartPolicy: OnFailure
@@ -380,8 +380,13 @@ cronjobs:
         sizeLimit: "200Gi"
     imagePullSecrets:
         - name: regcred
+    tolerations:
+      - key: "group"
+        operator: "Equal"
+        value: "gpu"
+        effect: "NoSchedule"
     nodeSelector:
-        agentpool: jamcambf
+        agentpool: jamcamp
     resources:
       limits:
           cpu: "23"
@@ -416,7 +421,7 @@ cronjobs:
       limits:
         cpu: "0.5"
 
-  - name: test-jamcam-cron-on-half-hour
+  - name: jamcam-cron-on-half-hour
     schedule: "30 4-19 * * *"
     concurrencyPolicy: Allow
     restartPolicy: OnFailure
@@ -449,8 +454,13 @@ cronjobs:
         sizeLimit: "200Gi"
     imagePullSecrets:
         - name: regcred
+    tolerations:
+      - key: "group"
+        operator: "Equal"
+        value: "gpu"
+        effect: "NoSchedule"
     nodeSelector:
-        agentpool: jamcambf
+        agentpool: jamcamp
     resources:
       limits:
         cpu: "23"
