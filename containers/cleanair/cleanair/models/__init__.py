@@ -7,6 +7,7 @@ from .mr_dgp_model import MRDGP
 
 from .schemas import (
     StaticFeatureSchema,
+    DynamicFeatureSchema,
     StaticFeatureLocSchema,
     StaticFeatureTimeSpecies,
     StaticFeaturesWithSensors,
@@ -20,6 +21,7 @@ __all__ = [
     "SVGP",
     "MRDGP",
     "StaticFeatureSchema",
+    "DynamicFeatureSchema",
     "StaticFeatureLocSchema",
     "StaticFeatureTimeSpecies",
     "StaticFeaturesWithSensors",

@@ -83,7 +83,7 @@ def production() -> None:
     token = token_cmd.stdout.decode("utf-8")[:-1]
 
     PROD_SECRET_DICT["password"] = token
-    PROD_SECRET_DICT["username"] = username + "@cleanair-inputs-server"
+    PROD_SECRET_DICT["username"] = username + "@cleanair-inputs-2021-server"
 
     # Create config secretfile
     with open(CONFIG_SECRETFILE_PATH, "w") as secretfile:

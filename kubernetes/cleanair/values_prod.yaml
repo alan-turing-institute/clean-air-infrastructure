@@ -1,61 +1,71 @@
 # This is a YAML-formatted file.
 # Variables to be passed into the templates.
-imageTag: 736008ab7e8b82180398cef0b6d61216295869f2
+imageTag: 6bff12839805f29382aa91206140bd6a81cbdbed
 
-# jobs:
+jobs:
 
-#   - name: static-features-oshighway
-#     image:
-#         repository: cleanairdocker.azurecr.io/feature_static
-#         imagePullPolicy: Always
-#     args: ["fill", "--feature-source", "oshighway", "--sources", "laqn", "aqe", "hexgrid"]
-#     restartPolicy: OnFailure
-#     volumeMounts:
-#     - name: secrets
-#       mountPath: "/secrets/"
-#       readOnly: true
-#     volumes:
-#     - name: secrets
-#       secret:
-#         secretName: secrets
-#     imagePullSecrets:
-#         - name: regcred
-
-#   - name: static-features-ukmap
-#     image:
-#         repository: cleanairdocker.azurecr.io/feature_static
-#         imagePullPolicy: Always
-#     args: ["fill", "--feature-source", "ukmap", "--sources", "laqn", "aqe", "hexgrid"]
-#     restartPolicy: OnFailure
-#     volumeMounts:
-#     - name: secrets
-#       mountPath: "/secrets/"
-#       readOnly: true
-#     volumes:
-#     - name: secrets
-#       secret:
-#         secretName: secrets
-#     imagePullSecrets:
-#         - name: regcred
-
-#   - name: static-features-street-canyon
-#     image:
-#         repository: cleanairdocker.azurecr.io/feature_static
-#         imagePullPolicy: Always
-#     args: ["fill",  "--feature-source", "streetcanyon", "--sources", "laqn", "aqe", "hexgrid"]
-#     restartPolicy: OnFailure
-#     volumeMounts:
-#     - name: secrets
-#       mountPath: "/secrets/"
-#       readOnly: true
-#     volumes:
-#     - name: secrets
-#       secret:
-#         secretName: secrets
-#     imagePullSecrets:
-#         - name: regcred
 
 cronjobs:
+
+  - name: static-features-oshighway
+    schedule: "0 0 * * *"
+    concurrencyPolicy: Allow
+    restartPolicy: OnFailure
+    failedJobsHistoryLimit: 10
+    image:
+      repository: cleanairdocker.azurecr.io/cleanair
+      imagePullPolicy: Always
+    args: [ "urbanair", "--secretfile", "db_secrets.json", "features", "static", "oshighway", "fill", "--insert-method", "missing", "--source", "laqn", "--source", "aqe", "--source", "hexgrid", "--source", "satellite"]
+    volumeMounts:
+      - name: secrets
+        mountPath: "/secrets/"
+        readOnly: true
+    volumes:
+      - name: secrets
+        secret:
+          secretName: secrets
+    imagePullSecrets:
+      - name: regcred
+
+  - name: static-features-ukmap
+    schedule: "0 0 * * *"
+    concurrencyPolicy: Allow
+    restartPolicy: OnFailure
+    failedJobsHistoryLimit: 10
+    image:
+      repository: cleanairdocker.azurecr.io/cleanair
+      imagePullPolicy: Always
+    args: [ "urbanair", "--secretfile", "db_secrets.json", "features", "static", "ukmap", "fill", "--insert-method", "missing",  "--source", "laqn", "--source", "aqe", "--source", "hexgrid", "--source", "satellite"]
+    volumeMounts:
+      - name: secrets
+        mountPath: "/secrets/"
+        readOnly: true
+    volumes:
+      - name: secrets
+        secret:
+          secretName: secrets
+    imagePullSecrets:
+      - name: regcred
+
+  - name: static-features-street-canyon
+    schedule: "0 0 * * *"
+    concurrencyPolicy: Allow
+    restartPolicy: OnFailure
+    failedJobsHistoryLimit: 10
+    image:
+      repository: cleanairdocker.azurecr.io/cleanair
+      imagePullPolicy: Always
+    args: [ "urbanair", "--secretfile", "db_secrets.json", "features", "static", "streetcanyon", "--insert-method", "missing",  "fill", "--source", "laqn", "--source", "aqe", "--source", "hexgrid", "--source", "satellite"]
+    volumeMounts:
+      - name: secrets
+        mountPath: "/secrets/"
+        readOnly: true
+    volumes:
+      - name: secrets
+        secret:
+          secretName: secrets
+    imagePullSecrets:
+      - name: regcred
 
   - name: input-aqe
     schedule: "5 * * * *"
@@ -137,15 +147,22 @@ cronjobs:
     imagePullSecrets:
         - name: regcred
 
-  - name: forecast-scoot
-    schedule: "* 22 * * *"
+  - name: scoot-forecast
+    schedule: "00 22 * * *"
     concurrencyPolicy: Allow
     restartPolicy: OnFailure
     failedJobsHistoryLimit: 10
+    startingDeadlineSeconds: 3600
     image:
         repository: cleanairdocker.azurecr.io/cleanair
         imagePullPolicy: IfNotPresent
-    args: ["urbanair", "--secretfile", "db_secrets.json", "processors", "scoot", "forecast", "--traindays", "14", "--preddays", "2", "--trainupto", "today"]
+    args: [ "bash", "/app/scripts/forecast_scoot.sh" ]
+    env:
+      - name: DB_SECRET_FILE
+        value: "/secrets/db_secrets.json"
+    envFrom:
+    - secretRef:
+        name: cleanair-log-storage-key
     volumeMounts:
     - name: secrets
       mountPath: "/secrets/"
@@ -156,45 +173,13 @@ cronjobs:
         secretName: secrets
     imagePullSecrets:
         - name: regcred
-
-  - name: air-forecast-svgp-gpu
-    schedule: "30 0 * * *"
-    concurrencyPolicy: Allow
-    restartPolicy: OnFailure
-    failedJobsHistoryLimit: 10
-    image:
-        repository: cleanairdocker.azurecr.io/model_fitting_gpu
-        imagePullPolicy: IfNotPresent
-    args: ["bash", "/app/scripts/svgp.sh"]
-    env:
-      - name: DB_SECRET_FILE
-        value: "/secrets/db_secrets.json"
-    volumeMounts:
-    - name: secrets
-      mountPath: "/secrets/"
-      readOnly: true
-    volumes:
-    - name: secrets
-      secret:
-        secretName: secrets
-    imagePullSecrets:
-      - name: regcred
-    tolerations:
-      - key: "group"
-        operator: "Equal"
-        value: "cleangpu"
-        effect: "NoSchedule"
-    nodeSelector:
-      agentpool: cleanairgpu
     resources:
       limits:
-          cpu: "6"
-          nvidia.com/gpu: 1
+        cpu: "6"
       requests:
         cpu: "3"
-        nvidia.com/gpu: 1
 
-  - name: air-forecast-mrdgp-gpu
+  - name: air-forecast-svgp-gpu-static
     schedule: "30 2 * * *"
     concurrencyPolicy: Allow
     restartPolicy: OnFailure
@@ -202,10 +187,15 @@ cronjobs:
     image:
         repository: cleanairdocker.azurecr.io/model_fitting_gpu
         imagePullPolicy: IfNotPresent
-    args: ["bash", "/app/scripts/mrdgp.sh"]
+    args: ["bash", "/app/scripts/svgp_static.sh"]
     env:
       - name: DB_SECRET_FILE
         value: "/secrets/db_secrets.json"
+    envFrom:
+    - secretRef:
+        name: cleanair-log-storage-key
+    - secretRef:
+        name: cleanair-experiment-archive-key
     volumeMounts:
     - name: secrets
       mountPath: "/secrets/"
@@ -228,8 +218,134 @@ cronjobs:
           cpu: "6"
           nvidia.com/gpu: 1
       requests:
-        cpu: "3"
-        nvidia.com/gpu: 1
+          cpu: "3"
+          nvidia.com/gpu: 1
+
+  - name: air-forecast-svgp-gpu-dynamic
+    schedule: "30 2 * * *"
+    concurrencyPolicy: Allow
+    restartPolicy: OnFailure
+    failedJobsHistoryLimit: 10
+    image:
+        repository: cleanairdocker.azurecr.io/model_fitting_gpu
+        imagePullPolicy: IfNotPresent
+    args: ["bash", "/app/scripts/svgp_dynamic.sh"]
+    env:
+      - name: DB_SECRET_FILE
+        value: "/secrets/db_secrets.json"
+    envFrom:
+    - secretRef:
+        name: cleanair-log-storage-key
+    - secretRef:
+        name: cleanair-experiment-archive-key
+    volumeMounts:
+    - name: secrets
+      mountPath: "/secrets/"
+      readOnly: true
+    volumes:
+    - name: secrets
+      secret:
+        secretName: secrets
+    imagePullSecrets:
+      - name: regcred
+    tolerations:
+      - key: "group"
+        operator: "Equal"
+        value: "cleangpu"
+        effect: "NoSchedule"
+    nodeSelector:
+      agentpool: cleanairgpu
+    resources:
+      limits:
+          cpu: "6"
+          nvidia.com/gpu: 1
+      requests:
+          cpu: "3"
+          nvidia.com/gpu: 1
+
+  - name: air-forecast-mrdgp-gpu-static
+    schedule: "30 0 * * *"
+    concurrencyPolicy: Allow
+    restartPolicy: OnFailure
+    failedJobsHistoryLimit: 10
+    image:
+        repository: cleanairdocker.azurecr.io/model_fitting_gpu
+        imagePullPolicy: IfNotPresent
+    args: ["bash", "/app/scripts/mrdgp_static.sh"]
+    env:
+      - name: DB_SECRET_FILE
+        value: "/secrets/db_secrets.json"
+    envFrom:
+    - secretRef:
+        name: cleanair-log-storage-key
+    - secretRef:
+        name: cleanair-experiment-archive-key
+    volumeMounts:
+    - name: secrets
+      mountPath: "/secrets/"
+      readOnly: true
+    volumes:
+    - name: secrets
+      secret:
+       secretName: secrets
+    imagePullSecrets:
+      - name: regcred
+    tolerations:
+      - key: "group"
+        operator: "Equal"
+        value: "cleangpu"
+        effect: "NoSchedule"
+    nodeSelector:
+      agentpool: cleanairgpu
+    resources:
+      limits:
+          cpu: "6"
+          nvidia.com/gpu: 1
+      requests:
+          cpu: "3"
+          nvidia.com/gpu: 1
+
+  - name: air-forecast-mrdgp-gpu-dynamic
+    schedule: "30 0 * * *"
+    concurrencyPolicy: Allow
+    restartPolicy: OnFailure
+    failedJobsHistoryLimit: 10
+    image:
+        repository: cleanairdocker.azurecr.io/model_fitting_gpu
+        imagePullPolicy: IfNotPresent
+    args: ["bash", "/app/scripts/mrdgp_dynamic.sh"]
+    env:
+      - name: DB_SECRET_FILE
+        value: "/secrets/db_secrets.json"
+    envFrom:
+    - secretRef:
+        name: cleanair-log-storage-key
+    - secretRef:
+        name: cleanair-experiment-archive-key
+    volumeMounts:
+    - name: secrets
+      mountPath: "/secrets/"
+      readOnly: true
+    volumes:
+    - name: secrets
+      secret:
+       secretName: secrets
+    imagePullSecrets:
+      - name: regcred
+    tolerations:
+      - key: "group"
+        operator: "Equal"
+        value: "cleangpu"
+        effect: "NoSchedule"
+    nodeSelector:
+      agentpool: cleanairgpu
+    resources:
+      limits:
+          cpu: "6"
+          nvidia.com/gpu: 1
+      requests:
+          cpu: "3"
+          nvidia.com/gpu: 1
 
   - name: test-jamcam-cron-on-hour
     schedule: "0 4-19 * * *"
@@ -265,12 +381,7 @@ cronjobs:
     imagePullSecrets:
         - name: regcred
     nodeSelector:
-        agentpool: jamcam
-    tolerations:
-      - key: "group"
-        operator: "Equal"
-        value: "gpu"
-        effect: "NoSchedule"
+        agentpool: jamcambf
     resources:
       limits:
           cpu: "23"
@@ -339,12 +450,7 @@ cronjobs:
     imagePullSecrets:
         - name: regcred
     nodeSelector:
-        agentpool: jamcam
-    tolerations:
-      - key: "group"
-        operator: "Equal"
-        value: "gpu"
-        effect: "NoSchedule"
+        agentpool: jamcambf
     resources:
       limits:
         cpu: "23"
@@ -593,3 +699,9 @@ letsencryptIssuer:
       email: ogiles@turing.ac.uk
       server: https://acme-v02.api.letsencrypt.org/directory
       secretName: cleanair-certs-prod
+
+ingress-nginx:
+  controller:
+    service:
+      externalTrafficPolicy: Local
+    replicaCount: 1

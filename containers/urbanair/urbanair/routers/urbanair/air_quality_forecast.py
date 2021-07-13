@@ -1,24 +1,25 @@
 """Air quality forecast API routes"""
 import logging
+from datetime import datetime, timedelta
 from time import time
 from typing import List, Tuple, Optional, cast
-from datetime import datetime, timedelta
-from sqlalchemy.orm import Session
+
 from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy.orm import Session
+
 from ...databases import get_db
-from ...databases.schemas.air_quality_forecast import (
-    ForecastResultGeoJson,
-    ForecastResultJson,
-    GeometryGeoJson,
-)
 from ...databases.queries.air_quality_forecast import (
     cached_instance_ids,
     cached_forecast_hexgrid_json,
     cached_forecast_hexgrid_geojson,
     cached_geometries_hexgrid,
 )
+from ...databases.schemas.air_quality_forecast import (
+    ForecastResultGeoJson,
+    ForecastResultJson,
+    GeometryGeoJson,
+)
 from ...responses import GeoJSONResponse
-
 
 router = APIRouter()
 logger = logging.getLogger("fastapi")  # pylint: disable=invalid-name
@@ -132,7 +133,6 @@ def forecast_hexgrid_json(
         with_geometry=False,
         bounding_box=bounding_box,
     )
-
     # Return the query results as a list of tuples
     # This will be automatically converted to ForecastResultJson using from_orm
     logger.info("Processing hexgrid JSON request took %.2fs", time() - request_start)

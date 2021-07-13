@@ -1,7 +1,7 @@
 """AQE input CLI"""
-from datetime import datetime, timedelta
+from datetime import timedelta
 import typer
-from cleanair.processors import ScootPerDetectorForecaster
+from ....processors import ScootPerDetectorForecaster
 from ..shared_args import (
     UpTo,
     NDays,
@@ -54,10 +54,7 @@ def forecast(
 
     # Train using data from the (trainhours + traindays) hours before trainupto
     # Forecast over the training range plus an additional (preddays + predhours) hours
-    training_end_time = min(
-        datetime.now().replace(second=0, microsecond=0, minute=0),
-        as_datetime(trainupto),
-    )
+    training_end_time = as_datetime(trainupto)
     forecast_start_time = training_end_time - timedelta(hours=trainhours + traindays)
     forecast_length_hrs = preddays + predhours + traindays + trainhours
 

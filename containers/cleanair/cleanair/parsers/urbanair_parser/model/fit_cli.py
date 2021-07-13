@@ -69,7 +69,8 @@ def fit_model(model: ModelMixin, file_manager: FileManager,) -> ModelMixin:
         X_train.pop(Source.satellite)
     y_training_result = model.predict(X_train)
 
-    # save forecast to file
+    # Save predictions and model stats to file
     file_manager.save_forecast_to_pickle(y_forecast)
     file_manager.save_pred_training_to_pickle(y_training_result)
+    file_manager.save_elbo(model.elbo)
     return model

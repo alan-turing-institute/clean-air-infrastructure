@@ -1,25 +1,23 @@
 """
 Tests related to the ModelConfig class
 """
-import pytest
 from enum import Enum
-from dateutil.parser import isoparse
-from datetime import timedelta
-from pydantic import ValidationError
-from cleanair.models import ModelConfig
-from cleanair.types.dataset_types import DataConfig, FullDataConfig
 
-from cleanair.types import Species, Source, FeatureNames, FeatureBufferSize
-from cleanair.databases import DBWriter
-from cleanair.databases.tables import MetaPoint
+import pytest
 from cleanair.exceptions import MissingFeatureError, MissingSourceError
+from cleanair.types import (
+    Species,
+    Source,
+    StaticFeatureNames,
+    DynamicFeatureNames,
+    FeatureBufferSize,
+)
+from pydantic import ValidationError
 
 
 class TestDataConfig:
     def test_setup(self, fake_cleanair_dataset):
         """Insert test data"""
-
-        pass
 
     def test_generate_config(self, model_config):
 
@@ -31,7 +29,8 @@ class TestDataConfig:
                 [Source.laqn, Source.aqe, Source.satellite],
                 [Source.laqn, Source.hexgrid],
                 [Species.NO2],
-                [i.value for i in FeatureNames],
+                [i.value for i in StaticFeatureNames],
+                [i.value for i in DynamicFeatureNames],
                 [i.value for i in FeatureBufferSize],
                 Source.laqn,
             )
@@ -39,7 +38,7 @@ class TestDataConfig:
             pytest.fail(e)
 
     @pytest.mark.parametrize(
-        "trainupto,train_sources,pred_sources,species,features,buffer_sizes,norm_by",
+        "trainupto,train_sources,pred_sources,species,static_features,dynamic_features,buffer_sizes,norm_by",
         [
             # Uses an invalid source
             pytest.param(
@@ -47,7 +46,8 @@ class TestDataConfig:
                 [Source.laqn, Source.aqe, Source.satellite],
                 [Source.laqn, Source.hexgrid],
                 [Species.NO2],
-                [i.value for i in FeatureNames],
+                [i.value for i in StaticFeatureNames],
+                [i.value for i in DynamicFeatureNames],
                 [i.value for i in FeatureBufferSize],
                 "not_a_source",
             ),
@@ -57,7 +57,8 @@ class TestDataConfig:
                 [Source.laqn, Source.aqe, Source.satellite],
                 [Source.laqn, Species.NO2],
                 [Species.NO2],
-                [i.value for i in FeatureNames],
+                [i.value for i in StaticFeatureNames],
+                [i.value for i in DynamicFeatureNames],
                 [i.value for i in FeatureBufferSize],
                 Source.laqn,
             ),
@@ -70,7 +71,8 @@ class TestDataConfig:
         train_sources,
         pred_sources,
         species,
-        features,
+        static_features,
+        dynamic_features,
         buffer_sizes,
         norm_by,
     ):
@@ -84,7 +86,8 @@ class TestDataConfig:
                 train_sources,
                 pred_sources,
                 species,
-                features,
+                static_features,
+                dynamic_features,
                 buffer_sizes,
                 norm_by,
             )
@@ -100,14 +103,11 @@ class TestDataConfig:
         )
 
         # Check feature availability doesn't raise an error
-        try:
-            model_config.check_features_available(
-                valid_config.features,
-                valid_config.train_start_date,
-                valid_config.pred_end_date,
-            )
-        except Exception:
-            pytest.fail("Unexpected error")
+        model_config.check_static_features_available(
+            valid_config.static_features,
+            valid_config.train_start_date,
+            valid_config.pred_end_date,
+        )
 
         class FakeFeature(str, Enum):
 
@@ -115,7 +115,7 @@ class TestDataConfig:
 
         # Check error raised when features missing
         with pytest.raises(MissingFeatureError):
-            model_config.check_features_available(
+            model_config.check_static_features_available(
                 [FakeFeature.fake_feature],
                 valid_config.train_start_date,
                 valid_config.pred_end_date,
@@ -131,14 +131,8 @@ class TestDataConfig:
         )
 
         # Check source availability doesn't raise an error
-        try:
-            model_config.check_sources_available(valid_config.train_sources)
-        except Exception:
-            pytest.fail("Unexpected error")
-        try:
-            model_config.check_sources_available(valid_config.pred_sources)
-        except Exception:
-            pytest.fail("Unexpected error")
+        model_config.check_sources_available(valid_config.train_sources)
+        model_config.check_sources_available(valid_config.pred_sources)
 
         class FakeSource(str, Enum):
             fake_source = "fake_source"
@@ -149,15 +143,9 @@ class TestDataConfig:
 
     def test_validate_config(self, valid_config, model_config):
         "Check all validations pass"
+        model_config.validate_config(valid_config)
 
-        try:
-            model_config.validate_config(valid_config)
-        except Exception:
-            pytest.raises("Unexpected error")
-
-    def test_get_interest_point_ids_open_laqn(
-        self, valid_config, model_config, laqn_sites_open
-    ):
+    def test_get_interest_point_ids_open_laqn(self, model_config, laqn_sites_open):
         "Check we get all interest points"
 
         # Check we get all open sites and not any closed sites
@@ -170,7 +158,7 @@ class TestDataConfig:
         }
 
     def test_get_interest_point_ids_open_laqn_within_london(
-        self, valid_config, model_config, meta_within_london
+        self, model_config, meta_within_london
     ):
         "Check we get all interest points"
 
@@ -239,9 +227,14 @@ class TestDataConfig:
             full_config = model_config.generate_full_config(valid_config)
 
             for source in [Source.laqn, Source.aqe]:
-                full_config.train_interest_points[source] == [
-                    i for i in meta_within_london if i.source == source.value
+                point_id_in_london = [
+                    str(i.id) for i in meta_within_london if i.source == source.value
                 ]
+                assert isinstance(full_config.train_interest_points[source][0], str)
+                assert isinstance(point_id_in_london[0], str)
+                assert set(full_config.train_interest_points[source]) == set(
+                    point_id_in_london
+                )
 
         except ValidationError:
             pytest.raises("Full config failed")

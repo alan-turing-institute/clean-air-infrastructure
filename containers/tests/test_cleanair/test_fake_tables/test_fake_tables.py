@@ -1,8 +1,6 @@
-import pytest
 import uuid
-from dateutil import rrule
-from dateutil.parser import isoparse
-from sqlalchemy.exc import IntegrityError, ProgrammingError, IntegrityError
+
+import pytest
 from cleanair.databases import DBWriter, DBReader
 from cleanair.databases.tables import (
     MetaPoint,
@@ -10,17 +8,10 @@ from cleanair.databases.tables import (
     LAQNReading,
     AQESite,
     AQEReading,
-    StaticFeature,
 )
-from cleanair.databases.tables.fakes import (
-    MetaPointSchema,
-    LAQNSiteSchema,
-    LAQNReadingSchema,
-    AQESiteSchema,
-    AQEReadingSchema,
-    StaticFeaturesSchema,
-)
-from cleanair.types import Source, Species, FeatureNames
+from cleanair.databases.tables.fakes import LAQNSiteSchema
+from cleanair.types import Source
+from sqlalchemy.exc import IntegrityError
 
 
 class TestDataFaker:

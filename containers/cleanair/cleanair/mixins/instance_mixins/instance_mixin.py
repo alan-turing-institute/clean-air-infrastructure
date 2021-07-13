@@ -8,7 +8,7 @@ from pydantic import BaseModel
 from sqlalchemy import inspect
 from ...databases.mixins import DataTableMixin, ModelTableMixin, InstanceTableMixin
 from ...types import ClusterId, ModelName, Tag
-from ...utils.hashing import hash_fn, instance_id_from_hash, get_git_hash
+from ...hashing import hash_fn, instance_id_from_hash, get_git_hash
 from ...loggers import green
 
 

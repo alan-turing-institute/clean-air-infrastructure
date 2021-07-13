@@ -6,7 +6,6 @@ from ..state import (
     CONFIG_SECRETFILE_PATH,
     APP_DIR,
     DATA_CACHE,
-    MODEL_DATA_CACHE,
 )
 from ....loggers import initialise_logging
 
@@ -29,9 +28,6 @@ def init_callback(
 
     if not DATA_CACHE.is_dir():
         DATA_CACHE.mkdir()
-
-    if not MODEL_DATA_CACHE.is_dir():
-        MODEL_DATA_CACHE.mkdir()
 
     # Configure settings
     if verbose:

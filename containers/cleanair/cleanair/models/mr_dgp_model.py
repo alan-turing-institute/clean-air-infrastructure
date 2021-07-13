@@ -1,6 +1,7 @@
 """
 Multi-resolution DGP (LAQN + Satellite)
 """
+from copy import deepcopy
 from typing import Dict, Optional, List
 import os
 from nptyping import NDArray
@@ -30,6 +31,7 @@ from ..types import (
     Source,
     Species,
     TargetDict,
+    MRDGPParams,
 )
 
 # turn off tensorflow warnings for gpflow
@@ -44,6 +46,13 @@ class MRDGP(ModelMixin):
     """
     MR-DGP for air quality.
     """
+
+    def params(self) -> MRDGPParams:
+        params = deepcopy(self.model_params)
+        params.kernel.variance = self.model.kern.variance.read_value().tolist()
+        params.kernel.lengthscales = self.model.kern.lengthscales.read_value().tolist()
+
+        return params
 
     def make_mixture(
         self, dataset: List[List[NDArray]], parent_mixtures=None, name_prefix: str = ""
@@ -155,9 +164,6 @@ class MRDGP(ModelMixin):
         y_sat = y_train[Source.satellite][Species.NO2].copy()
 
         # ===========================Setup Data===========================
-        features = [0, 1, 2]  # TODO change hardcoded features
-        x_laqn = x_laqn[:, features]
-        x_sat = x_sat[:, :, features]
 
         x_sat, y_sat = ModelMixin.clean_data(x_sat, y_sat)
         x_laqn, y_laqn = ModelMixin.clean_data(x_laqn, y_laqn)

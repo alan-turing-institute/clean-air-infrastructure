@@ -35,7 +35,14 @@ spec:
               resources:
 {{ toYaml . | indent 16 }}
               {{- end }}
-
+              {{- with $job.env }}
+              env:
+{{ toYaml . | indent 14 }}
+              {{- end }}
+              {{- with $job.envFrom }}
+              envFrom:
+{{ toYaml . | indent 14 }}
+              {{- end }}
             {{- with $job.volumeMounts }}
               volumeMounts:
 {{ toYaml . | indent 14 }}
@@ -48,10 +55,6 @@ spec:
             volumes:
 {{ toYaml . | indent 12 }}
           {{- end }}
-            {{- with $job.env }}
-            env:
-{{ toYaml . | indent 12 }}
-            {{- end }}
             {{- with $job.nodeSelector }}
             nodeSelector:
 {{ toYaml . | indent 14 }}

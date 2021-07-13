@@ -3,6 +3,12 @@ from enum import Enum, unique
 
 
 @unique
+class ScootProcessType(str, Enum):
+    "Scoot processor type"
+    forecast = "forecast"
+    real = "real"
+
+
 class ClusterId(str, Enum):
     """Ids for clusters."""
 
@@ -23,7 +29,7 @@ class Tag(str, Enum):
 
 
 @unique
-class FeatureNames(str, Enum):
+class StaticFeatureNames(str, Enum):
     "Features"
     min_canyon_ratio = "min_canyon_ratio"
     avg_canyon_ratio = "avg_canyon_ratio"
@@ -45,6 +51,14 @@ class FeatureNames(str, Enum):
     museums = "museums"
     park = "park"
     water = "water"
+
+
+@unique
+class DynamicFeatureNames(str, Enum):
+    "Valid dynamic feature names"
+    max_n_vehicles = "max_n_vehicles"
+    avg_n_vehicles = "avg_n_vehicles"
+    min_n_vehicles = "min_n_vehicles"
 
 
 @unique

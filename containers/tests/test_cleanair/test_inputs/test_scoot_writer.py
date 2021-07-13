@@ -1,10 +1,10 @@
-import pytest
-import pandas as pd
-from pandas.util.testing import assert_frame_equal
+from datetime import timedelta
+
 import numpy as np
-from dateutil import rrule
-from datetime import time, timedelta
+import pytest
 from cleanair.inputs.scoot_writer import ScootReader
+from dateutil import rrule
+from pandas.util.testing import assert_frame_equal
 
 
 def test_scoot_detector(

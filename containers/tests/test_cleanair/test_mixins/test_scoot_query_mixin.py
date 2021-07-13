@@ -1,11 +1,12 @@
 """Testing database query mixins."""
 
 from datetime import date
+
 import pytest
-from geoalchemy2.shape import to_shape
-from shapely.geometry import Point
 from cleanair.mixins import ScootQueryMixin
 from cleanair.types import Borough
+from geoalchemy2.shape import to_shape
+from shapely.geometry import Point
 
 
 def check_number_of_readings(readings_df, ndetectors, nhours):

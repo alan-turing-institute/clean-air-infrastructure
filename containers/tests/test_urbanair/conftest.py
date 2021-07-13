@@ -159,7 +159,6 @@ def mock_air_quality_instance():
 def sample_hexgrid_points(secretfile, connection_class):
     """Real hexgrid points to use for air quality routes test"""
     reader = DBReader(secretfile=secretfile, connection=connection_class)
-    print("hello sample_hexgrid_points")
     with reader.dbcnxn.open_session() as session:
         points = (
             session.query(

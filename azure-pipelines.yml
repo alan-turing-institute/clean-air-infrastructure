@@ -22,7 +22,7 @@ stages:
     - task: AzureKeyVault@1
       displayName: 'Read KeyVault secrets'
       inputs:
-        azureSubscription: 'cleanair-scn'
+        azureSubscription: 'urbanair-scn'
         KeyVaultName: 'cleanair-secrets'
         SecretsFilter: 'container-registry-admin-password,container-registry-admin-username,container-registry-login-server'
     # Login to ACR
@@ -30,19 +30,24 @@ stages:
         echo "$(CONTAINER-REGISTRY-ADMIN-PASSWORD)" | docker login -u "$(CONTAINER-REGISTRY-ADMIN-USERNAME)" --password-stdin "$(CONTAINER-REGISTRY-LOGIN-SERVER)"
       displayName: 'Login to ACR'
 
+    # Set cleanair version
+    - bash: |
+        echo "##vso[task.setvariable variable=urbanair_version]$(git tag --sort=creatordate | head -1 | sed 's/^.//')"
+      displayName: 'Set cleanair version'
+
     # CleanAir Package (inputs, feature processing)
     - script: |
-        docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/cleanair:$(Build.SourceVersion) -f containers/dockerfiles/cleanair.Dockerfile containers
+        docker build --build-arg urbanair_version=$(urbanair_version) -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/cleanair:$(Build.SourceVersion) -f containers/dockerfiles/cleanair.Dockerfile containers
       displayName: 'Build a docker image for inputs and feature processing'
 
     # Urbanair API
     - script: |
-        docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/urbanairapi:$(Build.SourceVersion) -f containers/dockerfiles/urbanairapi.Dockerfile containers
+        docker build --build-arg urbanair_version=$(urbanair_version) -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/urbanairapi:$(Build.SourceVersion) -f containers/dockerfiles/urbanairapi.Dockerfile containers
       displayName: 'Build urbanair API image'
 
     # JamCam cronjobs (Both Cleanair and UrbanAir packages)
     - script: |
-        docker build --build-arg git_hash=$(git show -s --format=%H) -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/jamcamcron:$(Build.SourceVersion) -f containers/dockerfiles/jamcam.Dockerfile containers
+        docker build --build-arg urbanair_version=$(urbanair_version) --build-arg git_hash=$(git show -s --format=%H) -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/jamcamcron:$(Build.SourceVersion) -f containers/dockerfiles/jamcam.Dockerfile containers
       displayName: "Build jamcam cronjob image"
 
     # Push CleanAir and UrbanAir to ACR and remove local images
@@ -69,11 +74,11 @@ stages:
     #     docker build --build-arg git_hash=$(git show -s --format=%H) -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/model_fitting:$(Build.SourceVersion) -f containers/dockerfiles/model_fitting.Dockerfile containers
     #   displayName: "Build model fitting image"
     - script: | 
-        docker build --build-arg git_hash=$(git show -s --format=%H) -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/model_fitting_gpu:$(Build.SourceVersion) -f containers/dockerfiles/model_fitting_gpu.Dockerfile containers
+        docker build --build-arg urbanair_version=$(urbanair_version) --build-arg git_hash=$(git show -s --format=%H) -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/model_fitting_gpu:$(Build.SourceVersion) -f containers/dockerfiles/model_fitting_gpu.Dockerfile containers
       displayName: "Build gpu model fitting image"
     # Odysseus
     - script: |
-         docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/odysseus:$(Build.SourceVersion) -f containers/dockerfiles/odysseus.Dockerfile containers
+         docker build --build-arg urbanair_version=$(urbanair_version) -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/odysseus:$(Build.SourceVersion) -f containers/dockerfiles/odysseus.Dockerfile containers
       displayName: 'Building the Odysseus image'
     # List available images
     - script: |
@@ -99,7 +104,7 @@ stages:
     - task: AzureCLI@1
       displayName: 'Connect to Azure'
       inputs:
-        azureSubscription: 'cleanair-scn'
+        azureSubscription: 'urbanair-scn'
         scriptLocation: 'inlineScript'
         inlineScript: |
           az aks get-credentials -n $(KUBERNETES_CLUSTER_NAME) -g $(KUBERNETES_CLUSTER_RESOURCE_GROUP)
@@ -109,9 +114,9 @@ stages:
     - task: AzureKeyVault@1
       displayName: 'Read KeyVault secrets'
       inputs:
-        azureSubscription: 'cleanair-scn'
+        azureSubscription: 'urbanair-scn'
         KeyVaultName: 'cleanair-secrets'
-        SecretsFilter: 'scoot-aws-key,scoot-aws-key-id,satellite-copernicus-key,cleanair-inputs-db-name,cleanair-inputs-db-cluster-password,cleanair-inputs-db-cluster-username,cleanair-inputs-db-server-name, container-registry-admin-password,container-registry-admin-username,container-registry-login-server,sentry-dsn,tomtom-api-key'
+        SecretsFilter: 'scoot-aws-key,scoot-aws-key-id,satellite-copernicus-key,cleanair-inputs-db-name,cleanair-inputs-2021-db-cluster-password,cleanair-inputs-2021-db-cluster-username,cleanair-inputs-2021-db-server-name, container-registry-admin-password,container-registry-admin-username,container-registry-login-server,sentry-dsn,tomtom-api-key,cleanair-log-storage-key,cleanair-log-storage-connection-string,cleanair-experiment-archive-key'
     # Install matching Kubectl version
     - task: KubectlInstaller@0
       displayName: 'Install matching Kubectl version'
@@ -147,9 +152,9 @@ stages:
             "aws_key": "$(SCOOT-AWS-KEY)"
           }' > aws_secrets.json
           echo '{
-            "username": "$(CLEANAIR-INPUTS-DB-CLUSTER-USERNAME)@$(CLEANAIR-INPUTS-DB-SERVER-NAME)",
-            "password": "$(CLEANAIR-INPUTS-DB-CLUSTER-PASSWORD)",
-            "host": "$(CLEANAIR-INPUTS-DB-SERVER-NAME).postgres.database.azure.com",
+            "username": "$(CLEANAIR-INPUTS-2021-DB-CLUSTER-USERNAME)@$(CLEANAIR-INPUTS-2021-DB-SERVER-NAME)",
+            "password": "$(CLEANAIR-INPUTS-2021-DB-CLUSTER-PASSWORD)",
+            "host": "$(CLEANAIR-INPUTS-2021-DB-SERVER-NAME).postgres.database.azure.com",
             "port": 5432,
             "db_name": "$(CLEANAIR-INPUTS-DB-NAME)",
             "ssl_mode": "require"
@@ -160,10 +165,19 @@ stages:
           kubectl create secret generic --namespace cleanair secrets --from-file=aws_secrets.json --from-file=db_secrets.json --from-file=copernicus_secrets.json
           kubectl create secret generic --namespace cleanair sentry --from-literal=SENTRY_DSN='$(SENTRY-DSN)'
           rm -f aws_secrets.json db_secrets.json copernicus_secrets.json
-          # kubectl create secret generic --namespace cleanair secrets --from-literal=host='$(CLEANAIR-INPUTS-DB-SERVER-NAME).postgres.database.azure.com' --from-literal=port=5432 --from-literal=db_name='$(CLEANAIR-INPUTS-DB-NAME)' --from-literal=username='$(CLEANAIR-INPUTS-DB-CLUSTER-USERNAME)@$(CLEANAIR-INPUTS-DB-SERVER-NAME)' --from-literal=password='$(CLEANAIR-INPUTS-DB-CLUSTER-PASSWORD)' --from-literal=ssl_mode='require' --from-literal=aws_key_id='$(SCOOT-AWS-KEY-ID)' --from-literal=aws_key='$(SCOOT-AWS-KEY)'
+          # kubectl create secret generic --namespace cleanair secrets --from-literal=host='$(CLEANAIR-INPUTS-2021-DB-SERVER-NAME).postgres.database.azure.com' --from-literal=port=5432 --from-literal=db_name='$(CLEANAIR-INPUTS-DB-NAME)' --from-literal=username='$(CLEANAIR-INPUTS-2021-DB-CLUSTER-USERNAME)@$(CLEANAIR-INPUTS-2021-DB-SERVER-NAME)' --from-literal=password='$(CLEANAIR-INPUTS-2021-DB-CLUSTER-PASSWORD)' --from-literal=ssl_mode='require' --from-literal=aws_key_id='$(SCOOT-AWS-KEY-ID)' --from-literal=aws_key='$(SCOOT-AWS-KEY)'
         fi
         if [ "$(kubectl get secret --namespace cleanair 2> /dev/null | grep tomtom-api-key)" == "" ]; then
           kubectl create secret generic --namespace cleanair tomtom-api-key --from-literal=TOMTOM_API_KEY='$(TOMTOM-API-KEY)'
+        fi
+        if [ "$(kubectl get secret --namespace cleanair 2> /dev/null | grep cleanair-log-storage-connection-string)" == "" ]; then
+              kubectl create secret generic --namespace cleanair cleanair-log-storage-connection-string --from-literal=CLEANAIR_LOG_STORAGE_CONNECTION_STRING='$(CLEANAIR-LOG-STORAGE-CONNECTION-STRING)'
+        fi
+        if [ "$(kubectl get secret --namespace cleanair 2> /dev/null | grep cleanair-log-storage-key)" == "" ]; then
+              kubectl create secret generic --namespace cleanair cleanair-log-storage-key --from-literal=CLEANAIR_LOG_STORAGE_KEY='$(CLEANAIR-LOG-STORAGE-KEY)'
+        fi
+        if [ "$(kubectl get secret --namespace cleanair 2> /dev/null | grep cleanair-experiment-archive-key)" == "" ]; then
+              kubectl create secret generic --namespace cleanair cleanair-experiment-archive-key --from-literal=CLEANAIR_EXPERIMENT_ARCHIVE_KEY='$(CLEANAIR-EXPERIMENT-ARCHIVE-KEY)'
         fi
       displayName: 'Add secrets to Kubernetes'
     # Prepare Helm chart
@@ -181,7 +195,7 @@ stages:
       displayName: 'Install/upgrade Helm chart'
       inputs:
         connectionType: Azure Resource Manager
-        azureSubscriptionEndpoint: 'cleanair-scn'
+        azureSubscriptionEndpoint: 'urbanair-scn'
         azureResourceGroup: $(KUBERNETES_CLUSTER_RESOURCE_GROUP)
         kubernetesCluster: $(KUBERNETES_CLUSTER_NAME)
         namespace: $(NAMESPACE)
