@@ -1,10 +1,11 @@
 """Static routes"""
 # pylint: disable=C0116
 import os
-from fastapi import APIRouter, Request, Response
-from fastapi.templating import Jinja2Templates
-from starlette.responses import RedirectResponse
 
+from fastapi import APIRouter, Request, Response, Depends
+from fastapi.templating import Jinja2Templates
+
+from ...security import logged_in
 
 router = APIRouter()
 
@@ -15,17 +16,11 @@ templates = Jinja2Templates(
 )
 
 
-@router.get("/", include_in_schema=False)
-async def index(request: Request) -> RedirectResponse:
-
-    return RedirectResponse(url=request.url_for("jamcam_map"))
-
-
 @router.get("/usage", include_in_schema=False)
-async def usage(request: Request) -> Response:
+async def usage(request: Request, _: dict = Depends(logged_in)) -> Response:
     return templates.TemplateResponse("usage.html", {"request": request})
 
 
 @router.get("/map", include_in_schema=False)
-async def jamcam_map(request: Request) -> Response:
+async def jamcam_map(request: Request, _: dict = Depends(logged_in)) -> Response:
     return templates.TemplateResponse("map.html", {"request": request})

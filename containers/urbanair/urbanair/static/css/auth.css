@@ -1,0 +1,140 @@
+html {
+    height: 100%;
+    overflow-x: hidden;
+    font-size: 17px;
+}
+
+body {
+
+    color: black;
+    font-family: "Roboto",-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing: antialiased;
+    width: 100%;
+    min-height: 100%;
+    font-size: 1rem;
+    margin: 0px;
+}
+
+a {
+    color: blue;
+    font-weight: bold;
+}
+.container {
+    display: flex;
+    justify-content: center;
+}
+
+.item {
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+    min-height: 1px;
+    width: 50%;
+    max-width: 50%;
+} 
+
+/* Add a black background color to the top navigation */
+.topnav {
+
+    overflow: hidden;
+    background-color: #3A51AF;
+    margin-left: 0px;
+    color: white;
+    box-shadow: 0 0 0.2rem rgba(0,0,0,0), 0 0.2rem 0.4rem rgba(0,0,0,0);
+  }
+
+
+/* Style the links inside the navigation bar */
+.topnav a {
+    float: right;
+    color: #D6D7E4;
+    text-align: center;
+    padding: 14px 16px;
+    text-decoration: none;
+    font-size: 17px;
+  }
+  
+  /* Change the color of links on hover */
+  .topnav a:hover {
+    background-color: #ddd;
+    color: black;
+  }
+
+.topnav .title {
+    float: left;
+    font-weight: bold;
+}
+
+.topnav .user {
+      color: white;
+      font-weight: bold;
+}
+
+.topnav .user:hover {
+    color: white;
+    background-color: #3A51AF;
+}
+  
+.token {
+    margin-top: 5vh;
+    color: #0C2D48;
+    font-size: 1em;
+}
+
+.token p {
+    font-size: .8em;
+    line-height: 1.6;
+    margin: 0.5em 0em;
+}
+
+.token p span {
+    color: black;
+    font-weight: bold;
+}
+
+.token button {
+    /* border-radius: 20px; */
+    background-color: #3A51AF;
+    color: white;
+    padding: 0.8em 1em;
+    margin-bottom: 0.5em;
+    font-weight: bold;
+}
+
+.token hr {
+    width: 85%;
+    float: left;
+}
+
+.access {
+    margin-top: 2em;
+    margin-bottom: 0.5em;
+    padding: 1%;
+    height: 10vh;
+    width: 98%;
+    border: solid 1px black;
+    border-radius: 5px;
+    background-color: rgba(237, 237, 237, 0.5);
+    word-wrap: break-word;
+    resize: none;
+}
+
+.access:disabled {
+    color: black;
+}
+
+footer {
+    text-align: left;
+    padding: 3px;
+    background-color: #141414;
+    color: #A1A1A1;
+    font-size: 0.6em;
+    position: fixed;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+
+}
+
+footer p {
+    margin-left: 10vw;
+}

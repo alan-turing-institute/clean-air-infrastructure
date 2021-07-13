@@ -1,10 +1,11 @@
 """UrbanAir API"""
 import os
 import logging
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from fastapi.staticfiles import StaticFiles
 from .routers.developer import urbanroute
 from .config import get_settings
+from .security import get_http_username
 
 logger = logging.getLogger("fastapi")  # pylint: disable=invalid-name
 
@@ -30,4 +31,6 @@ if get_settings().mount_docs:
     )
     logger.info("Mount dev documentation")
 
-app.include_router(urbanroute.router, tags=["Developer"])
+app.include_router(
+    urbanroute.router, tags=["Developer"], dependencies=[Depends(get_http_username)]
+)

@@ -1,7 +1,8 @@
 """Configurations"""
-from typing import Optional
+from typing import Optional, Union
 from functools import lru_cache
-from pydantic import BaseSettings
+from pathlib import Path
+from pydantic import BaseSettings, validator
 
 
 class Settings(BaseSettings):
@@ -13,7 +14,16 @@ class Settings(BaseSettings):
     mount_docs: bool = False
     sentry_dsn: Optional[str]
     root_path: str = ""
+    htpasswdfile: Optional[Path] = None
     tomtom_api_key: str = ""
+
+    @validator("htpasswdfile")
+    @classmethod
+    def check_htpasswdfile_exists(cls, v: Union[bool, Path]) -> Union[bool, Path]:
+        "Ensure htpasswdfile exists"
+        if isinstance(v, Path) and not v.exists():
+            raise IOError("htpasswdfile could not be found")
+        return v
 
 
 @lru_cache()

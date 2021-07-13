@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title>Odysseus API Access</title>
+    <link href="{{ url_for('static', path='css/auth.css') }}" rel="stylesheet">
+    <!-- Chart -->
+</head>
+<body>
+
+    <div class="topnav">
+        <a href = "{{ url_for('logout') }}">Logout</a>
+        <a class="user">{{user.preferred_username}}</a>
+        <a class="title">Odysseus</a>
+    </div>
+
+    <div class = "container">
+        <div>
+        <div class="token">
+            <h3>Odysseus Map</h3>
+            <p>Visit the <a href="{{ url_for('jamcam_map') }}">Odysseus Map</a> to see activity at JamCam camera's across London.</p>
+        </div>
+
+        <div class="token">
+            <h3>Generate an access token</h3>
+            <p>Access tokens are short lived tokens which can be used to authenticate against the Odysseus API.</p>
+            <p>The tokens will <span>expire after 60 minutes</span>. Request a new token to access the API again</p>
+            <P>Use the token by setting the following header in your api requests: <span>"Authorization: Bearer {your token}"</span></P>
+            <textarea id="access" class="access" placeholder="Click the button"></textarea>
+            <button class="btn success" onclick="getAccessToken()">+ Create a Token</button>
+            <button class="btn success" onclick="copyAccessToken()">Copy token to clipboard</button>
+        </div>
+
+        <div class="token">
+            <h3>API Docs</h3>
+            <p>Check the API <a href=" {{ url_for('get_documentation') }}">Swagger Docs</a> to try out the API.</p>
+            <p>Generate a token above. When using the Swagger Docs click the <span>Authorize</span> button and copy in your token.</p>
+
+            <p>Docs are also available as <a href=" {{ url_for('get_redocumentation') }}">ReDocs</a>
+        </div>
+    </div>
+    </div>
+
+    <footer>
+       <div>
+           <p>Authorization for Odysseus API</p>
+           <p>Copyright © 2019-2020 Alan Turing Institute</p>
+        </div>
+        
+    </footer>
+
+</body>
+
+<script type="text/javascript">
+
+function getAccessToken() {
+
+    console.log("Access Token Requested")
+    console.log(document.getElementById("access").innerHTML)
+    // document.getElementById("access").innerHTML = "Hello Houda";
+
+    var xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = function() {
+        if (this.readyState == 4 && this.status == 200) {
+        
+            try {
+                response = JSON.parse(this.responseText);
+                document.getElementById("access").value = response.access_token;
+            } catch(e){
+                if (e instanceof TypeError) {
+                    text = "Failed to fetch token. Contact administrator"
+                    document.getElementById("access").value = text;
+                    console.log(text)
+                }
+                else{
+                    text = "Unknown error. Contact administrator"
+                    document.getElementById("access").value = text;
+                    console.log(text)
+                }
+            }
+        }
+    };
+    xhttp.open("GET", "{{ url_for('odysseus_token') }}", true);
+    xhttp.send();
+}
+
+
+function copyAccessToken() {
+    document.getElementById("access").select();
+    document.execCommand("copy");
+}
+
+
+</script>
+</html>

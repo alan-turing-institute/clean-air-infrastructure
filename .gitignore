@@ -35,3 +35,8 @@ images/
 # database
 mylocal_db/
 logfile
+
+# secrets
+*.env
+
+kubernetes/odysseus/camera_backfill/jobs

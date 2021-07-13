@@ -5,7 +5,13 @@ from cleanair.databases import DBWriter
 from cleanair.databases.tables import JamCamVideoStats
 from urbanair.types import DetectionClass
 
-# pylint: disable=C0115,R0201
+# pylint: disable=C0115,R0201,W0621
+
+
+@pytest.fixture()
+def oauth_basic_headers(basic_token_class):
+    """Pytest fixture giving a basic access token"""
+    return {"Authorization": f"Bearer {basic_token_class[0]}"}
 
 
 class TestBasic:
@@ -27,10 +33,13 @@ class TestRaw:
             writer.commit_records(
                 video_stat_records, on_conflict="overwrite", table=JamCamVideoStats,
             )
+
         except IntegrityError:
             pytest.fail("Dummy data insert")
 
-    def test_24_hours(self, client_class_odysseus, video_stat_records):
+    def test_24_hours(
+        self, client_class_odysseus, oauth_basic_headers, video_stat_records
+    ):
         """Test 24 hour request startime/endtime"""
 
         # Check response
@@ -40,11 +49,11 @@ class TestRaw:
                 "starttime": "2020-01-01T00:00:00",
                 "endtime": "2020-01-02T00:00:00",
             },
+            headers=oauth_basic_headers,
         )
-        assert response.status_code == 200
 
         data = response.json()
-        print(data)
+        assert response.status_code == 200
         assert len(data) == len(video_stat_records)
 
     @pytest.mark.parametrize(
@@ -58,7 +67,9 @@ class TestRaw:
             DetectionClass.bus,
         ],
     )
-    def test_24_hours_detc(self, client_class_odysseus, video_stat_records, detc):
+    def test_24_hours_detc(
+        self, client_class_odysseus, oauth_basic_headers, video_stat_records, detc
+    ):
         """Test 24 hour request detection class"""
 
         # Check response
@@ -69,6 +80,7 @@ class TestRaw:
                 "endtime": "2020-01-02T00:00:00",
                 "detection_class": detc.value,
             },
+            headers=oauth_basic_headers,
         )
         assert response.status_code == 200
 
@@ -79,21 +91,25 @@ class TestRaw:
         assert len(unique_detections) == 1
         assert len(data) == len(video_stat_records) / len(DetectionClass.map_all())
 
-    def test_24_hours_equivilant(self, client_class_odysseus):
+    def test_24_hours_equivilant(self, client_class_odysseus, oauth_basic_headers):
         """Test /api/v1/jamcams/raw returns 24 hours"""
 
         # Check response
         response1 = client_class_odysseus.get(
-            "/api/v1/jamcams/raw/", params={"starttime": "2020-01-01T00:00:00",},
+            "/api/v1/jamcams/raw/",
+            params={"starttime": "2020-01-01T00:00:00",},
+            headers=oauth_basic_headers,
         ).json()
 
         response2 = client_class_odysseus.get(
-            "/api/v1/jamcams/raw/", params={"endtime": "2020-01-02T00:00:00"},
+            "/api/v1/jamcams/raw/",
+            params={"endtime": "2020-01-02T00:00:00"},
+            headers=oauth_basic_headers,
         ).json()
 
         assert response1 == response2
 
-    def test_recent_404_no_data(self, client_class_odysseus):
+    def test_recent_404_no_data(self, client_class_odysseus, oauth_basic_headers):
         """Requst when no data is available"""
 
         response = client_class_odysseus.get(
@@ -102,12 +118,13 @@ class TestRaw:
                 "starttime": "2020-01-02T00:00:00",
                 "endtime": "2020-01-03T00:00:00",
             },
+            headers=oauth_basic_headers,
         )
 
         assert response.status_code == 404
         assert response.json()["detail"] == "No data was found"
 
-    def test_request_404_48h(self, client_class_odysseus):
+    def test_request_404_48h(self, client_class_odysseus, oauth_basic_headers):
         """Request more than 48 hours"""
 
         response = client_class_odysseus.get(
@@ -116,12 +133,15 @@ class TestRaw:
                 "starttime": "2020-01-01T00:00:00",
                 "endtime": "2020-01-03T00:00:00",
             },
+            headers=oauth_basic_headers,
         )
 
         assert response.status_code == 422
         assert "Cannot request more than two days" in response.json()["detail"]
 
-    def test_request_404_2w(self, client_class_odysseus, video_stat_records):
+    def test_request_404_2w(
+        self, client_class_odysseus, video_stat_records, oauth_basic_headers
+    ):
         """Request more than 2 weeks hours"""
 
         camera_id = video_stat_records[0]["camera_id"]
@@ -132,12 +152,15 @@ class TestRaw:
                 "starttime": "2020-01-01T00:00:00",
                 "endtime": "2020-01-09T00:00:00",
             },
+            headers=oauth_basic_headers,
         )
 
         assert response.status_code == 422
         assert "Cannot request more than one week" in response.json()["detail"]
 
-    def test_request_404_1_week(self, client_class_odysseus, video_stat_records):
+    def test_request_404_1_week(
+        self, client_class_odysseus, video_stat_records, oauth_basic_headers,
+    ):
         """Request when no data is available"""
 
         camera_id = video_stat_records[0]["camera_id"].split(".mp4")[0]
@@ -148,6 +171,7 @@ class TestRaw:
                 "starttime": "2020-01-01T00:00:00",
                 "endtime": "2020-01-08T00:00:00",
             },
+            headers=oauth_basic_headers,
         )
 
         assert response.status_code == 200
