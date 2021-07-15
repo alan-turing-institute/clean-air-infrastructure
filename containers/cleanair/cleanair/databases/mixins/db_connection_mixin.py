@@ -52,6 +52,12 @@ class DBConnectionMixin:
             **self.connection_info,
         }
 
+        if (
+            "ssl_mode" in self.connection_info
+            and self.connection_info["ssl_mode"] == "require"
+        ):
+            self.connection_dict["options"] += "&sslmode=require"
+
     @property
     def connection_keys(self):
         "Return valid connection keys"
