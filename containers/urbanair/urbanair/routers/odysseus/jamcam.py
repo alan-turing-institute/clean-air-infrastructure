@@ -16,6 +16,7 @@ from ...databases.queries import (
     get_jamcam_hourly,
     get_jamcam_daily,
     get_jamcam_today,
+    get_jamcam_stability_summary,
 )
 from ...databases.schemas.jamcam import (
     JamCamVideo,
@@ -23,6 +24,7 @@ from ...databases.schemas.jamcam import (
     JamCamAvailable,
     JamCamMetaData,
     JamCamDailyAverage,
+    JamCamStabilitySummaryData,
 )
 from ...types import DetectionClass
 
@@ -38,7 +40,8 @@ def common_jamcam_params(
         DetectionClass.all_classes, description="Class of object"
     ),
     starttime: datetime.datetime = Query(
-        None, description="""ISO UTC datetime to request data from""",
+        None,
+        description="""ISO UTC datetime to request data from""",
     ),
     endtime: datetime.datetime = Query(
         None,
@@ -46,8 +49,8 @@ def common_jamcam_params(
     ),
 ) -> Dict:
     """Common parameters in jamcam routes.
-       If a camera_id is provided request up to 1 week of data
-       If no camera_id is provided request up to 24 hours of data
+    If a camera_id is provided request up to 1 week of data
+    If no camera_id is provided request up to 24 hours of data
     """
     # pylint: disable=C0301
     if starttime and endtime:
@@ -81,7 +84,8 @@ def common_jamcam_params(
     response_model=List[JamCamAvailable],
 )
 def camera_available(
-    commons: dict = Depends(common_jamcam_params), db: Session = Depends(get_db),
+    commons: dict = Depends(common_jamcam_params),
+    db: Session = Depends(get_db),
 ) -> Optional[List[Tuple]]:
 
     data = get_jamcam_available(
@@ -101,7 +105,8 @@ def camera_available(
     response_model=List[JamCamVideo],
 )
 def camera_raw_counts(
-    commons: dict = Depends(common_jamcam_params), db: Session = Depends(get_db),
+    commons: dict = Depends(common_jamcam_params),
+    db: Session = Depends(get_db),
 ) -> Optional[List[Tuple]]:
 
     data = get_jamcam_raw(
@@ -121,7 +126,8 @@ def camera_raw_counts(
     description="Request counts of objects at jamcam cameras averaged by hour",
 )
 def camera_hourly_average(
-    commons: dict = Depends(common_jamcam_params), db: Session = Depends(get_db),
+    commons: dict = Depends(common_jamcam_params),
+    db: Session = Depends(get_db),
 ) -> Optional[List[Tuple]]:
 
     data = get_jamcam_hourly(
@@ -141,12 +147,13 @@ def jamcam_daily_params(
         DetectionClass.all_classes, description="Class of object"
     ),
     date: Optional[datetime.date] = Query(
-        None, description="(optional) ISO UTC date for which to request data",
+        None,
+        description="(optional) ISO UTC date for which to request data",
     ),
 ) -> Dict:
     """Common parameters in jamcam routes.
-       If a camera_id is provided request up to 1 week of data
-       If no camera_id is provided request up to 24 hours of data
+    If a camera_id is provided request up to 1 week of data
+    If no camera_id is provided request up to 24 hours of data
     """
     # pylint: disable=C0301
 
@@ -169,11 +176,15 @@ def jamcam_daily_params(
     description="Request averaged counts of objects at jamcam cameras day",
 )
 def camera_daily_average(
-    commons: dict = Depends(jamcam_daily_params), db: Session = Depends(get_db),
+    commons: dict = Depends(jamcam_daily_params),
+    db: Session = Depends(get_db),
 ) -> Optional[List[Tuple]]:
 
     data = get_jamcam_daily(
-        db, commons["camera_id"], commons["detection_class"], commons["date"],
+        db,
+        commons["camera_id"],
+        commons["detection_class"],
+        commons["date"],
     )
 
     return all_or_404(data)
@@ -186,8 +197,8 @@ def jamcam_today_params(
     ),
 ) -> Dict:
     """Common parameters in jamcam routes.
-       If a camera_id is provided request up to 1 week of data
-       If no camera_id is provided request up to 24 hours of data
+    If a camera_id is provided request up to 1 week of data
+    If no camera_id is provided request up to 24 hours of data
     """
 
     return {
@@ -202,7 +213,8 @@ def jamcam_today_params(
     description="Request averaged counts of objects at jamcam cameras for today",
 )
 def camera_today_average(
-    commons: dict = Depends(jamcam_today_params), db: Session = Depends(get_db),
+    commons: dict = Depends(jamcam_today_params),
+    db: Session = Depends(get_db),
 ) -> Optional[List[Tuple]]:
 
     data = get_jamcam_today(db, commons["camera_id"], commons["detection_class"])
@@ -215,9 +227,38 @@ def camera_today_average(
     response_model=List[JamCamMetaData],
     description="The locations and other metadata of all jamcams",
 )
-def metadata(db: Session = Depends(get_db),) -> Optional[List[Tuple]]:
+def metadata(
+    db: Session = Depends(get_db),
+) -> Optional[List[Tuple]]:
 
     data = get_jamcam_metadata(db)
+
+    return all_or_404(data)
+
+
+def jamcam_stability_score_params(
+    camera_id: Optional[str] = Query(None, description="(optional) A unique JamCam id"),
+) -> Dict:
+    """Common parameters in jamcam routes.
+    If a camera_id is provided request only that score, otherwise return all
+    """
+
+    return {
+        "camera_id": camera_id,
+    }
+
+
+@router.get(
+    "/stability_score",
+    response_model=List[JamCamStabilitySummaryData],
+    description="The stability score calculated per camera",
+)
+def stability_score(
+    commons: dict = Depends(jamcam_stability_score_params),
+    db: Session = Depends(get_db),
+) -> Optional[List[Tuple]]:
+
+    data = get_jamcam_stability_summary(db, commons["camera_id"])
 
     return all_or_404(data)
 

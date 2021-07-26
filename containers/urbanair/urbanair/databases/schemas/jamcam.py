@@ -69,6 +69,11 @@ class JamCamDailyAverage(JamCamAverageCounts):
     counts: int
 
 
+class JamCamStabilitySummaryData(JamCamBase):
+
+    score: int
+
+
 # GeoJson Types
 
 

@@ -7,7 +7,11 @@ from sqlalchemy.sql.selectable import Alias
 
 from cleanair.decorators import db_query
 from cleanair.databases.tables import JamCamDayStats
-from cleanair.databases.tables import JamCamVideoStats, JamCamMetaData
+from cleanair.databases.tables import (
+    JamCamVideoStats,
+    JamCamMetaData,
+    JamCamStabilitySummaryData,
+)
 from cleanair.databases.materialised_views.jamcam_today_stats_view import (
     JamcamTodayStatsView,
 )
@@ -25,10 +29,10 @@ def start_end_filter(
     max_video_upload_time_sq: Alias,
 ) -> Query:
     """Create an sqlalchemy filter which implements the following:
-        If starttime and endtime are given filter between them.
-        If only starttime filter 24 hours including starttime
-        If only endtime  filter 24 hours proceeding endtime
-        If not starttime and endtime get the last day of available data
+    If starttime and endtime are given filter between them.
+    If only starttime filter 24 hours including starttime
+    If only endtime  filter 24 hours proceeding endtime
+    If not starttime and endtime get the last day of available data
     """
 
     if starttime and endtime:
@@ -112,7 +116,9 @@ def get_jamcam_available(
 
     # Filter by time
     if starttime:
-        res = res.filter(JamCamVideoStats.video_upload_datetime >= starttime,)
+        res = res.filter(
+            JamCamVideoStats.video_upload_datetime >= starttime,
+        )
     if endtime:
         res = res.filter(JamCamVideoStats.video_upload_datetime < endtime)
 
@@ -260,3 +266,18 @@ def get_jamcam_metadata(db: Session) -> Query:
         func.ST_X(JamCamMetaData.location).label("lon"),
         JamCamMetaData.flag.label("flag"),
     )
+
+
+@db_query()
+def get_jamcam_stability_summary(db: Session, camera_id: Optional[str]) -> Query:
+    "Return jamcam stability summary data"
+    # camera_id	mean_ssim_avg0	mean_mse_avg0	var_ssim_avg0	var_mse_avg0	nocp_mse_avg0	nocp_ssim_avg0	score
+    query = db.query(
+        JamCamStabilitySummaryData.camera_id.label("camera_id"),
+        JamCamStabilitySummaryData.score.label("score"),
+    )
+
+    if camera_id:
+        query = query.filter(JamCamStabilitySummaryData.camera_id == camera_id)
+
+    return query
