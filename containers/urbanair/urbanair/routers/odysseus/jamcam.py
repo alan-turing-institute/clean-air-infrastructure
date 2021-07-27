@@ -17,6 +17,7 @@ from ...databases.queries import (
     get_jamcam_daily,
     get_jamcam_today,
     get_jamcam_stability_summary,
+    get_jamcam_stability_raw,
 )
 from ...databases.schemas.jamcam import (
     JamCamVideo,
@@ -25,6 +26,7 @@ from ...databases.schemas.jamcam import (
     JamCamMetaData,
     JamCamDailyAverage,
     JamCamStabilitySummaryData,
+    JamCamStabilityRawData,
 )
 from ...types import DetectionClass
 
@@ -259,6 +261,33 @@ def stability_score(
 ) -> Optional[List[Tuple]]:
 
     data = get_jamcam_stability_summary(db, commons["camera_id"])
+
+    return all_or_404(data)
+
+
+def jamcam_stability_raw_params(
+    camera_id: Optional[str] = Query(None, description="(optional) A unique JamCam id"),
+) -> Dict:
+    """Common parameters in jamcam routes.
+    If a camera_id is provided request only that score, otherwise return all
+    """
+
+    return {
+        "camera_id": camera_id,
+    }
+
+
+@router.get(
+    "/stability_raw",
+    response_model=List[JamCamStabilityRawData],
+    description="The stability raw data calculated per camera",
+)
+def stability_raw(
+    commons: dict = Depends(jamcam_stability_raw_params),
+    db: Session = Depends(get_db),
+) -> Optional[List[Tuple]]:
+
+    data = get_jamcam_stability_raw(db, commons["camera_id"])
 
     return all_or_404(data)
 

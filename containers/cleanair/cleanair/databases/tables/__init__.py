@@ -46,6 +46,7 @@ from .jamcam_tables import (
     JamCamDayStats,
     JamCamMetaData,
     JamCamStabilitySummaryData,
+    JamCamStabilityRawData,
 )
 
 __all__ = [
@@ -67,6 +68,7 @@ __all__ = [
     "JamCamDayStats",
     "JamCamMetaData",
     "JamCamStabilitySummaryData",
+    "JamCamStabilityRawData",
     "MetaPoint",
     "OSHighway",
     "RectGrid",

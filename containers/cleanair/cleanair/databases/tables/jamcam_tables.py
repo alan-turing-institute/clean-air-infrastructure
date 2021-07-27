@@ -10,6 +10,7 @@ from sqlalchemy.dialects.postgresql import (
     VARCHAR,
     INTEGER,  # INT4
     FLOAT,  # FLOAT4
+    BOOLEAN,  # BOOL
 )
 
 from ..base import Base
@@ -234,6 +235,7 @@ class JamCamStabilityRawData(Base):
     ssim_diff_0 = Column(FLOAT)
     ssim_diff_avg0 = Column(FLOAT)
     date = Column(DATE)
+    is_cp = Column(BOOLEAN)
 
     Index("stability_raw_camera_id_idx", "camera_id", "date")
     UniqueConstraint(camera_id, date)

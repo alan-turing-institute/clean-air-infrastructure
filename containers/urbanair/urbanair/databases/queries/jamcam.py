@@ -11,6 +11,7 @@ from cleanair.databases.tables import (
     JamCamVideoStats,
     JamCamMetaData,
     JamCamStabilitySummaryData,
+    JamCamStabilityRawData,
 )
 from cleanair.databases.materialised_views.jamcam_today_stats_view import (
     JamcamTodayStatsView,
@@ -279,5 +280,34 @@ def get_jamcam_stability_summary(db: Session, camera_id: Optional[str]) -> Query
 
     if camera_id:
         query = query.filter(JamCamStabilitySummaryData.camera_id == camera_id)
+
+    return query
+
+
+@db_query()
+def get_jamcam_stability_raw(db: Session, camera_id: Optional[str]) -> Query:
+    "Return jamcam stability raw data"
+    # mse_diff_n1: float
+    # mse_diff_0: float
+    # mse_diff_avg0: float
+    # ssim_diff_n1: float
+    # ssim_diff_0: float
+    # ssim_diff_avg0: float
+    # date: datetime
+    # is_cp: bool
+    query = db.query(
+        JamCamStabilityRawData.camera_id.label("camera_id"),
+        JamCamStabilityRawData.mse_diff_n1.label("mse_diff_n1"),
+        JamCamStabilityRawData.mse_diff_0.label("mse_diff_0"),
+        JamCamStabilityRawData.mse_diff_avg0.label("mse_diff_avg0"),
+        JamCamStabilityRawData.ssim_diff_n1.label("ssim_diff_n1"),
+        JamCamStabilityRawData.ssim_diff_0.label("ssim_diff_0"),
+        JamCamStabilityRawData.ssim_diff_avg0.label("ssim_diff_avg0"),
+        JamCamStabilityRawData.date.label("date"),
+        JamCamStabilityRawData.is_cp.label("is_cp"),
+    )
+
+    if camera_id:
+        query = query.filter(JamCamStabilityRawData.camera_id == camera_id)
 
     return query
