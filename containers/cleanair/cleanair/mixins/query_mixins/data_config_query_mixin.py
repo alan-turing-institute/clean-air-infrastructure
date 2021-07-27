@@ -32,21 +32,21 @@ class AirQualityDataConfigQueryMixin:
             A database query with columns for data id, data config and preprocessing.
         """
         with self.dbcnxn.open_session() as session:
-            readings = session.query(AirQualityDataTable)
+            data_ids = session.query(AirQualityDataTable)
             if train_start_date:
                 # NOTE uses a json b query to get the entry of the dictionary
-                readings = readings.filter(
+                data_ids = data_ids.filter(
                     AirQualityDataTable.data_config["train_start_date"].astext
                     >= train_start_date
                 )
             if pred_start_date:
-                readings = readings.filter(
+                data_ids = data_ids.filter(
                     AirQualityDataTable.data_config["pred_start_date"].astext
                     >= pred_start_date
                 )
             if features:
-                readings = readings.filter(
+                data_ids = data_ids.filter(
                     set(AirQualityDataTable.data_config["features"])
                     == set(features)
                 )
-            return readings
+            return data_ids
