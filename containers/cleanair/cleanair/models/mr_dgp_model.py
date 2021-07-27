@@ -1,7 +1,6 @@
 """
 Multi-resolution DGP (LAQN + Satellite)
 """
-from copy import deepcopy
 from typing import Dict, Optional, List
 import os
 from nptyping import NDArray
@@ -31,7 +30,7 @@ from ..types import (
     Source,
     Species,
     TargetDict,
-    MRDGPParams,
+    CompiledMRDGPParams,
 )
 
 # turn off tensorflow warnings for gpflow
@@ -47,12 +46,46 @@ class MRDGP(ModelMixin):
     MR-DGP for air quality.
     """
 
-    def params(self) -> MRDGPParams:
-        params = deepcopy(self.model_params)
-        params.kernel.variance = self.model.kern.variance.read_value().tolist()
-        params.kernel.lengthscales = self.model.kern.lengthscales.read_value().tolist()
+    def params(self) -> CompiledMRDGPParams:
 
-        return params
+        base_laqn = []
+        for kernel in self.model.kernels[0][0].kernels:
+            base_laqn.append(
+                KernelParams(
+                    name=kernel.name,
+                    type=self.model_params.base_laqn.kernel.type,
+                    variance=kernel.variance.read_value(),
+                    input_dim=kernel.input_dim,
+                )
+            )
+        base_sat = []
+        for kernel in self.model.kernels[0][1].kernels:
+            base_sat.append(
+                KernelParams(
+                    name=kernel.name,
+                    type=self.model_params.base_sat.kernel.type,
+                    variance=kernel.variance.read_value(),
+                    input_dim=kernel.input_dim,
+                )
+            )
+        dgp_sat = []
+        for kernel in self.model.kernels[1][0].kernels:
+            dgp_sat.append(
+                KernelParams(
+                    name=kernel.name,
+                    type=self.model_params.dgp_sat.kernel.type,
+                    variance=kernel.variance.read_value(),
+                    input_dim=kernel.input_dim,
+                )
+            )
+        return CompiledMRDGPParams(
+            base_laqn=base_laqn,
+            base_sat=base_sat,
+            dgp_sat=dgp_sat,
+            mixing_weight=self.model_params.mixing_weight,
+            num_prediction_samples=self.model_params.num_prediction_samples,
+            num_samples_between_layers=self.model_params.num_samples_between_layers,
+        )
 
     def make_mixture(
         self, dataset: List[List[NDArray]], parent_mixtures=None, name_prefix: str = ""
