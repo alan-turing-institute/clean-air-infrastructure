@@ -16,7 +16,7 @@ from ..types import (
     Species,
 )
 
-MRDGP_NUM_INDUCING_POINTS = 1000
+MRDGP_NUM_INDUCING_POINTS = 500
 MRDGP_MAXITER: int = 5000
 
 
