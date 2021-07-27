@@ -1,7 +1,7 @@
 """Mixin for querying from the air quality data config table."""
 
 from __future__ import annotations
-from typing import Optional, Any, TYPE_CHECKING
+from typing import Optional, Any, TYPE_CHECKING, List
 from ...databases.tables import AirQualityDataTable
 from ...decorators import db_query
 
@@ -19,12 +19,14 @@ class AirQualityDataConfigQueryMixin:
         self,
         train_start_date: Optional[str] = None,
         pred_start_date: Optional[str] = None,
+        features: Optional[List[str]] = None,
     ) -> Any:
         """Get the data ids and data configs that match the arguments.
 
         Args:
             train_start_date: ISO formatted datetime of the start of the training period.
             pred_start_date: ISO formatted datetime of the start of the prediciton period.
+            features: list of feature names, searches for exact match, ignoring order
 
         Returns:
             A database query with columns for data id, data config and preprocessing.
@@ -41,5 +43,10 @@ class AirQualityDataConfigQueryMixin:
                 readings = readings.filter(
                     AirQualityDataTable.data_config["pred_start_date"].astext
                     >= pred_start_date
+                )
+            if features:
+                readings = readings.filter(
+                    set(AirQualityDataTable.data_config["features"])
+                    == set(features)
                 )
             return readings
