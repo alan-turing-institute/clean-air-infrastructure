@@ -2,6 +2,7 @@
 import logging
 from datetime import datetime
 from typing import Optional, List, Tuple
+
 from sqlalchemy import func
 from sqlalchemy.orm import Session, Query
 
@@ -11,9 +12,11 @@ from cleanair.databases.tables import (
     AirQualityInstanceTable,
     AirQualityResultTable,
     HexGrid,
+    AirQualityDataTable,
 )
 from cleanair.decorators import db_query
-
+from cleanair.params import PRODUCTION_STATIC_FEATURES, PRODUCTION_DYNAMIC_FEATURES
+from cleanair.types import DynamicFeatureNames, StaticFeatureNames
 from ..database import all_or_404
 from ..schemas.air_quality_forecast import ForecastResultGeoJson, GeometryGeoJson
 
@@ -22,7 +25,11 @@ logger = logging.getLogger("fastapi")  # pylint: disable=invalid-name
 
 @db_query()
 def query_instance_ids(
-    db: Session, start_datetime: datetime, end_datetime: datetime,
+    db: Session,
+    start_datetime: datetime,
+    end_datetime: datetime,
+    static_features: List[StaticFeatureNames],
+    dynamic_features: List[DynamicFeatureNames],
 ) -> Query:
     """
     Check which model IDs produced forecasts between start_datetime and end_datetime.
@@ -32,15 +39,28 @@ def query_instance_ids(
             AirQualityResultTable.instance_id,
             AirQualityResultTable.measurement_start_utc,
         )
+        .filter(
+            AirQualityResultTable.measurement_start_utc >= start_datetime,
+            AirQualityResultTable.measurement_start_utc < end_datetime,
+        )
+        .join(HexGrid, HexGrid.point_id == AirQualityResultTable.point_id)
         .join(
             AirQualityInstanceTable,
             AirQualityInstanceTable.instance_id == AirQualityResultTable.instance_id,
         )
         .filter(
             AirQualityInstanceTable.tag == "production",
-            AirQualityInstanceTable.model_name == "svgp",
-            AirQualityResultTable.measurement_start_utc >= start_datetime,
-            AirQualityResultTable.measurement_start_utc < end_datetime,
+            AirQualityInstanceTable.model_name == "mrdgp",
+        )
+        .join(
+            AirQualityDataTable,
+            AirQualityInstanceTable.data_id == AirQualityDataTable.data_id,
+        )
+        .filter(
+            AirQualityDataTable.data_config["static_features"]
+            == [feature.value for feature in static_features],
+            AirQualityDataTable.data_config["dynamic_features"]
+            == [feature.value for feature in dynamic_features],
         )
     )
 
@@ -66,7 +86,13 @@ def cached_instance_ids(
         start_datetime,
         end_datetime,
     )
-    return query_instance_ids(db, start_datetime, end_datetime).all()
+    return query_instance_ids(
+        db=db,
+        start_datetime=start_datetime,
+        end_datetime=end_datetime,
+        static_features=PRODUCTION_STATIC_FEATURES,
+        dynamic_features=PRODUCTION_DYNAMIC_FEATURES,
+    ).all()
 
 
 @db_query()
