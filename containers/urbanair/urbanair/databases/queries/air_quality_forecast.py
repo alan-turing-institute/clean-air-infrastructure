@@ -50,9 +50,11 @@ def query_instance_ids(
         upto=end_datetime,
     ).subquery()
 
-    query = results_query.innerjoin(
-        instance_query,
-        instance_query.c.instance_id == results_query.c.instance_id
+    query = db.query(
+        results_query.innerjoin(
+            instance_query,
+            instance_query.c.instance_id == results_query.c.instance_id
+        )
     )
 
     # query = (
