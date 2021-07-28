@@ -39,19 +39,19 @@ def query_instance_ids(
         db.query(
             AirQualityResultTable.instance_id,
             AirQualityResultTable.measurement_start_utc,
-        ).filter(
+        )
+        .filter(
             AirQualityResultTable.measurement_start_utc >= start_datetime,
             AirQualityResultTable.measurement_start_utc < end_datetime,
-        ).join(
-            HexGrid,
-            HexGrid.point_id == AirQualityResultTable.point_id
         )
+        .join(HexGrid, HexGrid.point_id == AirQualityResultTable.point_id)
         .join(
             AirQualityInstanceTable,
             AirQualityInstanceTable.instance_id == AirQualityResultTable.instance_id,
-        ).filter(
+        )
+        .filter(
             AirQualityInstanceTable.tag == "production",
-            AirQualityInstanceTable.model_name == "svgp",
+            AirQualityInstanceTable.model_name == "mrdgp",
         )
         .join(
             AirQualityDataTable,
@@ -79,9 +79,7 @@ def query_instance_ids(
     key=lambda _, *args, **kwargs: hashkey(*args, **kwargs),
 )
 def cached_instance_ids(
-    db: Session,
-    start_datetime: datetime,
-    end_datetime: datetime,
+    db: Session, start_datetime: datetime, end_datetime: datetime,
 ) -> Optional[List[Tuple]]:
     """Cache available model instances"""
     logger.info(
@@ -100,8 +98,7 @@ def cached_instance_ids(
 
 @db_query()
 def query_geometries_hexgrid(
-    db: Session,
-    bounding_box: Optional[Tuple[float]] = None,
+    db: Session, bounding_box: Optional[Tuple[float]] = None,
 ) -> Query:
     """
     Query geometries for combining with plain JSON forecasts
@@ -123,8 +120,7 @@ def query_geometries_hexgrid(
     cache=LRUCache(maxsize=256), key=lambda _, *args, **kwargs: hashkey(*args, **kwargs)
 )
 def cached_geometries_hexgrid(
-    db: Session,
-    bounding_box: Optional[Tuple[float]] = None,
+    db: Session, bounding_box: Optional[Tuple[float]] = None,
 ) -> GeometryGeoJson:
     """Cache geometries with optional bounding box"""
     logger.info("Querying hexgrid geometries")
