@@ -42,13 +42,16 @@ def query_instance_ids(
         ).filter(
             AirQualityResultTable.measurement_start_utc >= start_datetime,
             AirQualityResultTable.measurement_start_utc < end_datetime,
+        ).join(
+            HexGrid,
+            HexGrid.point_id == AirQualityResultTable.point_id
         )
         .join(
             AirQualityInstanceTable,
             AirQualityInstanceTable.instance_id == AirQualityResultTable.instance_id,
         ).filter(
             AirQualityInstanceTable.tag == "production",
-            AirQualityInstanceTable.model_name == "mrdgp",
+            AirQualityInstanceTable.model_name == "svgp",
         )
         .join(
             AirQualityDataTable,
