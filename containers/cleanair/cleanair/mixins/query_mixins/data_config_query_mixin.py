@@ -19,7 +19,8 @@ class AirQualityDataConfigQueryMixin:
         self,
         train_start_date: Optional[str] = None,
         pred_start_date: Optional[str] = None,
-        features: Optional[List[str]] = None,
+        static_features: Optional[List[str]] = None,
+        dynamic_features: Optional[List[str]] = None,
     ) -> Any:
         """Get the data ids and data configs that match the arguments.
 
@@ -44,9 +45,14 @@ class AirQualityDataConfigQueryMixin:
                     AirQualityDataTable.data_config["pred_start_date"].astext
                     >= pred_start_date
                 )
-            if features:
+            if static_features:
                 data_ids = data_ids.filter(
                     set(AirQualityDataTable.data_config["features"])
-                    == set(features)
+                    == set(static_features)
+                )
+            if dynamic_features:
+                data_ids = data_ids.filter(
+                    set(AirQualityDataTable.data_config["features"])
+                    == set(dynamic_features)
                 )
             return data_ids
