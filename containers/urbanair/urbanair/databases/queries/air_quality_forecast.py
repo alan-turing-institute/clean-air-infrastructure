@@ -3,8 +3,6 @@ import logging
 from datetime import datetime
 from typing import Optional, List, Tuple
 
-from cleanair.params import PRODUCTION_STATIC_FEATURES, PRODUCTION_DYNAMIC_FEATURES
-from cleanair.types import DynamicFeatureNames, StaticFeatureNames
 from sqlalchemy import func
 from sqlalchemy.orm import Session, Query
 
@@ -17,7 +15,8 @@ from cleanair.databases.tables import (
     AirQualityDataTable,
 )
 from cleanair.decorators import db_query
-
+from cleanair.params import PRODUCTION_STATIC_FEATURES, PRODUCTION_DYNAMIC_FEATURES
+from cleanair.types import DynamicFeatureNames, StaticFeatureNames
 from ..database import all_or_404
 from ..schemas.air_quality_forecast import ForecastResultGeoJson, GeometryGeoJson
 
