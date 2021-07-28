@@ -59,9 +59,9 @@ def query_instance_ids(
         )
         .filter(
             AirQualityDataTable.data_config["static_features"]
-            == [feature.value for feature in PRODUCTION_STATIC_FEATURES],
+            == [feature.value for feature in static_features],
             AirQualityDataTable.data_config["dynamic_features"]
-            == [feature.value for feature in PRODUCTION_DYNAMIC_FEATURES],
+            == [feature.value for feature in dynamic_features],
         )
     )
 
