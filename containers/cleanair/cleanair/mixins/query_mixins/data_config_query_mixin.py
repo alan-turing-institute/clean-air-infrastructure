@@ -27,7 +27,6 @@ class AirQualityDataConfigQueryMixin:
         Args:
             train_start_date: ISO formatted datetime of the start of the training period.
             pred_start_date: ISO formatted datetime of the start of the prediciton period.
-            features: list of feature names, searches for exact match, ignoring order
 
         Returns:
             A database query with columns for data id, data config and preprocessing.
@@ -47,12 +46,12 @@ class AirQualityDataConfigQueryMixin:
                 )
             if static_features:
                 data_ids = data_ids.filter(
-                    set(AirQualityDataTable.data_config["features"])
-                    == set(static_features)
+                    AirQualityDataTable.data_config["features"]
+                    == static_features
                 )
             if dynamic_features:
                 data_ids = data_ids.filter(
-                    set(AirQualityDataTable.data_config["features"])
-                    == set(dynamic_features)
+                    AirQualityDataTable.data_config["features"]
+                    == dynamic_features
                 )
             return data_ids
