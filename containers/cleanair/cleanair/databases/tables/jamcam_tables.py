@@ -8,6 +8,9 @@ from sqlalchemy.dialects.postgresql import (
     SMALLINT,
     REAL,
     VARCHAR,
+    INTEGER,  # INT4
+    FLOAT,  # FLOAT4
+    BOOLEAN,  # BOOL
 )
 
 from ..base import Base
@@ -93,7 +96,35 @@ class JamCamDayStats(Base):
 
 
 class JamCamMetaData(Base):
-    """Table of Jamcam data: locations, flags, etc."""
+    """Table of Jamcam data: locations, flags, etc.
+    # Current Jamcam meta table DDL
+    # -----------------------------
+    # CREATE TABLE jamcam.metadata (
+    #     id bigserial NOT NULL,
+    #     camera_id varchar(20) NOT NULL,
+    #     "location" geometry(point, 4326) NOT NULL,
+    #     notes varchar(128) NULL,
+    #     u0 int2 NULL,
+    #     v0 int2 NULL,
+    #     u1 int2 NULL,
+    #     h float4 NULL,
+    #     flag int2 NULL,
+    #     borough_name varchar NULL,
+    #     borough_gss_code varchar NULL,
+    #     translation_x float4 NULL,
+    #     translation_y float4 NULL,
+    #     rotation float4 NULL,
+    #     scale_shear_x1 float4 NULL,
+    #     scale_shear_x2 float4 NULL,
+    #     scale_shear_y1 float4 NULL,
+    #     scale_shear_y2 float4 NULL,
+    #     focal_length float4 NULL,
+    #     pitch float4 NULL,
+    #     "scale" float4 NULL,
+    #     CONSTRAINT metadata_pkey PRIMARY KEY (id)
+    # );
+    # CREATE INDEX idx_metadata_location ON jamcam.metadata USING gist (location);
+    """
 
     # pylint: disable=C0103
 
@@ -111,6 +142,16 @@ class JamCamMetaData(Base):
     flag = Column(SMALLINT)
     borough_name = Column(VARCHAR)
     borough_gss_code = Column(VARCHAR)
+    translation_x = Column(FLOAT)
+    translation_y = Column(FLOAT)
+    rotation = Column(FLOAT)
+    scale_shear_x1 = Column(FLOAT)
+    scale_shear_x2 = Column(FLOAT)
+    scale_shear_y1 = Column(FLOAT)
+    scale_shear_y2 = Column(FLOAT)
+    focal_length = Column(FLOAT)
+    pitch = Column(FLOAT)
+    scale = Column(FLOAT)
 
     def __repr__(self):
         vals = [
@@ -118,3 +159,90 @@ class JamCamMetaData(Base):
             for column in [c.name for c in self.__table__.columns]
         ]
         return "<JamCamMetaData(" + ", ".join(vals) + ")>"
+
+
+class JamCamStabilitySummaryData(Base):
+    """Table of Jamcam stability summary data
+    # Current Jamcam Stability Summary table DDL
+    # -----------------------------
+    # CREATE TABLE jamcam.stability_summary (
+    #     camera_id varchar NOT NULL,
+    #     mean_ssim_avg0 float4 NULL,
+    #     mean_mse_avg0 float4 NULL,
+    #     var_ssim_avg0 float4 NULL,
+    #     var_mse_avg0 float4 NULL,
+    #     nocp_mse_avg0 int4 NULL,
+    #     nocp_ssim_avg0 int4 NULL,
+    #     score int4 NULL,
+    #     CONSTRAINT stability_summary_pk PRIMARY KEY (camera_id)
+    # );
+    # CREATE INDEX stability_summary_camera_id_idx ON jamcam.stability_summary USING btree (camera_id);
+    """
+
+    # pylint: disable=C0103
+
+    __tablename__ = "stability_summary"
+    __table_args__ = {"schema": "jamcam"}
+
+    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    camera_id = Column(VARCHAR)
+    mean_ssim_avg0 = Column(FLOAT)
+    mean_mse_avg0 = Column(FLOAT)
+    var_ssim_avg0 = Column(FLOAT)
+    var_mse_avg0 = Column(FLOAT)
+    nocp_mse_avg0 = Column(INTEGER)
+    nocp_ssim_avg0 = Column(INTEGER)
+    score = Column(INTEGER)
+
+    Index("stability_summary_camera_id_idx", "camera_id")
+
+    def __repr__(self):
+        vals = [
+            "{}='{}'".format(column, getattr(self, column))
+            for column in [c.name for c in self.__table__.columns]
+        ]
+        return "<JamCamStabilitySummaryData(" + ", ".join(vals) + ")>"
+
+
+class JamCamStabilityRawData(Base):
+    """Table of Jamcam stability raw data
+    # Current Jamcam Stability Raw table DDL
+    # -----------------------------
+    # CREATE TABLE jamcam.stability_raw (
+    #     camera_id varchar NOT NULL,
+    #     mse_diff_n1 float4 NULL,
+    #     mse_diff_0 float4 NULL,
+    #     mse_diff_avg0 float4 NULL,
+    #     ssim_diff_n1 float4 NULL,
+    #     ssim_diff_0 float4 NULL,
+    #     ssim_diff_avg0 float4 NULL,
+    #     "date" date NULL
+    # );
+    # CREATE UNIQUE INDEX stability_raw_camera_id_idx ON jamcam.stability_raw USING btree (camera_id, date);
+    """
+
+    # pylint: disable=C0103
+
+    __tablename__ = "stability_raw"
+    __table_args__ = {"schema": "jamcam"}
+
+    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    camera_id = Column(VARCHAR)
+    mse_diff_n1 = Column(FLOAT)
+    mse_diff_0 = Column(FLOAT)
+    mse_diff_avg0 = Column(FLOAT)
+    ssim_diff_n1 = Column(FLOAT)
+    ssim_diff_0 = Column(FLOAT)
+    ssim_diff_avg0 = Column(FLOAT)
+    date = Column(DATE)
+    is_cp = Column(BOOLEAN)
+
+    Index("stability_raw_camera_id_idx", "camera_id", "date")
+    UniqueConstraint(camera_id, date)
+
+    def __repr__(self):
+        vals = [
+            "{}='{}'".format(column, getattr(self, column))
+            for column in [c.name for c in self.__table__.columns]
+        ]
+        return "<JamCamStabilityRawData(" + ", ".join(vals) + ")>"
