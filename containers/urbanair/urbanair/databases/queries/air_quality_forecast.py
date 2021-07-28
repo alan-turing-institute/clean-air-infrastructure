@@ -39,20 +39,22 @@ def query_instance_ids(
         db.query(
             AirQualityResultTable.instance_id,
             AirQualityResultTable.measurement_start_utc,
+        ).filter(
+            AirQualityResultTable.measurement_start_utc >= start_datetime,
+            AirQualityResultTable.measurement_start_utc < end_datetime,
         )
         .join(
             AirQualityInstanceTable,
             AirQualityInstanceTable.instance_id == AirQualityResultTable.instance_id,
+        ).filter(
+            AirQualityInstanceTable.tag == "production",
+            AirQualityInstanceTable.model_name == "mrdgp",
         )
         .join(
             AirQualityDataTable,
             AirQualityInstanceTable.data_id == AirQualityDataTable.data_id,
         )
         .filter(
-            AirQualityInstanceTable.tag == "production",
-            AirQualityInstanceTable.model_name == "svgp",
-            AirQualityResultTable.measurement_start_utc >= start_datetime,
-            AirQualityResultTable.measurement_start_utc < end_datetime,
             AirQualityDataTable.data_config["static_features"]
             == [feature.value for feature in PRODUCTION_STATIC_FEATURES],
             AirQualityDataTable.data_config["dynamic_features"]
