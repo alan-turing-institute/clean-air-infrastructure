@@ -13,7 +13,9 @@ from cleanair.databases.tables import (
     HexGrid,
 )
 from cleanair.decorators import db_query
-
+from cleanair.mixins.query_mixins.data_config_query_mixin import AirQualityDataConfigQueryMixin
+from cleanair.mixins import InstanceQueryMixin, ResultQueryMixin
+from cleanair.params.shared_params import PRODUCTION_DYNAMIC_FEATURES, PRODUCTION_STATIC_FEATURES,
 from ..database import all_or_404
 from ..schemas.air_quality_forecast import ForecastResultGeoJson, GeometryGeoJson
 
@@ -22,27 +24,48 @@ logger = logging.getLogger("fastapi")  # pylint: disable=invalid-name
 
 @db_query()
 def query_instance_ids(
-    db: Session, start_datetime: datetime, end_datetime: datetime,
+    db: Session, start_datetime: datetime, end_datetime: datetime, features: List[str]
 ) -> Query:
     """
     Check which model IDs produced forecasts between start_datetime and end_datetime.
     """
-    query = (
-        db.query(
-            AirQualityResultTable.instance_id,
-            AirQualityResultTable.measurement_start_utc,
-        )
-        .join(
-            AirQualityInstanceTable,
-            AirQualityInstanceTable.instance_id == AirQualityResultTable.instance_id,
-        )
-        .filter(
-            AirQualityInstanceTable.tag == "production",
-            AirQualityInstanceTable.model_name == "svgp",
-            AirQualityResultTable.measurement_start_utc >= start_datetime,
-            AirQualityResultTable.measurement_start_utc < end_datetime,
-        )
+
+    data_ids = AirQualityDataConfigQueryMixin().query_data_config(
+        features=PRODUCTION_STATIC_FEATURES+PRODUCTION_DYNAMIC_FEATURES
+    ).subquery()
+
+    instance_query = InstanceQueryMixin().get_instances(
+        tag='production',
+        models=['mrdgp'],
+        data_ids=data_ids,
+    ).subquery()
+
+    results_query = ResultQueryMixin().query_results(
+        start=start_datetime,
+        upto=end_datetime,
+    ).subquery()
+
+    query = results_query.innerjoin(
+        instance_query,
+        instance_query.c.instance_id == results_query.c.instance_id
     )
+
+    # query = (
+    #     db.query(
+    #         AirQualityResultTable.instance_id,
+    #         AirQualityResultTable.measurement_start_utc,
+    #     )
+    #     .join(
+    #         AirQualityInstanceTable,
+    #         AirQualityInstanceTable.instance_id == AirQualityResultTable.instance_id,
+    #     )
+    #     .filter(
+    #         AirQualityInstanceTable.tag == "production",
+    #         AirQualityInstanceTable.model_name == "mrdgp",
+    #         AirQualityResultTable.measurement_start_utc >= start_datetime,
+    #         AirQualityResultTable.measurement_start_utc < end_datetime,
+    #     )
+    # )
 
     # Return only instance IDs and distinct values
     query = query.with_entities(
@@ -66,6 +89,7 @@ def cached_instance_ids(
         start_datetime,
         end_datetime,
     )
+    # Replace this with mixin
     return query_instance_ids(db, start_datetime, end_datetime).all()
 
 
