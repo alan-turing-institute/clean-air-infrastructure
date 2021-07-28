@@ -2,6 +2,9 @@
 import logging
 from datetime import datetime
 from typing import Optional, List, Tuple
+
+from cleanair.params import PRODUCTION_STATIC_FEATURES, PRODUCTION_DYNAMIC_FEATURES
+from cleanair.types import DynamicFeatureNames, StaticFeatureNames
 from sqlalchemy import func
 from sqlalchemy.orm import Session, Query
 
@@ -11,6 +14,7 @@ from cleanair.databases.tables import (
     AirQualityInstanceTable,
     AirQualityResultTable,
     HexGrid,
+    AirQualityDataTable,
 )
 from cleanair.decorators import db_query
 
@@ -22,7 +26,11 @@ logger = logging.getLogger("fastapi")  # pylint: disable=invalid-name
 
 @db_query()
 def query_instance_ids(
-    db: Session, start_datetime: datetime, end_datetime: datetime,
+    db: Session,
+    start_datetime: datetime,
+    end_datetime: datetime,
+    static_features: List[StaticFeatureNames],
+    dynamic_features: List[DynamicFeatureNames],
 ) -> Query:
     """
     Check which model IDs produced forecasts between start_datetime and end_datetime.
@@ -36,11 +44,19 @@ def query_instance_ids(
             AirQualityInstanceTable,
             AirQualityInstanceTable.instance_id == AirQualityResultTable.instance_id,
         )
+        .join(
+            AirQualityDataTable,
+            AirQualityInstanceTable.data_id == AirQualityDataTable.data_id,
+        )
         .filter(
             AirQualityInstanceTable.tag == "production",
             AirQualityInstanceTable.model_name == "svgp",
             AirQualityResultTable.measurement_start_utc >= start_datetime,
             AirQualityResultTable.measurement_start_utc < end_datetime,
+            AirQualityDataTable.data_config["static_features"]
+            == [feature.value for feature in PRODUCTION_STATIC_FEATURES],
+            AirQualityDataTable.data_config["dynamic_features"]
+            == [feature.value for feature in PRODUCTION_DYNAMIC_FEATURES],
         )
     )
 
@@ -58,7 +74,9 @@ def query_instance_ids(
     key=lambda _, *args, **kwargs: hashkey(*args, **kwargs),
 )
 def cached_instance_ids(
-    db: Session, start_datetime: datetime, end_datetime: datetime,
+    db: Session,
+    start_datetime: datetime,
+    end_datetime: datetime,
 ) -> Optional[List[Tuple]]:
     """Cache available model instances"""
     logger.info(
@@ -66,12 +84,19 @@ def cached_instance_ids(
         start_datetime,
         end_datetime,
     )
-    return query_instance_ids(db, start_datetime, end_datetime).all()
+    return query_instance_ids(
+        db=db,
+        start_datetime=start_datetime,
+        end_datetime=end_datetime,
+        static_features=PRODUCTION_STATIC_FEATURES,
+        dynamic_features=PRODUCTION_DYNAMIC_FEATURES,
+    ).all()
 
 
 @db_query()
 def query_geometries_hexgrid(
-    db: Session, bounding_box: Optional[Tuple[float]] = None,
+    db: Session,
+    bounding_box: Optional[Tuple[float]] = None,
 ) -> Query:
     """
     Query geometries for combining with plain JSON forecasts
@@ -93,7 +118,8 @@ def query_geometries_hexgrid(
     cache=LRUCache(maxsize=256), key=lambda _, *args, **kwargs: hashkey(*args, **kwargs)
 )
 def cached_geometries_hexgrid(
-    db: Session, bounding_box: Optional[Tuple[float]] = None,
+    db: Session,
+    bounding_box: Optional[Tuple[float]] = None,
 ) -> GeometryGeoJson:
     """Cache geometries with optional bounding box"""
     logger.info("Querying hexgrid geometries")
