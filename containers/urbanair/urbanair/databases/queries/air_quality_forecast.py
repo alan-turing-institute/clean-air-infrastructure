@@ -22,9 +22,7 @@ logger = logging.getLogger("fastapi")  # pylint: disable=invalid-name
 
 @db_query()
 def query_instance_ids(
-    db: Session,
-    start_datetime: datetime,
-    end_datetime: datetime,
+    db: Session, start_datetime: datetime, end_datetime: datetime,
 ) -> Query:
     """
     Check which model IDs produced forecasts between start_datetime and end_datetime.
@@ -60,9 +58,7 @@ def query_instance_ids(
     key=lambda _, *args, **kwargs: hashkey(*args, **kwargs),
 )
 def cached_instance_ids(
-    db: Session,
-    start_datetime: datetime,
-    end_datetime: datetime,
+    db: Session, start_datetime: datetime, end_datetime: datetime,
 ) -> Optional[List[Tuple]]:
     """Cache available model instances"""
     logger.info(
@@ -75,8 +71,7 @@ def cached_instance_ids(
 
 @db_query()
 def query_geometries_hexgrid(
-    db: Session,
-    bounding_box: Optional[Tuple[float]] = None,
+    db: Session, bounding_box: Optional[Tuple[float]] = None,
 ) -> Query:
     """
     Query geometries for combining with plain JSON forecasts
@@ -98,8 +93,7 @@ def query_geometries_hexgrid(
     cache=LRUCache(maxsize=256), key=lambda _, *args, **kwargs: hashkey(*args, **kwargs)
 )
 def cached_geometries_hexgrid(
-    db: Session,
-    bounding_box: Optional[Tuple[float]] = None,
+    db: Session, bounding_box: Optional[Tuple[float]] = None,
 ) -> GeometryGeoJson:
     """Cache geometries with optional bounding box"""
     logger.info("Querying hexgrid geometries")
