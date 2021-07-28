@@ -9,6 +9,7 @@ from sqlalchemy.orm import sessionmaker
 import numpy as np
 from cleanair.databases import DBReader
 from cleanair.databases.tables import HexGrid, MetaPoint
+from cleanair.params import PRODUCTION_STATIC_FEATURES, PRODUCTION_DYNAMIC_FEATURES
 from urbanair import urbanair, odysseus, databases
 from urbanair.types import DetectionClass
 
@@ -136,7 +137,16 @@ MODEL_NAME = "svgp"
 @pytest.fixture(scope="module")
 def mock_air_quality_data():
     """Fake data for air quality routes test"""
-    records = [{"data_id": MODEL_DATA_ID, "data_config": {}, "preprocessing": {},}]
+    records = [
+        {
+            "data_id": MODEL_DATA_ID,
+            "data_config": {
+                "static_features": [feature.value for feature in PRODUCTION_STATIC_FEATURES],
+                "dynamic_features": [feature.value for feature in PRODUCTION_DYNAMIC_FEATURES]
+            },
+            "preprocessing": {},
+        }
+    ]
     return records
 
 
