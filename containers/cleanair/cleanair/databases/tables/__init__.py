@@ -47,7 +47,7 @@ from .jamcam_tables import (
     JamCamMetaData,
     JamCamStabilitySummaryData,
     JamCamStabilityRawData,
-    JamCamConfidentDetections
+    JamCamConfidentDetections,
 )
 
 __all__ = [
