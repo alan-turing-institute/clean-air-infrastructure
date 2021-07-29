@@ -159,7 +159,8 @@ def jamcam_daily_params(
     if date == datetime.date.today():
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="Data is only available for historical dates at this endpoint. For today, use the /today endpoint.",
+            detail="Data is only available for historical dates at this endpoint.\
+                 For today, use the /today endpoint.",
         )
 
     return {
@@ -243,7 +244,9 @@ def jamcam_stability_score_params(
 @router.get(
     "/stability_score",
     response_model=List[JamCamStabilitySummaryData],
-    description="The stability score calculated per camera, integer valued where lower is better. Constructed from change point and outlier detection over `ssim_diff_avg0`.",
+    description="The stability score calculated per camera, integer valued where \
+                lower is better. Constructed from change point and outlier detection over \
+                `ssim_diff_avg0`.",
 )
 def stability_score(
     commons: dict = Depends(jamcam_stability_score_params),
@@ -270,7 +273,13 @@ def jamcam_stability_raw_params(
 @router.get(
     "/stability_raw",
     response_model=List[JamCamStabilityRawData],
-    description="The stability raw data calculated per camera. `mse_diff_avg0` and `ssim_diff_avg0` are of most value, describing the Mean Squared Error and Structural Similarity Index Measure per camera each day against a reference `avg0` set constructed from initial data collection samples. A comparison against the first ever frame (`_0') and a frame sampled from the day before (`_n1`) are also available however noisy.",
+    description="The stability raw data calculated per camera. `mse_diff_avg0` and \
+        `ssim_diff_avg0` are of most value, describing the Mean Squared Error and \
+        Structural Similarity Index Measure per camera each day against a reference \
+        avg0` set constructed from initial data collection samples. A \
+        comparison against the first ever frame (`_0') and a frame \
+        sampled from the day before (`_n1`) are also available \
+        however noisy.",
 )
 def stability_raw(
     commons: dict = Depends(jamcam_stability_raw_params), db: Session = Depends(get_db),
@@ -316,7 +325,8 @@ def traffic_data_tiles(zoom: int, x: int, y: int) -> Optional[Response]:
 @router.get(
     "/confidence",
     response_model=List[JamCamConfidentDetections],
-    description="Request counts of objects at jamcam cameras with above 0.8 detection confidence from the object detection model.",
+    description="Request counts of objects at jamcam cameras with above 0.8 \
+        detection confidence from the object detection model.",
 )
 def confident_detections(
     commons: dict = Depends(common_jamcam_params), db: Session = Depends(get_db),
