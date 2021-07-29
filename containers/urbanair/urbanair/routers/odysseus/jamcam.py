@@ -318,7 +318,7 @@ def traffic_data_tiles(zoom: int, x: int, y: int) -> Optional[Response]:
     response_model=List[JamCamConfidentDetections],
     description="Request counts of objects at jamcam cameras with above 0.8 detection confidence from the object detection model.",
 )
-def camera_hourly_average(
+def confident_detections(
     commons: dict = Depends(common_jamcam_params), db: Session = Depends(get_db),
 ) -> Optional[List[Tuple]]:
 
