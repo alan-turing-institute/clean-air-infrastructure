@@ -176,7 +176,8 @@ class JamCamStabilitySummaryData(Base):
     #     score int4 NULL,
     #     CONSTRAINT stability_summary_pk PRIMARY KEY (camera_id)
     # );
-    # CREATE INDEX stability_summary_camera_id_idx ON jamcam.stability_summary USING btree (camera_id);
+    # CREATE INDEX stability_summary_camera_id_idx ON jamcam.stability_summary
+    # USING btree (camera_id);
     """
 
     # pylint: disable=C0103
@@ -218,7 +219,8 @@ class JamCamStabilityRawData(Base):
     #     ssim_diff_avg0 float4 NULL,
     #     "date" date NULL
     # );
-    # CREATE UNIQUE INDEX stability_raw_camera_id_idx ON jamcam.stability_raw USING btree (camera_id, date);
+    # CREATE UNIQUE INDEX stability_raw_camera_id_idx ON jamcam.stability_raw
+    # USING btree (camera_id, date);
     """
 
     # pylint: disable=C0103
@@ -246,3 +248,47 @@ class JamCamStabilityRawData(Base):
             for column in [c.name for c in self.__table__.columns]
         ]
         return "<JamCamStabilityRawData(" + ", ".join(vals) + ")>"
+
+
+class JamCamConfidentDetections(Base):
+    """Table of Jamcam confident detections data
+    # Current Jamcam Confident Detections table DDL
+    # -----------------------------
+    # CREATE MATERIALIZED VIEW jamcam.video_summary_80perc
+    # TABLESPACE pg_default
+    # AS SELECT frame_stats_v3.camera_id,
+    #     frame_stats_v3.video_upload_datetime,
+    #     frame_stats_v3.detection_class,
+    #     max(frame_stats_v3.detection_id) AS count
+    # FROM jamcam.frame_stats_v3
+    # WHERE frame_stats_v3.confidence > 0.8::double precision
+    # GROUP BY frame_stats_v3.camera_id, frame_stats_v3.video_upload_datetime,
+    # frame_stats_v3.detection_class
+    # WITH DATA;
+
+    # -- View indexes:
+    # CREATE INDEX video_summary_80perc_camera_id_idx ON
+    # jamcam.video_summary_80perc USING
+    # btree (camera_id, video_upload_datetime);
+    """
+
+    # pylint: disable=C0103
+
+    __tablename__ = "video_summary_80perc"
+    __table_args__ = {"schema": "jamcam"}
+
+    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    camera_id = Column(VARCHAR)
+    video_upload_datetime = Column(DATE)
+    count = Column(SMALLINT)
+    detection_class = Column(String(20))
+
+    Index("video_summary_80perc_camera_id_idx", "camera_id", "date")
+    UniqueConstraint(camera_id, video_upload_datetime)
+
+    def __repr__(self):
+        vals = [
+            "{}='{}'".format(column, getattr(self, column))
+            for column in [c.name for c in self.__table__.columns]
+        ]
+        return "<JamCamConfidentDetections(" + ", ".join(vals) + ")>"

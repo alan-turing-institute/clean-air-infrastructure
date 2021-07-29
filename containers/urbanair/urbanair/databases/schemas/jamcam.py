@@ -86,6 +86,13 @@ class JamCamStabilityRawData(JamCamBase):
     is_cp: bool
 
 
+class JamCamConfidentDetections(JamCamBase, UTCTime):
+
+    measurement_start_utc: datetime
+    detection_class: str
+    count: int
+
+
 # GeoJson Types
 
 
