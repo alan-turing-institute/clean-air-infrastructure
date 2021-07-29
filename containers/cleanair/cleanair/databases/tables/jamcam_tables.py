@@ -275,7 +275,7 @@ class JamCamConfidentDetections(Base):
     id = Column(BigInteger, primary_key=True, autoincrement=True)
     camera_id = Column(VARCHAR)
     video_upload_datetime = Column(DATE)
-    counts = Column(SMALLINT)
+    count = Column(SMALLINT)
     detection_class = Column(String(20))
 
     Index("video_summary_80perc_camera_id_idx", "camera_id", "date")

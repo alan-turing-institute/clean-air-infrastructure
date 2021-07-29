@@ -12,7 +12,7 @@ from cleanair.databases.tables import (
     JamCamMetaData,
     JamCamStabilitySummaryData,
     JamCamStabilityRawData,
-    JamCamConfidentDetections
+    JamCamConfidentDetections,
 )
 from cleanair.databases.materialised_views.jamcam_today_stats_view import (
     JamcamTodayStatsView,
@@ -118,9 +118,7 @@ def get_jamcam_available(
 
     # Filter by time
     if starttime:
-        res = res.filter(
-            JamCamVideoStats.video_upload_datetime >= starttime,
-        )
+        res = res.filter(JamCamVideoStats.video_upload_datetime >= starttime,)
     if endtime:
         res = res.filter(JamCamVideoStats.video_upload_datetime < endtime)
 
@@ -327,14 +325,18 @@ def get_jamcam_confident_detections(
     max_video_upload_datetime_sq = db.query(
         func.max(JamCamConfidentDetections.video_upload_datetime).label(
             "max_video_upload_datetime"
-        )).subquery()
+        )
+    ).subquery()
 
     res = db.query(
         JamCamConfidentDetections.camera_id,
-        JamCamConfidentDetections.counts,
+        JamCamConfidentDetections.count,
         JamCamConfidentDetections.detection_class,
-        JamCamConfidentDetections.video_upload_datetime.label("date"),
-    ).order_by(JamCamConfidentDetections.camera_id, JamCamConfidentDetections.video_upload_datetime)
+        JamCamConfidentDetections.video_upload_datetime.label("measurement_start_utc"),
+    ).order_by(
+        JamCamConfidentDetections.camera_id,
+        JamCamConfidentDetections.video_upload_datetime,
+    )
 
     # Filter by camera_id
     if camera_id:
@@ -351,21 +353,25 @@ def get_jamcam_confident_detections(
     elif starttime:
         res = res.filter(
             JamCamConfidentDetections.video_upload_datetime >= starttime,
-            JamCamConfidentDetections.video_upload_datetime < starttime + timedelta(hours=24),
+            JamCamConfidentDetections.video_upload_datetime
+            < starttime + timedelta(hours=24),
         )
 
     # 24 hours before endtime
     elif endtime:
         res = res.filter(
             JamCamConfidentDetections.video_upload_datetime < endtime,
-            JamCamConfidentDetections.video_upload_datetime >= endtime - timedelta(hours=24),
+            JamCamConfidentDetections.video_upload_datetime
+            >= endtime - timedelta(hours=24),
         )
 
     # Last available 24 hours
     else:
         res = res.filter(
             JamCamConfidentDetections.video_upload_datetime
-            >= func.date_trunc("day", max_video_upload_datetime_sq.c.max_video_upload_datetime)
+            >= func.date_trunc(
+                "day", max_video_upload_datetime_sq.c.max_video_upload_datetime
+            )
         )
 
     # Filter by detection class
@@ -375,7 +381,8 @@ def get_jamcam_confident_detections(
         )
     else:
         res = res.filter(
-            JamCamConfidentDetections.detection_class == DetectionClass.map_detection_class(detection_class)
+            JamCamConfidentDetections.detection_class
+            == DetectionClass.map_detection_class(detection_class)
         )
 
     return res

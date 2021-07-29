@@ -18,7 +18,7 @@ from ...databases.queries import (
     get_jamcam_today,
     get_jamcam_stability_summary,
     get_jamcam_stability_raw,
-    get_jamcam_confident_detections
+    get_jamcam_confident_detections,
 )
 from ...databases.schemas.jamcam import (
     JamCamVideo,
@@ -28,7 +28,7 @@ from ...databases.schemas.jamcam import (
     JamCamDailyAverage,
     JamCamStabilitySummaryData,
     JamCamStabilityRawData,
-    JamCamConfidentDetections
+    JamCamConfidentDetections,
 )
 from ...types import DetectionClass
 
@@ -44,8 +44,7 @@ def common_jamcam_params(
         DetectionClass.all_classes, description="Class of object"
     ),
     starttime: datetime.datetime = Query(
-        None,
-        description="""ISO UTC datetime to request data from""",
+        None, description="""ISO UTC datetime to request data from""",
     ),
     endtime: datetime.datetime = Query(
         None,
@@ -88,8 +87,7 @@ def common_jamcam_params(
     response_model=List[JamCamAvailable],
 )
 def camera_available(
-    commons: dict = Depends(common_jamcam_params),
-    db: Session = Depends(get_db),
+    commons: dict = Depends(common_jamcam_params), db: Session = Depends(get_db),
 ) -> Optional[List[Tuple]]:
 
     data = get_jamcam_available(
@@ -109,8 +107,7 @@ def camera_available(
     response_model=List[JamCamVideo],
 )
 def camera_raw_counts(
-    commons: dict = Depends(common_jamcam_params),
-    db: Session = Depends(get_db),
+    commons: dict = Depends(common_jamcam_params), db: Session = Depends(get_db),
 ) -> Optional[List[Tuple]]:
 
     data = get_jamcam_raw(
@@ -127,11 +124,10 @@ def camera_raw_counts(
 @router.get(
     "/hourly",
     response_model=List[JamCamVideoAverage],
-    description="Request counts of objects at jamcam cameras averaged by hour",
+    description="Request counts of objects at jamcam cameras averaged by hour.",
 )
 def camera_hourly_average(
-    commons: dict = Depends(common_jamcam_params),
-    db: Session = Depends(get_db),
+    commons: dict = Depends(common_jamcam_params), db: Session = Depends(get_db),
 ) -> Optional[List[Tuple]]:
 
     data = get_jamcam_hourly(
@@ -151,8 +147,7 @@ def jamcam_daily_params(
         DetectionClass.all_classes, description="Class of object"
     ),
     date: Optional[datetime.date] = Query(
-        None,
-        description="(optional) ISO UTC date for which to request data",
+        None, description="(optional) ISO UTC date for which to request data.",
     ),
 ) -> Dict:
     """Common parameters in jamcam routes.
@@ -164,7 +159,7 @@ def jamcam_daily_params(
     if date == datetime.date.today():
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="Data is only available for historical dates at this endpoint. For today, use the /today endpoint",
+            detail="Data is only available for historical dates at this endpoint. For today, use the /today endpoint.",
         )
 
     return {
@@ -180,15 +175,11 @@ def jamcam_daily_params(
     description="Request averaged counts of objects at jamcam cameras day",
 )
 def camera_daily_average(
-    commons: dict = Depends(jamcam_daily_params),
-    db: Session = Depends(get_db),
+    commons: dict = Depends(jamcam_daily_params), db: Session = Depends(get_db),
 ) -> Optional[List[Tuple]]:
 
     data = get_jamcam_daily(
-        db,
-        commons["camera_id"],
-        commons["detection_class"],
-        commons["date"],
+        db, commons["camera_id"], commons["detection_class"], commons["date"],
     )
 
     return all_or_404(data)
@@ -214,11 +205,10 @@ def jamcam_today_params(
 @router.get(
     "/today",
     response_model=List[JamCamDailyAverage],
-    description="Request averaged counts of objects at jamcam cameras for today",
+    description="Request averaged counts of objects at jamcam cameras for today.",
 )
 def camera_today_average(
-    commons: dict = Depends(jamcam_today_params),
-    db: Session = Depends(get_db),
+    commons: dict = Depends(jamcam_today_params), db: Session = Depends(get_db),
 ) -> Optional[List[Tuple]]:
 
     data = get_jamcam_today(db, commons["camera_id"], commons["detection_class"])
@@ -229,11 +219,9 @@ def camera_today_average(
 @router.get(
     "/metadata",
     response_model=List[JamCamMetaData],
-    description="The locations and other metadata of all jamcams",
+    description="The locations and other metadata of all jamcams.",
 )
-def metadata(
-    db: Session = Depends(get_db),
-) -> Optional[List[Tuple]]:
+def metadata(db: Session = Depends(get_db),) -> Optional[List[Tuple]]:
 
     data = get_jamcam_metadata(db)
 
@@ -255,7 +243,7 @@ def jamcam_stability_score_params(
 @router.get(
     "/stability_score",
     response_model=List[JamCamStabilitySummaryData],
-    description="The stability score calculated per camera",
+    description="The stability score calculated per camera, integer valued where lower is better. Constructed from change point and outlier detection over `ssim_diff_avg0`.",
 )
 def stability_score(
     commons: dict = Depends(jamcam_stability_score_params),
@@ -282,11 +270,10 @@ def jamcam_stability_raw_params(
 @router.get(
     "/stability_raw",
     response_model=List[JamCamStabilityRawData],
-    description="The stability raw data calculated per camera",
+    description="The stability raw data calculated per camera. `mse_diff_avg0` and `ssim_diff_avg0` are of most value, describing the Mean Squared Error and Structural Similarity Index Measure per camera each day against a reference `avg0` set constructed from initial data collection samples. A comparison against the first ever frame (`_0') and a frame sampled from the day before (`_n1`) are also available however noisy.",
 )
 def stability_raw(
-    commons: dict = Depends(jamcam_stability_raw_params),
-    db: Session = Depends(get_db),
+    commons: dict = Depends(jamcam_stability_raw_params), db: Session = Depends(get_db),
 ) -> Optional[List[Tuple]]:
 
     data = get_jamcam_stability_raw(db, commons["camera_id"])
@@ -303,7 +290,7 @@ def traffic_data() -> Optional[dict]:
 
 @router.get(
     "/traffic_data/{zoom}/{x}/{y}",
-    description="Third party traffic data",
+    description="Third party traffic data.",
     include_in_schema=False,
 )
 def traffic_data_tiles(zoom: int, x: int, y: int) -> Optional[Response]:
@@ -329,11 +316,10 @@ def traffic_data_tiles(zoom: int, x: int, y: int) -> Optional[Response]:
 @router.get(
     "/confidence",
     response_model=List[JamCamConfidentDetections],
-    description="Request counts of objects at jamcam cameras with above 0.8 detection confidence",
+    description="Request counts of objects at jamcam cameras with above 0.8 detection confidence from the object detection model.",
 )
 def camera_hourly_average(
-    commons: dict = Depends(common_jamcam_params),
-    db: Session = Depends(get_db),
+    commons: dict = Depends(common_jamcam_params), db: Session = Depends(get_db),
 ) -> Optional[List[Tuple]]:
 
     data = get_jamcam_confident_detections(

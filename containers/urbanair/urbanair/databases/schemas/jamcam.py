@@ -85,9 +85,10 @@ class JamCamStabilityRawData(JamCamBase):
     date: date
     is_cp: bool
 
-class JamCamConfidentDetections(JamCamBase):
 
-    date: date
+class JamCamConfidentDetections(JamCamBase, UTCTime):
+
+    measurement_start_utc: datetime
     detection_class: str
     count: int
 
