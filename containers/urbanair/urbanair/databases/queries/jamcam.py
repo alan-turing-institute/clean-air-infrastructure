@@ -12,6 +12,7 @@ from cleanair.databases.tables import (
     JamCamMetaData,
     JamCamStabilitySummaryData,
     JamCamStabilityRawData,
+    JamCamConfidentDetections
 )
 from cleanair.databases.materialised_views.jamcam_today_stats_view import (
     JamcamTodayStatsView,
@@ -117,7 +118,9 @@ def get_jamcam_available(
 
     # Filter by time
     if starttime:
-        res = res.filter(JamCamVideoStats.video_upload_datetime >= starttime,)
+        res = res.filter(
+            JamCamVideoStats.video_upload_datetime >= starttime,
+        )
     if endtime:
         res = res.filter(JamCamVideoStats.video_upload_datetime < endtime)
 
@@ -309,3 +312,70 @@ def get_jamcam_stability_raw(db: Session, camera_id: Optional[str]) -> Query:
         query = query.filter(JamCamStabilityRawData.camera_id == camera_id)
 
     return query
+
+
+@db_query()
+def get_jamcam_confident_detections(
+    db: Session,
+    camera_id: Optional[str],
+    detection_class: DetectionClass = DetectionClass.all_classes,
+    starttime: Optional[datetime] = None,
+    endtime: Optional[datetime] = None,
+) -> Query:
+    """Get jamcam counts from confidence table"""
+
+    max_video_upload_datetime_sq = db.query(
+        func.max(JamCamConfidentDetections.video_upload_datetime).label(
+            "max_video_upload_datetime"
+        )).subquery()
+
+    res = db.query(
+        JamCamConfidentDetections.camera_id,
+        JamCamConfidentDetections.counts,
+        JamCamConfidentDetections.detection_class,
+        JamCamConfidentDetections.video_upload_datetime.label("date"),
+    ).order_by(JamCamConfidentDetections.camera_id, JamCamConfidentDetections.video_upload_datetime)
+
+    # Filter by camera_id
+    if camera_id:
+        res = res.filter(JamCamConfidentDetections.camera_id == camera_id)
+
+    # Filter by time
+    if starttime and endtime:
+        res = res.filter(
+            JamCamConfidentDetections.video_upload_datetime >= starttime,
+            JamCamConfidentDetections.video_upload_datetime < endtime,
+        )
+
+    # 24 hours from starttime
+    elif starttime:
+        res = res.filter(
+            JamCamConfidentDetections.video_upload_datetime >= starttime,
+            JamCamConfidentDetections.video_upload_datetime < starttime + timedelta(hours=24),
+        )
+
+    # 24 hours before endtime
+    elif endtime:
+        res = res.filter(
+            JamCamConfidentDetections.video_upload_datetime < endtime,
+            JamCamConfidentDetections.video_upload_datetime >= endtime - timedelta(hours=24),
+        )
+
+    # Last available 24 hours
+    else:
+        res = res.filter(
+            JamCamConfidentDetections.video_upload_datetime
+            >= func.date_trunc("day", max_video_upload_datetime_sq.c.max_video_upload_datetime)
+        )
+
+    # Filter by detection class
+    if detection_class == DetectionClass.all_classes:
+        res = res.filter(
+            JamCamConfidentDetections.detection_class.in_(DetectionClass.map_all())
+        )
+    else:
+        res = res.filter(
+            JamCamConfidentDetections.detection_class == DetectionClass.map_detection_class(detection_class)
+        )
+
+    return res

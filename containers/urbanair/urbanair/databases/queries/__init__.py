@@ -8,6 +8,7 @@ from .jamcam import (
     get_jamcam_metadata,
     get_jamcam_stability_summary,
     get_jamcam_stability_raw,
+    get_jamcam_confident_detections
 )
 
 __all__ = [
@@ -19,4 +20,5 @@ __all__ = [
     "get_jamcam_metadata",
     "get_jamcam_stability_summary",
     "get_jamcam_stability_raw",
+    "get_jamcam_confident_detections"
 ]
