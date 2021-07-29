@@ -176,7 +176,8 @@ class JamCamStabilitySummaryData(Base):
     #     score int4 NULL,
     #     CONSTRAINT stability_summary_pk PRIMARY KEY (camera_id)
     # );
-    # CREATE INDEX stability_summary_camera_id_idx ON jamcam.stability_summary USING btree (camera_id);
+    # CREATE INDEX stability_summary_camera_id_idx ON jamcam.stability_summary 
+    # USING btree (camera_id);
     """
 
     # pylint: disable=C0103
@@ -218,7 +219,8 @@ class JamCamStabilityRawData(Base):
     #     ssim_diff_avg0 float4 NULL,
     #     "date" date NULL
     # );
-    # CREATE UNIQUE INDEX stability_raw_camera_id_idx ON jamcam.stability_raw USING btree (camera_id, date);
+    # CREATE UNIQUE INDEX stability_raw_camera_id_idx ON jamcam.stability_raw
+    # USING btree (camera_id, date);
     """
 
     # pylint: disable=C0103
@@ -260,11 +262,14 @@ class JamCamConfidentDetections(Base):
     #     max(frame_stats_v3.detection_id) AS count
     # FROM jamcam.frame_stats_v3
     # WHERE frame_stats_v3.confidence > 0.8::double precision
-    # GROUP BY frame_stats_v3.camera_id, frame_stats_v3.video_upload_datetime, frame_stats_v3.detection_class
+    # GROUP BY frame_stats_v3.camera_id, frame_stats_v3.video_upload_datetime,
+    # frame_stats_v3.detection_class
     # WITH DATA;
 
     # -- View indexes:
-    # CREATE INDEX video_summary_80perc_camera_id_idx ON jamcam.video_summary_80perc USING btree (camera_id, video_upload_datetime);
+    # CREATE INDEX video_summary_80perc_camera_id_idx ON 
+    # jamcam.video_summary_80perc USING 
+    # btree (camera_id, video_upload_datetime);
     """
 
     # pylint: disable=C0103
