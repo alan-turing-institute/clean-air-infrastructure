@@ -176,7 +176,7 @@ class JamCamStabilitySummaryData(Base):
     #     score int4 NULL,
     #     CONSTRAINT stability_summary_pk PRIMARY KEY (camera_id)
     # );
-    # CREATE INDEX stability_summary_camera_id_idx ON jamcam.stability_summary 
+    # CREATE INDEX stability_summary_camera_id_idx ON jamcam.stability_summary
     # USING btree (camera_id);
     """
 
@@ -267,8 +267,8 @@ class JamCamConfidentDetections(Base):
     # WITH DATA;
 
     # -- View indexes:
-    # CREATE INDEX video_summary_80perc_camera_id_idx ON 
-    # jamcam.video_summary_80perc USING 
+    # CREATE INDEX video_summary_80perc_camera_id_idx ON
+    # jamcam.video_summary_80perc USING
     # btree (camera_id, video_upload_datetime);
     """
 
