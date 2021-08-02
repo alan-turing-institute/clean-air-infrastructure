@@ -248,7 +248,7 @@ All the steps above can be done with:
 
 ```bash
 # Non-infrastructure dependencies
-conda create -n busyness python=3.7
+conda create -n busyness python=3.7.8 --channel conda-forge 
 conda activate busyness
 conda install -c anaconda postgresql
 conda install -c conda-forge gdal postgis uwsgi
