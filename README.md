@@ -248,7 +248,7 @@ All the steps above can be done with:
 
 ```bash
 # Non-infrastructure dependencies
-conda create -n busyness python=3.7
+conda create -n busyness python=3.7.8 --channel conda-forge 
 conda activate busyness
 conda install -c anaconda postgresql
 conda install -c conda-forge gdal postgis uwsgi
@@ -517,7 +517,7 @@ export PGPASSWORD=$(az account get-access-token --resource-type oss-rdbms --quer
 
 #### On development server
 ```bash
-DB_SECRET_FILE=$(pwd)/.secrets/.db_secrets_ad.json uvicorn urbanair.main:app --reload
+DB_SECRET_FILE=$(pwd)/.secrets/.db_secrets_ad.json uvicorn urbanair.urbanir:app --reload
 ```
 
 #### In a docker image
