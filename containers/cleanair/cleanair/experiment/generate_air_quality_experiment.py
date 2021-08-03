@@ -229,7 +229,6 @@ def production_mrdgp_static(secretfile: str) -> List[InstanceMixin]:
     )
     return [instance]
 
-
 def production_mrdgp_dynamic(secretfile: str) -> List[InstanceMixin]:
     """The production version of the dynamic MRDGP"""
     train_upto = datetime_from_word("today")
@@ -599,3 +598,86 @@ def dryrun_svgp(secretfile: str) -> List[InstanceMixin]:
         input_dim=input_dim,
     )
     return [InstanceMixin(full_data_config, ModelName.svgp, model_params, tag=Tag.test)]
+
+
+def test_mrdgp_dynamic(secretfile: str) -> List[InstanceMixin]:
+    """The test version of the dynamic MRDGP"""
+    train_upto = datetime_from_word("today")
+    train_start = train_upto - timedelta(PRODUCTION_MRDGP_TRAIN_DAYS)
+    forecast_upto = train_upto + timedelta(PRODUCTION_FORECAST_DAYS)
+    data_config = DataConfig(
+        train_start_date=train_start,
+        train_end_date=train_upto,
+        pred_start_date=train_upto,
+        pred_end_date=forecast_upto,
+        include_prediction_y=True,
+        train_sources=PRODUCTION_MRDGP_TRAIN_SOURCES,
+        pred_sources=PRODUCTION_MRDGP_FORECAST_SOURCES,
+        train_interest_points=PRODUCTION_MRDGP_TRAIN_INTEREST_POINTS,
+        pred_interest_points=PRODUCTION_MRDGP_FORECAST_INTEREST_POINTS,
+        species=PRODUCTION_MRDGP_SPECIES,
+        static_features=PRODUCTION_STATIC_FEATURES,
+        dynamic_features=PRODUCTION_DYNAMIC_FEATURES,
+        buffer_sizes=PRODUCTION_BUFFER_SIZES,
+        norm_by=Source.laqn,
+    )
+
+    input_dim = total_num_features(data_config)
+
+    model_config = ModelConfig(secretfile=secretfile)
+    model_config.validate_config(data_config)
+    full_data_config = model_config.generate_full_config(data_config)
+
+    # create model params
+    model_params = default_mrdgp_model_params(input_dim)
+
+    # create instance and add to list
+    instance = InstanceMixin(
+        full_data_config,
+        ModelName.mrdgp,
+        model_params,
+        tag=Tag.test,
+        cluster_id=ClusterId.nc6,
+    )
+    return [instance]
+
+def test_mrdgp_static(secretfile: str) -> List[InstanceMixin]:
+    """The test version of the dynamic MRDGP"""
+    train_upto = datetime_from_word("today")
+    train_start = train_upto - timedelta(PRODUCTION_MRDGP_TRAIN_DAYS)
+    forecast_upto = train_upto + timedelta(PRODUCTION_FORECAST_DAYS)
+    data_config = DataConfig(
+        train_start_date=train_start,
+        train_end_date=train_upto,
+        pred_start_date=train_upto,
+        pred_end_date=forecast_upto,
+        include_prediction_y=True,
+        train_sources=PRODUCTION_MRDGP_TRAIN_SOURCES,
+        pred_sources=PRODUCTION_MRDGP_FORECAST_SOURCES,
+        train_interest_points=PRODUCTION_MRDGP_TRAIN_INTEREST_POINTS,
+        pred_interest_points=PRODUCTION_MRDGP_FORECAST_INTEREST_POINTS,
+        species=PRODUCTION_MRDGP_SPECIES,
+        static_features=PRODUCTION_STATIC_FEATURES,
+        dynamic_features=[],
+        buffer_sizes=PRODUCTION_BUFFER_SIZES,
+        norm_by=Source.laqn,
+    )
+
+    input_dim = total_num_features(data_config)
+
+    model_config = ModelConfig(secretfile=secretfile)
+    model_config.validate_config(data_config)
+    full_data_config = model_config.generate_full_config(data_config)
+
+    # create model params
+    model_params = default_mrdgp_model_params(input_dim)
+
+    # create instance and add to list
+    instance = InstanceMixin(
+        full_data_config,
+        ModelName.mrdgp,
+        model_params,
+        tag=Tag.test,
+        cluster_id=ClusterId.nc6,
+    )
+    return [instance]

@@ -27,6 +27,10 @@ class ExperimentName(str, Enum):
     production_svgp_dynamic = "production_svgp_dynamic"
     production_svgp_static = "production_svgp_static"
 
+    # test names
+    test_mrdgp_dynamic = "test_mrdgp_dynamic"
+    test_mrdgp_static = "test_mrdgp_static"
+
 
 class ExperimentConfig(BaseModel):
     """Settings for an experiment"""

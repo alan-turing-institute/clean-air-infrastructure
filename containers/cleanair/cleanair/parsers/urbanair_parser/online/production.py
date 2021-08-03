@@ -1,20 +1,12 @@
 """CLI for production models"""
 
-from enum import Enum
 from pathlib import Path
 import typer
-from ..experiment.main import metrics, run, setup, update, upload
 from ....types import ExperimentName
 from ..shared_args import ExperimentDir
+from .utils import StaticDynamic, run_experiment_online
 
 app = typer.Typer(help="Production CLI")
-
-
-class StaticDynamic(str, Enum):
-    """Is the model static or dynamic?"""
-
-    dynamic = "dynamic"
-    static = "static"
 
 
 @app.command()
@@ -26,11 +18,7 @@ def svgp(
         experiment_name = ExperimentName.production_svgp_dynamic
     else:
         experiment_name = ExperimentName.production_svgp_static
-    setup(experiment_name, experiment_root=experiment_root)
-    run(experiment_name, experiment_root=experiment_root)
-    update(experiment_name, experiment_root=experiment_root)
-    metrics(experiment_name, experiment_root=experiment_root)
-    upload(experiment_name, experiment_root=experiment_root)
+    run_experiment_online(experiment_name, experiment_root=experiment_root)
 
 
 @app.command()
@@ -42,8 +30,4 @@ def mrdgp(
         experiment_name = ExperimentName.production_mrdgp_dynamic
     else:
         experiment_name = ExperimentName.production_mrdgp_static
-    setup(experiment_name, experiment_root=experiment_root)
-    run(experiment_name, experiment_root=experiment_root)
-    update(experiment_name, experiment_root=experiment_root)
-    metrics(experiment_name, experiment_root=experiment_root)
-    upload(experiment_name, experiment_root=experiment_root)
+    run_experiment_online(experiment_name, experiment_root=experiment_root)
