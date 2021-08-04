@@ -74,7 +74,7 @@ def query_instance_ids(
 
 
 @cached(
-    cache=TTLCache(maxsize=256, ttl=60),
+    cache=TTLCache(maxsize=256, ttl=60 * 60 * 24),
     key=lambda _, *args, **kwargs: hashkey(*args, **kwargs),
 )
 def cached_instance_ids(
@@ -178,7 +178,8 @@ def query_forecasts_hexgrid(
 
 
 @cached(
-    cache=LRUCache(maxsize=256), key=lambda _, *args, **kwargs: hashkey(*args, **kwargs)
+    cache=TTLCache(maxsize=256, ttl=60 * 60 * 24),
+    key=lambda _, *args, **kwargs: hashkey(*args, **kwargs),
 )
 def cached_forecast_hexgrid_json(
     db: Session,
@@ -209,7 +210,10 @@ def cached_forecast_hexgrid_json(
 
 
 @cached(
-    cache=LRUCache(maxsize=256), key=lambda _, *args, **kwargs: hashkey(*args, **kwargs)
+    cache=TTLCache(maxsize=256, ttl=60 * 60 * 24),
+    key=lambda _, instance_id, start_datetime, end_datetime, bounding_box: hashkey(
+        instance_id, start_datetime, end_datetime, bounding_box
+    ),
 )
 def cached_forecast_hexgrid_geojson(
     db: Session,
@@ -227,6 +231,8 @@ def cached_forecast_hexgrid_geojson(
         with_geometry=True,
         bounding_box=bounding_box,
     )
+    # logging.info('w/  db:' + str(hashkey(db, instance_id, start_datetime, end_datetime, bounding_box)))
+    # logging.info('w/o db: ' + str(hashkey(instance_id, start_datetime, end_datetime, bounding_box)))
     # Return the query results as a GeoJSON FeatureCollection
     features = ForecastResultGeoJson.build_features(
         [r._asdict() for r in query_results]
