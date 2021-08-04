@@ -129,7 +129,7 @@ def cached_instance_ids(
 
 
 @cached(
-    cache=TTLCache(maxsize=256, ttl=60),
+    cache=TTLCache(maxsize=256, ttl=60 * 60 * 24),
     key=lambda _, *args, **kwargs: hashkey(*args, **kwargs),
 )
 def cached_instance_ids_on_run_date(
