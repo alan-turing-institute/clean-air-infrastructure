@@ -85,8 +85,7 @@ def query_instance_ids_for_run_on_date(
     """
     query = (
         db.query(
-            AirQualityInstanceTable.instance_id,
-            AirQualityInstanceTable.fit_start_time,
+            AirQualityInstanceTable.instance_id, AirQualityInstanceTable.fit_start_time,
         )
         .join(
             AirQualityDataTable,
@@ -96,8 +95,10 @@ def query_instance_ids_for_run_on_date(
             func.cast(AirQualityInstanceTable.fit_start_time, DATE) == run_date,
             AirQualityInstanceTable.tag == "production",
             AirQualityInstanceTable.model_name == "mrdgp",
-            AirQualityDataTable.data_config["static_features"] == [feature.value for feature in static_features],
-            AirQualityDataTable.data_config["dynamic_features"] == [feature.value for feature in dynamic_features],
+            AirQualityDataTable.data_config["static_features"]
+            == [feature.value for feature in static_features],
+            AirQualityDataTable.data_config["dynamic_features"]
+            == [feature.value for feature in dynamic_features],
         )
     )
 
@@ -136,8 +137,7 @@ def cached_instance_ids_on_run_date(
 ) -> Optional[List[Tuple]]:
     """Cache available model instances run on this date"""
     logger.info(
-        "Querying available instance IDs on %s",
-        run_date,
+        "Querying available instance IDs on %s", run_date,
     )
     return query_instance_ids_for_run_on_date(
         db=db,

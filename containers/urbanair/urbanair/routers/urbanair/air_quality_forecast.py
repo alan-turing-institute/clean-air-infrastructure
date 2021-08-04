@@ -12,7 +12,8 @@ from ...databases.queries.air_quality_forecast import (
     cached_instance_ids,
     cached_forecast_hexgrid_json,
     cached_forecast_hexgrid_geojson,
-    cached_geometries_hexgrid, cached_instance_ids_on_run_date,
+    cached_geometries_hexgrid,
+    cached_instance_ids_on_run_date,
 )
 from ...databases.schemas.air_quality_forecast import (
     ForecastResultGeoJson,
@@ -119,7 +120,7 @@ def forecast_hexgrid_geometries(
 
 
 @router.get(
-    "/forecast/hexgrid/1hr/json",
+    "/forecast/hexgrid/json",
     description="Most up-to-date hexgrid forecasts for a given hour in JSON",
     response_model=List[ForecastResultJson],
 )
@@ -166,9 +167,8 @@ def forecast_hexgrid_1hr_json(
     return query_results
 
 
-
 @router.get(
-    "/forecast/hexgrid/1hr/geojson",
+    "/forecast/hexgrid/geojson",
     description="Most up-to-date forecasts for a given hour in GeoJSON",
     response_class=GeoJSONResponse,
     response_model=ForecastResultGeoJson,
@@ -251,7 +251,9 @@ def forecast_hexgrid__48hr_json(
     instance_id = instance_ids[0][0]
 
     logger.info(f"Instance found: {instance_id}")
-    logger.info(f"Getting data from {instance_id} between {start_datetime} and {start_datetime}")
+    logger.info(
+        f"Getting data from {instance_id} between {start_datetime} and {start_datetime}"
+    )
 
     # Get forecasts in this range (using a bounding box if specified)
     query_results = cached_forecast_hexgrid_json(
@@ -282,7 +284,7 @@ def forecast_hexgrid__48hr_json(
         example="2020-08-12",
     ),
     db: Session = Depends(get_db),
-        bounding_box: Tuple[float] = Depends(bounding_box_params),
+    bounding_box: Tuple[float] = Depends(bounding_box_params),
 ) -> Optional[ForecastResultGeoJson]:
     """Retrieve 48hrs of hexgrid forecasts in GEOJSON
 
@@ -305,8 +307,9 @@ def forecast_hexgrid__48hr_json(
     instance_id = instance_ids[0][0]
 
     logger.info(f"Instance found: {instance_id}")
-    logger.info(f"Getting data from {instance_id} between {start_datetime} and {start_datetime}")
-
+    logger.info(
+        f"Getting data from {instance_id} between {start_datetime} and {start_datetime}"
+    )
 
     # Get forecasts in this range as a GeoJSON FeatureCollection (using a bounding box if specified)
     query_results = cached_forecast_hexgrid_geojson(
@@ -320,4 +323,3 @@ def forecast_hexgrid__48hr_json(
     # Return the query results as a GeoJSON FeatureCollection
     logger.info("Processing hexgrid GeoJSON request took %.2fs", time() - request_start)
     return query_results
-
