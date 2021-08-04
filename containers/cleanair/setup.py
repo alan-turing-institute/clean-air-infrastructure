@@ -48,6 +48,7 @@ setuptools.setup(
         "typer==0.2.1",
         "uuid==1.30",
         "xarray==0.15.1",
+        "orjson==3.6.0",
     ],
     extras_require={
         "traffic": ["pystan==2.19.1.1", "fbprophet==0.6",],

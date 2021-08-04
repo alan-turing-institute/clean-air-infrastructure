@@ -1,6 +1,6 @@
 """Air quality forecast API routes"""
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from time import time
 from typing import List, Tuple, Optional, cast
 
@@ -13,6 +13,7 @@ from ...databases.queries.air_quality_forecast import (
     cached_forecast_hexgrid_json,
     cached_forecast_hexgrid_geojson,
     cached_geometries_hexgrid,
+    cached_instance_ids_on_run_date,
 )
 from ...databases.schemas.air_quality_forecast import (
     ForecastResultGeoJson,
@@ -92,11 +93,38 @@ def bounding_box_params(
 
 
 @router.get(
+    "/forecast/hexgrid/geometries",
+    description="Geometries for combining with plain JSON forecasts",
+    response_class=GeoJSONResponse,
+    response_model=GeometryGeoJson,
+)
+def forecast_hexgrid_geometries(
+    db: Session = Depends(get_db),
+    bounding_box: Tuple[float] = Depends(bounding_box_params),
+) -> Optional[List[Tuple]]:
+    """Retrieve hexgrid geometries in JSON
+
+    Returns:
+        json: JSON containing geometry of each hexgrid point
+    """
+    request_start = time()
+
+    # Get forecasts in this range (using a bounding box if specified)
+    query_results = cached_geometries_hexgrid(db, bounding_box=bounding_box)
+
+    # Return the query results as a GeoJSON FeatureCollection
+    logger.info(
+        "Processing hexgrid geometries request took %.2fs", time() - request_start
+    )
+    return query_results
+
+
+@router.get(
     "/forecast/hexgrid/json",
     description="Most up-to-date hexgrid forecasts for a given hour in JSON",
     response_model=List[ForecastResultJson],
 )
-def forecast_hexgrid_json(
+def forecast_hexgrid_1hr_json(
     time_: datetime = Query(
         None,
         alias="time",
@@ -140,39 +168,12 @@ def forecast_hexgrid_json(
 
 
 @router.get(
-    "/forecast/hexgrid/geometries",
-    description="Geometries for combining with plain JSON forecasts",
-    response_class=GeoJSONResponse,
-    response_model=GeometryGeoJson,
-)
-def forecast_hexgrid_geometries(
-    db: Session = Depends(get_db),
-    bounding_box: Tuple[float] = Depends(bounding_box_params),
-) -> Optional[List[Tuple]]:
-    """Retrieve hexgrid geometries in JSON
-
-    Returns:
-        json: JSON containing geometry of each hexgrid point
-    """
-    request_start = time()
-
-    # Get forecasts in this range (using a bounding box if specified)
-    query_results = cached_geometries_hexgrid(db, bounding_box=bounding_box)
-
-    # Return the query results as a GeoJSON FeatureCollection
-    logger.info(
-        "Processing hexgrid geometries request took %.2fs", time() - request_start
-    )
-    return query_results
-
-
-@router.get(
     "/forecast/hexgrid/geojson",
     description="Most up-to-date forecasts for a given hour in GeoJSON",
     response_class=GeoJSONResponse,
     response_model=ForecastResultGeoJson,
 )
-def forecast_hexgrid_geojson(
+def forecast_hexgrid_1hr_geojson(
     time_: datetime = Query(
         None,
         alias="time",
@@ -199,6 +200,116 @@ def forecast_hexgrid_geojson(
     # Get the most recent instance ID among those which predict in the required interval
     instance_ids = cached_instance_ids(db, start_datetime, end_datetime)
     instance_id = instance_ids[0][0]
+
+    # Get forecasts in this range as a GeoJSON FeatureCollection (using a bounding box if specified)
+    query_results = cached_forecast_hexgrid_geojson(
+        db,
+        instance_id=instance_id,
+        start_datetime=start_datetime,
+        end_datetime=end_datetime,
+        bounding_box=bounding_box,
+    )
+
+    # Return the query results as a GeoJSON FeatureCollection
+    logger.info("Processing hexgrid GeoJSON request took %.2fs", time() - request_start)
+    return query_results
+
+
+@router.get(
+    "/forecast/hexgrid/json/48hr",
+    description="Most up-to-date hexgrid forecasts for a given two days in JSON",
+    response_model=List[ForecastResultJson],
+)
+def forecast_hexgrid__48hr_json(
+    run_date: date = Query(
+        None,
+        alias="date",
+        description="JSON forecasts for the two days starting on this date",
+        example="2020-08-12",
+    ),
+    db: Session = Depends(get_db),
+    bounding_box: Tuple[float] = Depends(bounding_box_params),
+) -> Optional[List[Tuple]]:
+    """Retrieve 48hrs of hexgrid forecasts in JSON
+
+    Args:
+        run_date (datetime): First day of the 48hr period to get data for
+
+    Returns:
+        json: JSON containing one hour of forecasts at each hexgrid point
+    """
+    request_start = time()
+
+    # Establish start and end datetimes
+    start_datetime = datetime.combine(run_date, datetime.min.time())
+    end_datetime = start_datetime + timedelta(days=2)
+
+    logger.info("Getting instance ids")
+
+    # Get the most recent instance ID among those which predict in the required interval
+    instance_ids = cached_instance_ids_on_run_date(db, run_date)
+    instance_id = instance_ids[0][0]
+
+    logger.info(f"Instance found: {instance_id}")
+    logger.info(
+        f"Getting data from {instance_id} between {start_datetime} and {start_datetime}"
+    )
+
+    # Get forecasts in this range (using a bounding box if specified)
+    query_results = cached_forecast_hexgrid_json(
+        db,
+        instance_id=instance_id,
+        start_datetime=start_datetime,
+        end_datetime=end_datetime,
+        with_geometry=False,
+        bounding_box=bounding_box,
+    )
+    # Return the query results as a list of tuples
+    # This will be automatically converted to ForecastResultJson using from_orm
+    logger.info("Processing hexgrid JSON request took %.2fs", time() - request_start)
+    return query_results
+
+
+@router.get(
+    "/forecast/hexgrid/geojson/48hr",
+    description="Hexgrid forecasts for a given two days in GEOJSON",
+    response_class=GeoJSONResponse,
+    response_model=ForecastResultGeoJson,
+)
+def forecast_hexgrid__48hr_geojson(
+    run_date: date = Query(
+        None,
+        alias="date",
+        description="JSON forecasts for the two days starting on this date",
+        example="2020-08-12",
+    ),
+    db: Session = Depends(get_db),
+    bounding_box: Tuple[float] = Depends(bounding_box_params),
+) -> Optional[ForecastResultGeoJson]:
+    """Retrieve 48hrs of hexgrid forecasts in GEOJSON
+
+    Args:
+        run_date (datetime): First day of the 48hr period to get data for
+
+    Returns:
+        geojson: GEOJSON containing one hour of forecasts at each hexgrid point
+    """
+    request_start = time()
+
+    # Establish start and end datetimes
+    start_datetime = datetime.combine(run_date, datetime.min.time())
+    end_datetime = start_datetime + timedelta(days=2)
+
+    logger.info("Getting instance ids")
+
+    # Get the most recent instance ID among those which predict in the required interval
+    instance_ids = cached_instance_ids_on_run_date(db, run_date)
+    instance_id = instance_ids[0][0]
+
+    logger.info(f"Instance found: {instance_id}")
+    logger.info(
+        f"Getting data from {instance_id} between {start_datetime} and {start_datetime}"
+    )
 
     # Get forecasts in this range as a GeoJSON FeatureCollection (using a bounding box if specified)
     query_results = cached_forecast_hexgrid_geojson(

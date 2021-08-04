@@ -517,7 +517,7 @@ export PGPASSWORD=$(az account get-access-token --resource-type oss-rdbms --quer
 
 #### On development server
 ```bash
-DB_SECRET_FILE=$(pwd)/.secrets/.db_secrets_ad.json uvicorn urbanair.urbanir:app --reload
+DB_SECRET_FILE=$(pwd)/.secrets/.db_secrets_ad.json uvicorn urbanair.urbanair:app --reload
 ```
 
 #### In a docker image
