@@ -26,6 +26,7 @@ setuptools.setup(
         "cachetools",
         "geojson",
         "sentry_sdk",
+        "orjson==3.6.1",
     ],
     python_requires=">=3.7",
 )
