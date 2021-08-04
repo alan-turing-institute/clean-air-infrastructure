@@ -74,7 +74,7 @@ def query_instance_ids(
 
 
 @db_query()
-def query_instance_ids_for_run_on_date(
+def query_instance_ids_on_date(
     db: Session,
     run_date: date,
     static_features: List[StaticFeatureNames],
@@ -139,7 +139,7 @@ def cached_instance_ids_on_run_date(
     logger.info(
         "Querying available instance IDs on %s", run_date,
     )
-    return query_instance_ids_for_run_on_date(
+    return query_instance_ids_on_date(
         db=db,
         run_date=run_date,
         static_features=PRODUCTION_STATIC_FEATURES,

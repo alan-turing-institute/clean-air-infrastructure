@@ -276,7 +276,7 @@ def forecast_hexgrid__48hr_json(
     response_class=GeoJSONResponse,
     response_model=ForecastResultGeoJson,
 )
-def forecast_hexgrid__48hr_json(
+def forecast_hexgrid__48hr_geojson(
     run_date: date = Query(
         None,
         alias="date",
