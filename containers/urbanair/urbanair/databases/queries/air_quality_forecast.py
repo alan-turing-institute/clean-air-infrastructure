@@ -107,7 +107,7 @@ def query_instance_ids_for_run_on_date(
 
 
 @cached(
-    cache=TTLCache(maxsize=256, ttl=60),
+    cache=TTLCache(maxsize=256, ttl=60 * 60 * 24),
     key=lambda _, *args, **kwargs: hashkey(*args, **kwargs),
 )
 def cached_instance_ids(
@@ -230,7 +230,8 @@ def query_forecasts_hexgrid(
 
 
 @cached(
-    cache=LRUCache(maxsize=256), key=lambda _, *args, **kwargs: hashkey(*args, **kwargs)
+    cache=TTLCache(maxsize=256, ttl=60 * 60 * 24),
+    key=lambda _, *args, **kwargs: hashkey(*args, **kwargs),
 )
 def cached_forecast_hexgrid_json(
     db: Session,
@@ -261,7 +262,10 @@ def cached_forecast_hexgrid_json(
 
 
 @cached(
-    cache=LRUCache(maxsize=256), key=lambda _, *args, **kwargs: hashkey(*args, **kwargs)
+    cache=TTLCache(maxsize=256, ttl=60 * 60 * 24),
+    key=lambda _, instance_id, start_datetime, end_datetime, bounding_box: hashkey(
+        instance_id, start_datetime, end_datetime, bounding_box
+    ),
 )
 def cached_forecast_hexgrid_geojson(
     db: Session,
