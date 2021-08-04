@@ -231,8 +231,6 @@ def cached_forecast_hexgrid_geojson(
         with_geometry=True,
         bounding_box=bounding_box,
     )
-    # logging.info('w/  db:' + str(hashkey(db, instance_id, start_datetime, end_datetime, bounding_box)))
-    # logging.info('w/o db: ' + str(hashkey(instance_id, start_datetime, end_datetime, bounding_box)))
     # Return the query results as a GeoJSON FeatureCollection
     features = ForecastResultGeoJson.build_features(
         [r._asdict() for r in query_results]
