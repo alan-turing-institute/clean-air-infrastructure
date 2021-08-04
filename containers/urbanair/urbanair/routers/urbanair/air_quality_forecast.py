@@ -173,7 +173,7 @@ def forecast_hexgrid_1hr_json(
     response_class=GeoJSONResponse,
     response_model=ForecastResultGeoJson,
 )
-def forecast_hexgrid_geojson(
+def forecast_hexgrid_1hr_geojson(
     time_: datetime = Query(
         None,
         alias="time",
@@ -216,7 +216,7 @@ def forecast_hexgrid_geojson(
 
 
 @router.get(
-    "/forecast/hexgrid/48hr/json",
+    "/forecast/hexgrid/json/48hr",
     description="Most up-to-date hexgrid forecasts for a given two days in JSON",
     response_model=List[ForecastResultJson],
 )
@@ -271,7 +271,7 @@ def forecast_hexgrid__48hr_json(
 
 
 @router.get(
-    "/forecast/hexgrid/48hr/geojson",
+    "/forecast/hexgrid/geojson/48hr",
     description="Hexgrid forecasts for a given two days in GEOJSON",
     response_class=GeoJSONResponse,
     response_model=ForecastResultGeoJson,
