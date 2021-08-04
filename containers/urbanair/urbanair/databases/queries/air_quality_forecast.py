@@ -1,9 +1,9 @@
 """Air quality forecast database queries and external api calls"""
 import logging
-from datetime import datetime
+from datetime import datetime, date
 from typing import Optional, List, Tuple
 
-from sqlalchemy import func
+from sqlalchemy import func, DATE
 from sqlalchemy.orm import Session, Query
 
 from cachetools import cached, LRUCache, TTLCache
@@ -73,6 +73,38 @@ def query_instance_ids(
     return query.order_by(AirQualityInstanceTable.fit_start_time.desc())
 
 
+@db_query()
+def query_instance_ids_for_run_on_date(
+    db: Session,
+    run_date: date,
+    static_features: List[StaticFeatureNames],
+    dynamic_features: List[DynamicFeatureNames],
+) -> Query:
+    """
+    Check which model IDs produced forecasts on date.
+    """
+    query = (
+        db.query(
+            AirQualityInstanceTable.instance_id,
+            AirQualityInstanceTable.fit_start_time,
+        )
+        .join(
+            AirQualityDataTable,
+            AirQualityInstanceTable.data_id == AirQualityDataTable.data_id,
+        )
+        .filter(
+            func.cast(AirQualityInstanceTable.fit_start_time, DATE) == run_date,
+            AirQualityInstanceTable.tag == "production",
+            AirQualityInstanceTable.model_name == "mrdgp",
+            AirQualityDataTable.data_config["static_features"] == [feature.value for feature in static_features],
+            AirQualityDataTable.data_config["dynamic_features"] == [feature.value for feature in dynamic_features],
+        )
+    )
+
+    # Order by fit start time
+    return query.order_by(AirQualityInstanceTable.fit_start_time.desc())
+
+
 @cached(
     cache=TTLCache(maxsize=256, ttl=60),
     key=lambda _, *args, **kwargs: hashkey(*args, **kwargs),
@@ -80,7 +112,7 @@ def query_instance_ids(
 def cached_instance_ids(
     db: Session, start_datetime: datetime, end_datetime: datetime,
 ) -> Optional[List[Tuple]]:
-    """Cache available model instances"""
+    """Cache available model instances that cover the datetime range"""
     logger.info(
         "Querying available instance IDs between %s and %s",
         start_datetime,
@@ -90,6 +122,26 @@ def cached_instance_ids(
         db=db,
         start_datetime=start_datetime,
         end_datetime=end_datetime,
+        static_features=PRODUCTION_STATIC_FEATURES,
+        dynamic_features=PRODUCTION_DYNAMIC_FEATURES,
+    ).all()
+
+
+@cached(
+    cache=TTLCache(maxsize=256, ttl=60),
+    key=lambda _, *args, **kwargs: hashkey(*args, **kwargs),
+)
+def cached_instance_ids_on_run_date(
+    db: Session, run_date: date,
+) -> Optional[List[Tuple]]:
+    """Cache available model instances run on this date"""
+    logger.info(
+        "Querying available instance IDs on %s",
+        run_date,
+    )
+    return query_instance_ids_for_run_on_date(
+        db=db,
+        run_date=run_date,
         static_features=PRODUCTION_STATIC_FEATURES,
         dynamic_features=PRODUCTION_DYNAMIC_FEATURES,
     ).all()
