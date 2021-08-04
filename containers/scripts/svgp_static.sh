@@ -15,6 +15,6 @@ check_exit() {
 # set the secretfile filepath (if on own machine: init production)
 urbanair init local --secretfile "$DB_SECRET_FILE" >> $LOGFILE 2>&1
 
-urbanair production svgp static >> $LOGFILE 2>&1
+urbanair online production svgp static >> $LOGFILE 2>&1
 
 urbanair logs upload $LOGFILE

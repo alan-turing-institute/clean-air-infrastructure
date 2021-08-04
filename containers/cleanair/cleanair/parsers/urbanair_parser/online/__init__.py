@@ -1,5 +1,5 @@
 """CLI for production models"""
 
-from .main import app
+from .online import app
 
 __all__ = ["app"]
