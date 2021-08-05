@@ -1,7 +1,7 @@
 """Air quality forecast database queries and external api calls"""
 import logging
+from time import time
 from datetime import datetime, date
-from functools import lru_cache
 from typing import Optional, List, Tuple
 
 from sqlalchemy import func, DATE
@@ -108,7 +108,7 @@ def query_instance_ids_on_date(
 
 
 @cached(
-    cache=LRUCache(maxsize=64),
+    cache=TTLCache(maxsize=256, ttl=60 * 60 * 24, timer=time),
     key=lambda _, *args, **kwargs: hashkey(*args, **kwargs),
 )
 def cached_instance_ids(
@@ -130,7 +130,7 @@ def cached_instance_ids(
 
 
 @cached(
-    cache=LRUCache(maxsize=64),
+    cache=TTLCache(maxsize=256, ttl=60 * 60 * 24, timer=time),
     key=lambda _, *args, **kwargs: hashkey(*args, **kwargs),
 )
 def cached_instance_ids_on_run_date(
@@ -231,7 +231,7 @@ def query_forecasts_hexgrid(
 
 
 @cached(
-    cache=TTLCache(maxsize=256, ttl=60 * 60 * 24),
+    cache=TTLCache(maxsize=256, ttl=60 * 60 * 24, timer=time),
     key=lambda _, *args, **kwargs: hashkey(*args, **kwargs),
 )
 def cached_forecast_hexgrid_json(
@@ -263,7 +263,7 @@ def cached_forecast_hexgrid_json(
 
 
 @cached(
-    cache=TTLCache(maxsize=256, ttl=60 * 60 * 24),
+    cache=TTLCache(maxsize=256, ttl=60 * 60 * 24, timer=time),
     key=lambda _, instance_id, start_datetime, end_datetime, bounding_box: hashkey(
         instance_id, start_datetime, end_datetime, bounding_box
     ),
