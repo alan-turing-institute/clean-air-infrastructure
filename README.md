@@ -1,4 +1,4 @@
-# UrbanAir API - Repurposed as London Busyness COVID-19
+# UrbanAir API - Including London COVID-19 Busyness (Odysseus)
 [![Build Status](https://dev.azure.com/alan-turing-institute/clean-air-infrastructure/_apis/build/status/alan-turing-institute.clean-air-infrastructure?branchName=master)](https://dev.azure.com/alan-turing-institute/clean-air-infrastructure/_build/latest?definitionId=1&branchName=master)
 [![Build Status](https://travis-ci.com/alan-turing-institute/clean-air-infrastructure.svg?token=zxQwzfsqCyEouTqXAVUn&branch=master)](https://travis-ci.com/alan-turing-institute/clean-air-infrastructure)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -16,18 +16,18 @@ A list of key developers on the project. A good place to start if you wish to co
 
 | Name               | GitHub ID                                            | Email                       | Admin  |
 | ------------------ | -----------------------------------------------------| --------------------------- | ------ |
-| James Brandreth    | [@jamesbrandreth](https://github.com/jamesbrandreth) | <jbrandreth@turing.ac.uk>   | |
+| James Brandreth    | [@jamesbrandreth](https://github.com/jamesbrandreth) | <jbrandreth@turing.ac.uk>   | Infrastructure, Odysseus |
 | Oscar Giles        | [@OscartGiles](https://github.com/OscartGiles)       | <ogiles@turing.ac.uk>       | Infrastructure, Prod Database, Kubernetes Cluster |
 | Oliver Hamelijnck  | [@defaultobject](https://github.com/defaultobject)   | <ohamelijnck@turing.ac.uk>  | |
 | Chance Haycock     | [@chancehaycock](https://github.com/chancehaycock)   | <chaycock@turing.ac.uk>     | |
 | Christy Nakou      | [@ChristyNou](https://github.com/ChristyNou)         | <cnakou@turing.ac.uk>       | |
 | Patrick O'Hara     | [@PatrickOHara](https://github.com/PatrickOHara)     | <pohara@turing.ac.uk>       | |
-| James Walsh | [@dead-water](https://github.com/dead-water)              | <jwalsh@turing.ac.uk>| |
 | Harry Moss     | [@harryjmoss](https://github.com/harryjmoss)     | <h.moss@ucl.ac.uk>       | |
 | David Perez-Suarez | [@dpshelio](https://github.com/dpshelio)             | <d.perez-suarez@ucl.ac.uk>  | |
 | James Robinson     | [@jemrobinson](https://github.com/jemrobinson)       | <jrobinson@turing.ac.uk>    | Infrastructure, Prod Database, Kubernetes Cluster |
 | Tim Spain          | [@timspainUCL](https://github.com/timspainUCL)       | <t.spain@ucl.ac.uk>         | |
 | Edward Thorpe-Woods | [@TeddyTW](https://github.com/TeddyTW)              | <ethorpe-woods@turing.ac.uk>| |
+| James Walsh | [@dead-water](https://github.com/dead-water)              | <jwalsh@turing.ac.uk>| Infrastructure, Odysseus |
 
 # Contents
 
