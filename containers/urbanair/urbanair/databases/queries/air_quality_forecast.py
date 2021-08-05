@@ -1,6 +1,7 @@
 """Air quality forecast database queries and external api calls"""
 import logging
 from datetime import datetime, date
+from functools import lru_cache
 from typing import Optional, List, Tuple
 
 from sqlalchemy import func, DATE
@@ -107,7 +108,7 @@ def query_instance_ids_on_date(
 
 
 @cached(
-    cache=TTLCache(maxsize=256, ttl=60 * 60 * 24),
+    cache=LRUCache(maxsize=64),
     key=lambda _, *args, **kwargs: hashkey(*args, **kwargs),
 )
 def cached_instance_ids(
@@ -129,7 +130,7 @@ def cached_instance_ids(
 
 
 @cached(
-    cache=TTLCache(maxsize=256, ttl=60 * 60 * 24),
+    cache=LRUCache(maxsize=64),
     key=lambda _, *args, **kwargs: hashkey(*args, **kwargs),
 )
 def cached_instance_ids_on_run_date(
