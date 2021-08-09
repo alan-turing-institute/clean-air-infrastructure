@@ -317,7 +317,6 @@ cronjobs:
     env:
       - name: DB_SECRET_FILE
         value: "/secrets/db_secrets.json"
-    env:
       - name: HTTP_SECRET_FILE
         value: "/secrets/http_priming_secret"
     envFrom:
