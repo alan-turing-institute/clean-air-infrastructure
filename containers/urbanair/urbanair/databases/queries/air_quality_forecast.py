@@ -108,7 +108,7 @@ def query_instance_ids_on_date(
 
 
 @cached(
-    cache=TTLCache(maxsize=256, ttl=60 * 60 * 24, timer=time),
+    cache=TTLCache(maxsize=256, ttl=2 * 60 * 60 * 24, timer=time),
     key=lambda _, *args, **kwargs: hashkey(*args, **kwargs),
 )
 def cached_instance_ids(
@@ -130,7 +130,7 @@ def cached_instance_ids(
 
 
 @cached(
-    cache=TTLCache(maxsize=256, ttl=60 * 60 * 24, timer=time),
+    cache=TTLCache(maxsize=256, ttl=2 * 60 * 60 * 24, timer=time),
     key=lambda _, *args, **kwargs: hashkey(*args, **kwargs),
 )
 def cached_instance_ids_on_run_date(
@@ -280,7 +280,7 @@ def query_forecasts_hexgrid_hex_id(
 
 
 @cached(
-    cache=TTLCache(maxsize=256, ttl=60 * 60 * 24, timer=time),
+    cache=TTLCache(maxsize=256, ttl=2 * 60 * 60 * 24, timer=time),
     key=lambda _, *args, **kwargs: hashkey(*args, **kwargs),
 )
 def cached_forecast_hexgrid_json(
@@ -312,7 +312,7 @@ def cached_forecast_hexgrid_json(
 
 
 @cached(
-    cache=TTLCache(maxsize=256, ttl=60 * 60 * 24, timer=time),
+    cache=TTLCache(maxsize=256, ttl=2 * 60 * 60 * 24, timer=time),
     key=lambda _, *args, **kwargs: hashkey(*args, **kwargs),
 )
 def cached_forecast_hexgrid_csv(
@@ -345,7 +345,7 @@ def cached_forecast_hexgrid_csv(
 
 
 @cached(
-    cache=TTLCache(maxsize=256, ttl=60 * 60 * 24, timer=time),
+    cache=TTLCache(maxsize=256, ttl=2 * 60 * 60 * 24, timer=time),
     key=lambda _, instance_id, start_datetime, end_datetime, bounding_box: hashkey(
         instance_id, start_datetime, end_datetime, bounding_box
     ),
