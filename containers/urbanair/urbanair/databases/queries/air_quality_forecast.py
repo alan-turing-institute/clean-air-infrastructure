@@ -341,7 +341,7 @@ def cached_forecast_hexgrid_csv(
         bounding_box=bounding_box,
         output_type="df",
     )
-    return query.to_csv(index=False)
+    return query.round({"NO2_mean": 3, "NO2_var": 3}).to_csv(index=False)
 
 
 @cached(
