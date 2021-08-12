@@ -341,7 +341,7 @@ def cached_forecast_hexgrid_csv(
         bounding_box=bounding_box,
         output_type="df",
     )
-    return query.to_csv()
+    return query.to_csv(index=False)
 
 
 @cached(
