@@ -160,7 +160,7 @@ class TestData:
 
         # Check that we have the correct number of results
         mock_points = list({r["point_id"] for r in mock_air_quality_result})
-        features = [d for d in data["features"] if d["id"] in mock_points]
+        features = [d for d in data["features"] if d["point_id"] in mock_points]
         assert len(features) == len(mock_points)
 
         # Require that we have the same number of input and output geometries
