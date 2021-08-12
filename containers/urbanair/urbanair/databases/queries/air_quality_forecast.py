@@ -339,7 +339,7 @@ def cached_forecast_hexgrid_csv(
         end_datetime=end_datetime,
         with_geometry=with_geometry,
         bounding_box=bounding_box,
-        output_type="df"
+        output_type="df",
     )
     return query.to_csv()
 

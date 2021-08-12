@@ -13,7 +13,8 @@ from ...databases.queries.air_quality_forecast import (
     cached_forecast_hexgrid_json,
     cached_forecast_hexgrid_geojson,
     cached_geometries_hexgrid,
-    cached_instance_ids_on_run_date, cached_forecast_hexgrid_csv,
+    cached_instance_ids_on_run_date,
+    cached_forecast_hexgrid_csv,
 )
 from ...databases.schemas.air_quality_forecast import (
     ForecastResultGeoJson,
