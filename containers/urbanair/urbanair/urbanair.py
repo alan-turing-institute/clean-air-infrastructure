@@ -3,6 +3,7 @@ import os
 import logging
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.gzip import GZipMiddleware
 import sentry_sdk
 from sentry_sdk.integrations.asgi import SentryAsgiMiddleware
 from .routers.urbanair import static, air_quality_forecast
@@ -16,6 +17,8 @@ app = FastAPI(
     version="0.0.1",
     root_path=get_settings().root_path,
 )
+
+app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 sentry_dsn = get_settings().sentry_dsn  # pylint: disable=C0103
 if sentry_dsn:
