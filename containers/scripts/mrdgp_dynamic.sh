@@ -37,6 +37,10 @@ for i in {00..23}
   # prime each hour of geojson call
   wget -O - --http-user="${HTTP_USER}" --http-password="${HTTP_PASS}" \
   "https://urbanair.turing.ac.uk/api/v1/air_quality/forecast/hexgrid/geojson?time=${HTTP_DATE}T12%3A${i}&lon_min=-0.51&lon_max=0.335&lat_min=51.286&lat_max=51.692" &> /dev/null
+
+  # prime each hour of csv call
+  wget -O - --http-user="${HTTP_USER}" --http-password="${HTTP_PASS}" \
+  "https://urbanair.turing.ac.uk/api/v1/air_quality/forecast/hexgrid/csv?time=${HTTP_DATE}T12%3A${i}&lon_min=-0.51&lon_max=0.335&lat_min=51.286&lat_max=51.692" &> /dev/null
 done
 
 # prime 48 hour json call
@@ -45,5 +49,8 @@ wget -O - --http-user="${HTTP_USER}" --http-password="${HTTP_PASS}" \
 # prime 48 hour geojson call
 wget -O - --http-user="${HTTP_USER}" --http-password="${HTTP_PASS}" \
  "https://urbanair.turing.ac.uk/api/v1/air_quality/forecast/hexgrid/json/48hr?date=${HTTP_DATE}&lon_min=-0.51&lon_max=0.335&lat_min=51.286&lat_max=51.692" &> /dev/null
+# prime 48 hour csv call
+wget -O - --http-user="${HTTP_USER}" --http-password="${HTTP_PASS}" \
+ "https://urbanair.turing.ac.uk/api/v1/air_quality/forecast/hexgrid/csv/48hr?date=${HTTP_DATE}&lon_min=-0.51&lon_max=0.335&lat_min=51.286&lat_max=51.692" &> /dev/null
 
-echo "Complete. This job should not be shutting down." 
+echo "Complete. This job should now be shutting down." 
