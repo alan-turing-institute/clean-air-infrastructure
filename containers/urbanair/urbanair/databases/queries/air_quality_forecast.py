@@ -157,6 +157,7 @@ def query_geometries_hexgrid(
     """
     query = db.query(
         HexGrid.point_id,
+        HexGrid.hex_id,
         func.ST_AsText(func.ST_Transform(HexGrid.geom, 4326)).label("geom"),
     )
     # Note that SRID 4326 is not aligned with lat/lon so we return all geometries that
@@ -165,7 +166,7 @@ def query_geometries_hexgrid(
         query = query.filter(
             func.ST_Intersects(HexGrid.geom, func.ST_MakeEnvelope(*bounding_box, 4326))
         )
-    return query.distinct()
+    return query.distinct().order_by(HexGrid.hex_id)
 
 
 @cached(
@@ -198,16 +199,64 @@ def query_forecasts_hexgrid(
     """
     if with_geometry:
         query = db.query(
-            AirQualityResultTable.point_id,
-            AirQualityResultTable.measurement_start_utc,
+            AirQualityResultTable.point_id.label("point_id"),
+            HexGrid.hex_id.label("hex_id"),
+            AirQualityResultTable.measurement_start_utc.label("measurement_start_utc"),
             func.nullif(AirQualityResultTable.NO2_mean, "NaN").label("NO2_mean"),
             func.nullif(AirQualityResultTable.NO2_var, "NaN").label("NO2_var"),
             func.ST_AsText(func.ST_Transform(HexGrid.geom, 4326)).label("geom"),
         )
     else:
         query = db.query(
-            AirQualityResultTable.point_id,
-            AirQualityResultTable.measurement_start_utc,
+            AirQualityResultTable.point_id.label("point_id"),
+            HexGrid.hex_id.label("hex_id"),
+            AirQualityResultTable.measurement_start_utc.label("measurement_start_utc"),
+            func.nullif(AirQualityResultTable.NO2_mean, "NaN").label("NO2_mean"),
+            func.nullif(AirQualityResultTable.NO2_var, "NaN").label("NO2_var"),
+        )
+
+    # Restrict to hexgrid points for the given instance and times
+    query = query.join(
+        HexGrid, HexGrid.point_id == AirQualityResultTable.point_id
+    ).filter(
+        AirQualityResultTable.instance_id == instance_id,
+        AirQualityResultTable.measurement_start_utc >= start_datetime,
+        AirQualityResultTable.measurement_start_utc < end_datetime,
+    )
+
+    # Note that SRID 4326 is not aligned with lat/lon so we return all geometries that
+    # overlap with any part of the lat/lon bounding box
+    if bounding_box:
+        query = query.filter(
+            func.ST_Intersects(HexGrid.geom, func.ST_MakeEnvelope(*bounding_box, 4326))
+        )
+    return query
+
+
+@db_query()
+def query_forecasts_hexgrid_hex_id(
+    db: Session,
+    instance_id: str,
+    start_datetime: datetime,
+    end_datetime: datetime,
+    with_geometry: bool,
+    bounding_box: Optional[Tuple[float]] = None,
+) -> Query:
+    """
+    Get all forecasts for a given model instance in the given datetime range
+    """
+    if with_geometry:
+        query = db.query(
+            HexGrid.hex_id.label("hex_id"),
+            AirQualityResultTable.measurement_start_utc.label("measurement_start_utc"),
+            func.nullif(AirQualityResultTable.NO2_mean, "NaN").label("NO2_mean"),
+            func.nullif(AirQualityResultTable.NO2_var, "NaN").label("NO2_var"),
+            func.ST_AsText(func.ST_Transform(HexGrid.geom, 4326)).label("geom"),
+        )
+    else:
+        query = db.query(
+            HexGrid.hex_id.label("hex_id"),
+            AirQualityResultTable.measurement_start_utc.label("measurement_start_utc"),
             func.nullif(AirQualityResultTable.NO2_mean, "NaN").label("NO2_mean"),
             func.nullif(AirQualityResultTable.NO2_var, "NaN").label("NO2_var"),
         )
@@ -260,6 +309,39 @@ def cached_forecast_hexgrid_json(
         bounding_box=bounding_box,
     )
     return all_or_404(query)
+
+
+@cached(
+    cache=TTLCache(maxsize=256, ttl=60 * 60 * 24, timer=time),
+    key=lambda _, *args, **kwargs: hashkey(*args, **kwargs),
+)
+def cached_forecast_hexgrid_csv(
+    db: Session,
+    instance_id: str,
+    start_datetime: datetime,
+    end_datetime: datetime,
+    with_geometry: bool,
+    bounding_box: Optional[Tuple[float]] = None,
+) -> Optional[List[Tuple]]:
+    """Cache forecasts with geometry with optional bounding box"""
+    logger.info(
+        "Querying forecast geometries for %s between %s and %s",
+        instance_id,
+        start_datetime,
+        end_datetime,
+    )
+    if bounding_box:
+        logger.info("Restricting to bounding box (%s, %s => %s, %s)", *bounding_box)
+    query = query_forecasts_hexgrid_hex_id(
+        db,
+        instance_id=instance_id,
+        start_datetime=start_datetime,
+        end_datetime=end_datetime,
+        with_geometry=with_geometry,
+        bounding_box=bounding_box,
+        output_type="df"
+    )
+    return query.to_csv()
 
 
 @cached(

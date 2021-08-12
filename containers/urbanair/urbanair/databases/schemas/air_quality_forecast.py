@@ -29,7 +29,8 @@ class BaseGeoJson(BaseModel):
                 "features": [
                     {
                         "type": "Feature",
-                        "id": "00015c34-2c2d-4a55-889f-a458ee780b90",
+                        "point_id": "00015c34-2c2d-4a55-889f-a458ee780b90",
+                        "hex_id": "11481250",
                         "geometry": {
                             "type": "Polygon",
                             "coordinates": [
@@ -61,7 +62,8 @@ class ForecastResultGeoJson(BaseGeoJson):
         return [
             Feature(
                 geometry=list(shapely.wkt.loads(row["geom"]))[0],  # convert to polygon
-                id=row["point_id"],
+                point_id=row["point_id"],
+                hex_id=row["hex_id"],
                 properties={
                     "NO2_mean": row["NO2_mean"],
                     "NO2_var": row["NO2_var"],
@@ -92,6 +94,7 @@ class ForecastResultJson(UTCTime):
 
     # Schema attributes
     point_id: str
+    hex_id: int
     NO2_mean: Optional[float]
     NO2_var: Optional[float]
 
@@ -110,7 +113,8 @@ class GeometryGeoJson(BaseGeoJson):
         return [
             Feature(
                 geometry=list(shapely.wkt.loads(row["geom"]))[0],  # convert to polygon
-                id=row["point_id"],
+                point_id=row["point_id"],
+                hex_id=row["hex_id"],
             )
             for row in rows
         ]
