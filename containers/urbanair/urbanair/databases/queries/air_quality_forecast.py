@@ -343,6 +343,7 @@ def cached_forecast_hexgrid_csv(
     )
     return query.round({"NO2_mean": 3, "NO2_var": 3}).to_csv(index=False)
 
+
 # pylint: disable=C0103
 @cached(
     cache=TTLCache(maxsize=256, ttl=2 * 60 * 60 * 24, timer=time),
