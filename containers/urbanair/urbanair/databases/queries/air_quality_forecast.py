@@ -375,16 +375,14 @@ def cached_forecast_hexgrid_small_csv(
         output_type="df",
     )
 
-    data = data.round(
-        {"NO2_mean": 3, "NO2_var": 3}
-    )
+    data = data.round({"NO2_mean": 3, "NO2_var": 3})
 
-    data['NO2'] = data[['NO2_mean', 'NO2_var']].apply(tuple, axis=1)
+    data["NO2"] = data[["NO2_mean", "NO2_var"]].apply(tuple, axis=1)
 
     return data.pivot(
         index="measurement_start_utc",
         columns="hex_id",
-        values="NO2" # TODO don't forget NO2_var!!!!!!!
+        values="NO2",
     ).to_csv()
 
 
