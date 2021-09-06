@@ -1,4 +1,5 @@
 """Air quality forecast database queries and external api calls"""
+import csv
 import logging
 from time import time
 from datetime import datetime, date
@@ -379,10 +380,11 @@ def cached_forecast_hexgrid_small_csv(
     data = data.round({"NO2_mean": 3, "NO2_var": 3})
 
     data["NO2"] = data[["NO2_mean", "NO2_var"]].apply(tuple, axis=1)
+    data["NO2"] = data["NO2"].apply(lambda datum: f"[{datum[0]}; {datum[1]}]")
 
     return data.pivot(
         index="measurement_start_utc", columns="hex_id", values="NO2",
-    ).to_csv()
+    ).to_csv(quoting=csv.QUOTE_NONE)
 
 
 @cached(
