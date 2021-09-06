@@ -15,7 +15,7 @@ from ...databases.queries.air_quality_forecast import (
     cached_geometries_hexgrid,
     cached_instance_ids_on_run_date,
     cached_forecast_hexgrid_csv,
-    cached_forecast_hexgrid_small_csv,
+    cached_forecast_hexgrid_pivot_csv,
 )
 from ...databases.schemas.air_quality_forecast import (
     ForecastResultGeoJson,
@@ -218,11 +218,11 @@ def forecast_hexgrid_1hr_csv(
 
 
 @router.get(
-    "/forecast/hexgrid/csv_small",
+    "/forecast/hexgrid/csv_pivot",
     description="Most up-to-date hexgrid forecasts for a given hour in CSV",
     response_class=CSVResponse,
 )
-def forecast_hexgrid_1hr_csv_small(
+def forecast_hexgrid_1hr_csv_pivot(
     time_: datetime = Query(
         None,
         alias="time",
@@ -251,7 +251,7 @@ def forecast_hexgrid_1hr_csv_small(
     instance_id = instance_ids[0][0]
 
     # Get forecasts in this range (using a bounding box if specified)
-    query_results = cached_forecast_hexgrid_small_csv(
+    query_results = cached_forecast_hexgrid_pivot_csv(
         db,
         instance_id=instance_id,
         start_datetime=start_datetime,
@@ -479,15 +479,15 @@ def forecast_hexgrid_48hr_csv(
 
 
 @router.get(
-    "/forecast/hexgrid/csv_small/48hr",
-    description="Most up-to-date hexgrid forecasts for a given two days in JSON",
+    "/forecast/hexgrid/csv_pivot/48hr",
+    description="Most up-to-date hexgrid forecasts for a given two days in CSV",
     response_class=CSVResponse,
 )
-def forecast_hexgrid_48hr_small_csv(
+def forecast_hexgrid_48hr_csv_pivot(
     run_date: date = Query(
         None,
         alias="date",
-        description="JSON forecasts for the two days starting on this date",
+        description="Forecasts for the two days starting on this date",
         example="2021-08-12",
     ),
     db: Session = Depends(get_db),
@@ -519,7 +519,7 @@ def forecast_hexgrid_48hr_small_csv(
     )
 
     # Get forecasts in this range (using a bounding box if specified)
-    query_results = cached_forecast_hexgrid_small_csv(
+    query_results = cached_forecast_hexgrid_pivot_csv(
         db,
         instance_id=instance_id,
         start_datetime=start_datetime,

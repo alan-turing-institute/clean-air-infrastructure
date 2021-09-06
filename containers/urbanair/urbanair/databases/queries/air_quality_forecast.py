@@ -350,7 +350,7 @@ def cached_forecast_hexgrid_csv(
     cache=TTLCache(maxsize=256, ttl=2 * 60 * 60 * 24, timer=time),
     key=lambda _, *args, **kwargs: hashkey(*args, **kwargs),
 )
-def cached_forecast_hexgrid_small_csv(
+def cached_forecast_hexgrid_pivot_csv(
     db: Session,
     instance_id: str,
     start_datetime: datetime,
