@@ -290,7 +290,7 @@ def forecast_hexgrid_1hr_geojson(
         description="GeoJSON forecasts for the hour containing this ISO-formatted time",
         example="2021-08-12T06:00",
     ),
-    index: int =0,
+    index: int = 0,
     db: Session = Depends(get_db),
     bounding_box: Tuple[float] = Depends(bounding_box_params),
 ) -> Optional[ForecastResultGeoJson]:
@@ -401,7 +401,7 @@ def forecast_hexgrid__48hr_geojson(
         description="JSON forecasts for the two days starting on this date",
         example="2021-08-12",
     ),
-    index:int=0,
+    index: int = 0,
     db: Session = Depends(get_db),
     bounding_box: Tuple[float] = Depends(bounding_box_params),
 ) -> Optional[ForecastResultGeoJson]:
@@ -518,7 +518,7 @@ def forecast_hexgrid_48hr_csv_pivot(
         description="Forecasts for the two days starting on this date",
         example="2021-08-12",
     ),
-    index: int =0,
+    index: int = 0,
     db: Session = Depends(get_db),
     bounding_box: Tuple[float] = Depends(bounding_box_params),
 ) -> CSVResponse:
