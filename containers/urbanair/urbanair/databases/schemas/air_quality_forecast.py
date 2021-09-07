@@ -93,7 +93,6 @@ class ForecastResultJson(UTCTime):
     """Forecast results as JSON"""
 
     # Schema attributes
-    point_id: str
     hex_id: int
     NO2_mean: Optional[float]
     NO2_var: Optional[float]

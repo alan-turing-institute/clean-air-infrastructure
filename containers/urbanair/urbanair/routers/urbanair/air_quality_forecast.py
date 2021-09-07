@@ -237,6 +237,7 @@ def forecast_hexgrid_1hr_csv_pivot(
         description="JSON forecasts for the hour containing this ISO-formatted time",
         example="2021-08-12T06:00",
     ),
+    index: int = 0,
     db: Session = Depends(get_db),
     bounding_box: Tuple[float] = Depends(bounding_box_params),
 ) -> CSVResponse:
@@ -256,7 +257,10 @@ def forecast_hexgrid_1hr_csv_pivot(
 
     # Get the most recent instance ID among those which predict in the required interval
     instance_ids = cached_instance_ids(db, start_datetime, end_datetime)
-    instance_id = instance_ids[0][0]
+    if index < len(instance_ids):
+        instance_id = instance_ids[index][0]
+    else:
+        raise HTTPException(status_code=404, detail="No forecasts cover this period")
 
     # Get forecasts in this range (using a bounding box if specified)
     query_results = cached_forecast_hexgrid_pivot_csv(
@@ -514,6 +518,7 @@ def forecast_hexgrid_48hr_csv_pivot(
         description="Forecasts for the two days starting on this date",
         example="2021-08-12",
     ),
+    index: int =0,
     db: Session = Depends(get_db),
     bounding_box: Tuple[float] = Depends(bounding_box_params),
 ) -> CSVResponse:
@@ -535,7 +540,10 @@ def forecast_hexgrid_48hr_csv_pivot(
 
     # Get the most recent instance ID among those which predict in the required interval
     instance_ids = cached_instance_ids_on_run_date(db, run_date)
-    instance_id = instance_ids[0][0]
+    if index < len(instance_ids):
+        instance_id = instance_ids[index][0]
+    else:
+        raise HTTPException(status_code=404, detail="No forecasts cover this period")
 
     logger.info(f"Instance found: {instance_id}")
     logger.info(
