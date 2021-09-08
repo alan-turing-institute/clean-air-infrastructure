@@ -204,7 +204,7 @@ def sample_hexgrid_points(secretfile, connection_class):
     with reader.dbcnxn.open_session() as session:
         points = (
             session.query(
-                HexGrid.point_id,
+                HexGrid.hex_id,
                 func.ST_AsText(func.ST_Transform(HexGrid.geom, 4326)).label("geom"),
                 func.ST_AsText(MetaPoint.location).label("location"),
             )

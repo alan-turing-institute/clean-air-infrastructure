@@ -62,7 +62,6 @@ class ForecastResultGeoJson(BaseGeoJson):
         return [
             Feature(
                 geometry=list(shapely.wkt.loads(row["geom"]))[0],  # convert to polygon
-                point_id=row["point_id"],
                 hex_id=row["hex_id"],
                 properties={
                     "NO2_mean": row["NO2_mean"],
@@ -112,7 +111,6 @@ class GeometryGeoJson(BaseGeoJson):
         return [
             Feature(
                 geometry=list(shapely.wkt.loads(row["geom"]))[0],  # convert to polygon
-                point_id=row["point_id"],
                 hex_id=row["hex_id"],
             )
             for row in rows
