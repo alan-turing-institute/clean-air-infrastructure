@@ -205,6 +205,7 @@ def sample_hexgrid_points(secretfile, connection_class):
         points = (
             session.query(
                 HexGrid.hex_id,
+                HexGrid.point_id,
                 func.ST_AsText(func.ST_Transform(HexGrid.geom, 4326)).label("geom"),
                 func.ST_AsText(MetaPoint.location).label("location"),
             )
@@ -233,6 +234,32 @@ def mock_air_quality_result(
         {
             "instance_id": mock_instance_id,
             "point_id": point["point_id"],
+            "data_id": mock_data_id,
+            "measurement_start_utc": measurement_datetime,
+            "NO2_mean": np.random.poisson(60),
+            "NO2_var": 0.5 + abs(np.random.normal(5, 1)),
+        }
+        for measurement_datetime in measurement_datetimes
+        for point in sample_hexgrid_points
+    ]
+    return records
+
+
+@pytest.fixture(scope="class")
+def mock_air_quality_result_result(
+    sample_hexgrid_points, mock_data_id, mock_instance_id,
+):  # pylint: disable=redefined-outer-name
+    """Fake data for air quality routes test"""
+    measurement_datetimes = rrule.rrule(
+        rrule.HOURLY,
+        dtstart=datetime.now().replace(minute=0, second=0, microsecond=0),
+        until=datetime.now() + timedelta(hours=48),
+    )
+    records = [
+        {
+            "instance_id": mock_instance_id,
+            "point_id": point["point_id"],
+            "hex_id": point["hex_id"],
             "data_id": mock_data_id,
             "measurement_start_utc": measurement_datetime,
             "NO2_mean": np.random.poisson(60),

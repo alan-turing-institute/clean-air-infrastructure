@@ -148,7 +148,7 @@ class TestData:
 
     @staticmethod
     def test_geometries_endpoint(
-        client_class_urbanair, mock_air_quality_result, sample_hexgrid_points
+        client_class_urbanair, mock_air_quality_result_result, sample_hexgrid_points
     ):
         """Test geometries endpoint"""
         # Check response
@@ -159,8 +159,8 @@ class TestData:
         data = response.json()
 
         # Check that we have the correct number of results
-        mock_points = list({r["point_id"] for r in mock_air_quality_result})
-        features = [d for d in data["features"] if d["point_id"] in mock_points]
+        mock_points = list({r["hex_id"] for r in mock_air_quality_result_result})
+        features = [d for d in data["features"] if d["hex_id"] in mock_points]
         assert len(features) == len(mock_points)
 
         # Require that we have the same number of input and output geometries
