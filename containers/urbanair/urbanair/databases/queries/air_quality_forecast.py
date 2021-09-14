@@ -1,6 +1,7 @@
 """Air quality forecast database queries and external api calls"""
 import csv
 import logging
+import pandas as pd
 from time import time
 from datetime import datetime, date
 from typing import Optional, List, Tuple
@@ -285,7 +286,7 @@ def cached_forecast_hexgrid_csv(
     )
     if bounding_box:
         logger.info("Restricting to bounding box (%s, %s => %s, %s)", *bounding_box)
-    query = query_forecasts_hexgrid(
+    data = query_forecasts_hexgrid(
         db,
         instance_id=instance_id,
         start_datetime=start_datetime,
@@ -294,7 +295,8 @@ def cached_forecast_hexgrid_csv(
         bounding_box=bounding_box,
         output_type="df",
     )
-    return query.round({"NO2_mean": 3, "NO2_var": 3}).to_csv(index=False)
+    data[instance_id] = ""
+    return data.round({"NO2_mean": 3, "NO2_var": 3}).to_csv(index=False)
 
 
 # pylint: disable=C0103
@@ -334,9 +336,13 @@ def cached_forecast_hexgrid_pivot_csv(
     data["NO2"] = data[["NO2_mean", "NO2_var"]].apply(tuple, axis=1)
     data["NO2"] = data["NO2"].apply(lambda datum: f"[{datum[0]}; {datum[1]}]")
 
-    return data.pivot(
-        index="measurement_start_utc", columns="hex_id", values="NO2",
-    ).to_csv(quoting=csv.QUOTE_NONE)
+    table = pd.DataFrame(
+        data.pivot(
+            index="measurement_start_utc", columns="hex_id", values="NO2",
+        ).to_records()
+    )
+    table[instance_id] = ""
+    return table.to_csv(quoting=csv.QUOTE_NONE)
 
 
 @cached(
