@@ -124,8 +124,8 @@ class GeometryGeoJson(BaseGeoJson):
 
     @staticmethod
     def build_instance_id(instance_id: str):
+        """Add instance_id to the GeoJSON endpoint - ! not true geojson"""
         return instance_id
-
 
     @staticmethod
     def build_features(rows: List[Dict]) -> List[Feature]:
