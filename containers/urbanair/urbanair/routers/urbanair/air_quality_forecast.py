@@ -2,7 +2,7 @@
 import logging
 from datetime import datetime, timedelta, date
 from time import time
-from typing import List, Tuple, Optional, cast
+from typing import List, Tuple, Optional, cast, Dict
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
@@ -21,6 +21,7 @@ from ...databases.schemas.air_quality_forecast import (
     ForecastResultGeoJson,
     ForecastResultJson,
     GeometryGeoJson,
+    ForecastDatasetJson,
 )
 from ...responses import GeoJSONResponse, CSVResponse
 
@@ -124,7 +125,7 @@ def forecast_hexgrid_geometries(
 @router.get(
     "/forecast/hexgrid/json",
     description="Most up-to-date hexgrid forecasts for a given hour in JSON",
-    response_model=List[ForecastResultJson],
+    response_model=ForecastDatasetJson,
 )
 def forecast_hexgrid_1hr_json(
     time_: datetime = Query(
@@ -136,7 +137,7 @@ def forecast_hexgrid_1hr_json(
     index: int = 0,
     db: Session = Depends(get_db),
     bounding_box: Tuple[float] = Depends(bounding_box_params),
-) -> Optional[List[Tuple]]:
+) -> Dict:
     """Retrieve one hour of hexgrid forecasts containing the requested time in JSON
 
     Args:
@@ -170,7 +171,21 @@ def forecast_hexgrid_1hr_json(
     # Return the query results as a list of tuples
     # This will be automatically converted to ForecastResultJson using from_orm
     logger.info("Processing hexgrid JSON request took %.2fs", time() - request_start)
-    return query_results
+
+    response = {
+        "instance_id": instance_id,
+        "data": [
+            {
+                "measurement_start_utc": measurement[0],
+                "hex_id": measurement[1],
+                "NO2_mean": measurement[2],
+                "NO2_var": measurement[3],
+            }
+            for measurement in query_results
+        ],
+    }
+
+    return response
 
 
 @router.get(

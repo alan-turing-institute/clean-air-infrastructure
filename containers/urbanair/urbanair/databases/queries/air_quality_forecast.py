@@ -202,16 +202,16 @@ def query_forecasts_hexgrid(
     """
     if with_geometry:
         query = db.query(
-            HexGrid.hex_id.label("hex_id"),
             AirQualityResultTable.measurement_start_utc.label("measurement_start_utc"),
+            HexGrid.hex_id.label("hex_id"),
             func.nullif(AirQualityResultTable.NO2_mean, "NaN").label("NO2_mean"),
             func.nullif(AirQualityResultTable.NO2_var, "NaN").label("NO2_var"),
             func.ST_AsText(func.ST_Transform(HexGrid.geom, 4326)).label("geom"),
         )
     else:
         query = db.query(
-            HexGrid.hex_id.label("hex_id"),
             AirQualityResultTable.measurement_start_utc.label("measurement_start_utc"),
+            HexGrid.hex_id.label("hex_id"),
             func.nullif(AirQualityResultTable.NO2_mean, "NaN").label("NO2_mean"),
             func.nullif(AirQualityResultTable.NO2_var, "NaN").label("NO2_var"),
         )

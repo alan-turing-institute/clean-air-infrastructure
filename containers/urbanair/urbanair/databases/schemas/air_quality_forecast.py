@@ -91,9 +91,21 @@ class ForecastResultJson(UTCTime):
     """Forecast results as JSON"""
 
     # Schema attributes
-    hex_id: int
+    hex_id: str
     NO2_mean: Optional[float]
     NO2_var: Optional[float]
+
+    class Config:
+        """Pydantic configuration"""
+
+        orm_mode = True
+
+
+class ForecastDatasetJson(BaseModel):
+    """A set of forecast results with forecast metadata"""
+
+    instance_id: str
+    data: List[ForecastResultJson]
 
     class Config:
         """Pydantic configuration"""
