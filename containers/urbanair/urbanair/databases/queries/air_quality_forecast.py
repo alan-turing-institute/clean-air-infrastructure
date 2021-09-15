@@ -1,16 +1,16 @@
 """Air quality forecast database queries and external api calls"""
 import csv
 import logging
-import pandas as pd
-from time import time
 from datetime import datetime, date
+from time import time
 from typing import Optional, List, Tuple
 
+import pandas as pd
+from cachetools import cached, LRUCache, TTLCache
+from cachetools.keys import hashkey
 from sqlalchemy import func, DATE
 from sqlalchemy.orm import Session, Query
 
-from cachetools import cached, LRUCache, TTLCache
-from cachetools.keys import hashkey
 from cleanair.databases.tables import (
     AirQualityInstanceTable,
     AirQualityResultTable,
@@ -20,6 +20,7 @@ from cleanair.databases.tables import (
 from cleanair.decorators import db_query
 from cleanair.params import PRODUCTION_STATIC_FEATURES, PRODUCTION_DYNAMIC_FEATURES
 from cleanair.types import DynamicFeatureNames, StaticFeatureNames
+
 from ..database import all_or_404
 from ..schemas.air_quality_forecast import ForecastResultGeoJson, GeometryGeoJson
 
