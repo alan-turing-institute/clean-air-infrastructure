@@ -86,7 +86,7 @@ class TestData:
             "/api/v1/air_quality/forecast/hexgrid/json", params={"time": request_time}
         )
         assert response.status_code == 200
-        data = response.json()
+        data = response.json()["data"]
 
         # Check that we have the correct number of results
         assert len(data) == len(mock_air_quality_result) / 49
