@@ -29,7 +29,6 @@ class BaseGeoJson(BaseModel):
                 "features": [
                     {
                         "type": "Feature",
-                        "point_id": "00015c34-2c2d-4a55-889f-a458ee780b90",
                         "hex_id": "11481250",
                         "geometry": {
                             "type": "Polygon",
