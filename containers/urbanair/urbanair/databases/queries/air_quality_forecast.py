@@ -372,4 +372,4 @@ def cached_forecast_hexgrid_geojson(
     features = ForecastResultGeoJson.build_features(
         [r._asdict() for r in query_results]
     )
-    return ForecastResultGeoJson(features=features)
+    return ForecastResultGeoJson(instance_id=instance_id, features=features)

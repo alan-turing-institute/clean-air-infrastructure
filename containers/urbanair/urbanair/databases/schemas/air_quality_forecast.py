@@ -13,7 +13,13 @@ class BaseGeoJson(BaseModel):
 
     # Schema attributes
     type: str = "FeatureCollection"
+    instance_id: str
     features: List[Feature]
+
+    @staticmethod
+    def build_instance_id(instance_id: str):
+        """Stringify and embed the instance id"""
+        raise NotImplementedError("Must be implemented by child classes")
 
     @staticmethod
     def build_features(rows: List[Dict]) -> List[Feature]:
@@ -115,6 +121,11 @@ class ForecastDatasetJson(BaseModel):
 
 class GeometryGeoJson(BaseGeoJson):
     """Tile geometries as GeoJSON feature collection"""
+
+    @staticmethod
+    def build_instance_id(instance_id: str):
+        return instance_id
+
 
     @staticmethod
     def build_features(rows: List[Dict]) -> List[Feature]:
