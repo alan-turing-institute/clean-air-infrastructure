@@ -13,6 +13,7 @@ from ....experiment import (
     UpdateAirQualityExperiment,
     generate_air_quality_experiment,
 )
+from ....types.enum_types import ClusterId
 from ....metrics import AirQualityMetrics
 from ....mixins import InstanceMixin
 from ....models import ModelData
@@ -36,6 +37,7 @@ def size(experiment_name: ExperimentName, experiment_root: Path = ExperimentDir)
 @app.command()
 def setup(
     experiment_name: ExperimentName,
+    cluster_id: ClusterId = ClusterId.nc6,
     experiment_root: Path = ExperimentDir,
     use_cache: Optional[bool] = False,
     instance_root: Optional[Path] = None,
