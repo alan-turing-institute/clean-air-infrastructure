@@ -74,7 +74,7 @@ stages:
     #     docker build --build-arg git_hash=$(git show -s --format=%H) -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/model_fitting:$(Build.SourceVersion) -f containers/dockerfiles/model_fitting.Dockerfile containers
     #   displayName: "Build model fitting image"
     - script: | 
-        docker build --build-arg urbanair_version=$(urbanair_version) --build-arg git_hash=$(git show -s --format=%H) -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/model_fitting_gpu:$(Build.SourceVersion) -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/model_fitting_gpu:latest) -f containers/dockerfiles/model_fitting_gpu.Dockerfile containers
+        docker build --build-arg urbanair_version=$(urbanair_version) --build-arg git_hash=$(git show -s --format=%H) -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/model_fitting_gpu:$(Build.SourceVersion) -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/model_fitting_gpu:latest -f containers/dockerfiles/model_fitting_gpu.Dockerfile containers
       displayName: "Build gpu model fitting image"
     # Odysseus
     - script: |
