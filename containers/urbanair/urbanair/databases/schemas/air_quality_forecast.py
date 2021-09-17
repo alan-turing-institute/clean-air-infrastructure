@@ -29,7 +29,6 @@ class BaseGeoJson(BaseModel):
                 "features": [
                     {
                         "type": "Feature",
-                        "point_id": "00015c34-2c2d-4a55-889f-a458ee780b90",
                         "hex_id": "11481250",
                         "geometry": {
                             "type": "Polygon",
@@ -56,13 +55,19 @@ class BaseGeoJson(BaseModel):
 class ForecastResultGeoJson(BaseGeoJson):
     """Forecast results as GeoJSON feature collection"""
 
+    instance_id: str
+
+    @staticmethod
+    def build_instance_id(instance_id: str) -> str:
+        """Add instance_id to the GeoJSON endpoint - ! not true geojson"""
+        return instance_id
+
     @staticmethod
     def build_features(rows: List[Dict]) -> List[Feature]:
         """Construct GeoJSON Features from a list of dictionaries"""
         return [
             Feature(
                 geometry=list(shapely.wkt.loads(row["geom"]))[0],  # convert to polygon
-                point_id=row["point_id"],
                 hex_id=row["hex_id"],
                 properties={
                     "NO2_mean": row["NO2_mean"],
@@ -93,10 +98,21 @@ class ForecastResultJson(UTCTime):
     """Forecast results as JSON"""
 
     # Schema attributes
-    point_id: str
-    hex_id: int
+    hex_id: str
     NO2_mean: Optional[float]
     NO2_var: Optional[float]
+
+    class Config:
+        """Pydantic configuration"""
+
+        orm_mode = True
+
+
+class ForecastDatasetJson(BaseModel):
+    """A set of forecast results with forecast metadata"""
+
+    instance_id: str
+    data: List[ForecastResultJson]
 
     class Config:
         """Pydantic configuration"""
@@ -113,7 +129,6 @@ class GeometryGeoJson(BaseGeoJson):
         return [
             Feature(
                 geometry=list(shapely.wkt.loads(row["geom"]))[0],  # convert to polygon
-                point_id=row["point_id"],
                 hex_id=row["hex_id"],
             )
             for row in rows

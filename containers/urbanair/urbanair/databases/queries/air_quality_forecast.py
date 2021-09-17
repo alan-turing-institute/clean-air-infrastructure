@@ -1,15 +1,16 @@
 """Air quality forecast database queries and external api calls"""
 import csv
 import logging
-from time import time
 from datetime import datetime, date
+from time import time
 from typing import Optional, List, Tuple
 
+import pandas as pd
+from cachetools import cached, LRUCache, TTLCache
+from cachetools.keys import hashkey
 from sqlalchemy import func, DATE
 from sqlalchemy.orm import Session, Query
 
-from cachetools import cached, LRUCache, TTLCache
-from cachetools.keys import hashkey
 from cleanair.databases.tables import (
     AirQualityInstanceTable,
     AirQualityResultTable,
@@ -19,6 +20,7 @@ from cleanair.databases.tables import (
 from cleanair.decorators import db_query
 from cleanair.params import PRODUCTION_STATIC_FEATURES, PRODUCTION_DYNAMIC_FEATURES
 from cleanair.types import DynamicFeatureNames, StaticFeatureNames
+
 from ..database import all_or_404
 from ..schemas.air_quality_forecast import ForecastResultGeoJson, GeometryGeoJson
 
@@ -200,64 +202,16 @@ def query_forecasts_hexgrid(
     """
     if with_geometry:
         query = db.query(
-            AirQualityResultTable.point_id.label("point_id"),
-            HexGrid.hex_id.label("hex_id"),
             AirQualityResultTable.measurement_start_utc.label("measurement_start_utc"),
+            HexGrid.hex_id.label("hex_id"),
             func.nullif(AirQualityResultTable.NO2_mean, "NaN").label("NO2_mean"),
             func.nullif(AirQualityResultTable.NO2_var, "NaN").label("NO2_var"),
             func.ST_AsText(func.ST_Transform(HexGrid.geom, 4326)).label("geom"),
         )
     else:
         query = db.query(
-            AirQualityResultTable.point_id.label("point_id"),
-            HexGrid.hex_id.label("hex_id"),
             AirQualityResultTable.measurement_start_utc.label("measurement_start_utc"),
-            func.nullif(AirQualityResultTable.NO2_mean, "NaN").label("NO2_mean"),
-            func.nullif(AirQualityResultTable.NO2_var, "NaN").label("NO2_var"),
-        )
-
-    # Restrict to hexgrid points for the given instance and times
-    query = query.join(
-        HexGrid, HexGrid.point_id == AirQualityResultTable.point_id
-    ).filter(
-        AirQualityResultTable.instance_id == instance_id,
-        AirQualityResultTable.measurement_start_utc >= start_datetime,
-        AirQualityResultTable.measurement_start_utc < end_datetime,
-    )
-
-    # Note that SRID 4326 is not aligned with lat/lon so we return all geometries that
-    # overlap with any part of the lat/lon bounding box
-    if bounding_box:
-        query = query.filter(
-            func.ST_Intersects(HexGrid.geom, func.ST_MakeEnvelope(*bounding_box, 4326))
-        )
-    return query
-
-
-@db_query()
-def query_forecasts_hexgrid_hex_id(
-    db: Session,
-    instance_id: str,
-    start_datetime: datetime,
-    end_datetime: datetime,
-    with_geometry: bool,
-    bounding_box: Optional[Tuple[float]] = None,
-) -> Query:
-    """
-    Get all forecasts for a given model instance in the given datetime range
-    """
-    if with_geometry:
-        query = db.query(
             HexGrid.hex_id.label("hex_id"),
-            AirQualityResultTable.measurement_start_utc.label("measurement_start_utc"),
-            func.nullif(AirQualityResultTable.NO2_mean, "NaN").label("NO2_mean"),
-            func.nullif(AirQualityResultTable.NO2_var, "NaN").label("NO2_var"),
-            func.ST_AsText(func.ST_Transform(HexGrid.geom, 4326)).label("geom"),
-        )
-    else:
-        query = db.query(
-            HexGrid.hex_id.label("hex_id"),
-            AirQualityResultTable.measurement_start_utc.label("measurement_start_utc"),
             func.nullif(AirQualityResultTable.NO2_mean, "NaN").label("NO2_mean"),
             func.nullif(AirQualityResultTable.NO2_var, "NaN").label("NO2_var"),
         )
@@ -333,7 +287,7 @@ def cached_forecast_hexgrid_csv(
     )
     if bounding_box:
         logger.info("Restricting to bounding box (%s, %s => %s, %s)", *bounding_box)
-    query = query_forecasts_hexgrid_hex_id(
+    data = query_forecasts_hexgrid(
         db,
         instance_id=instance_id,
         start_datetime=start_datetime,
@@ -342,7 +296,8 @@ def cached_forecast_hexgrid_csv(
         bounding_box=bounding_box,
         output_type="df",
     )
-    return query.round({"NO2_mean": 3, "NO2_var": 3}).to_csv(index=False)
+    data[instance_id] = ""
+    return data.round({"NO2_mean": 3, "NO2_var": 3}).to_csv(index=False)
 
 
 # pylint: disable=C0103
@@ -367,7 +322,7 @@ def cached_forecast_hexgrid_pivot_csv(
     )
     if bounding_box:
         logger.info("Restricting to bounding box (%s, %s => %s, %s)", *bounding_box)
-    data = query_forecasts_hexgrid_hex_id(
+    data = query_forecasts_hexgrid(
         db,
         instance_id=instance_id,
         start_datetime=start_datetime,
@@ -382,9 +337,13 @@ def cached_forecast_hexgrid_pivot_csv(
     data["NO2"] = data[["NO2_mean", "NO2_var"]].apply(tuple, axis=1)
     data["NO2"] = data["NO2"].apply(lambda datum: f"[{datum[0]}; {datum[1]}]")
 
-    return data.pivot(
-        index="measurement_start_utc", columns="hex_id", values="NO2",
-    ).to_csv(quoting=csv.QUOTE_NONE)
+    table = pd.DataFrame(
+        data.pivot(
+            index="measurement_start_utc", columns="hex_id", values="NO2",
+        ).to_records()
+    )
+    table[instance_id] = ""
+    return table.to_csv(quoting=csv.QUOTE_NONE)
 
 
 @cached(
@@ -413,4 +372,4 @@ def cached_forecast_hexgrid_geojson(
     features = ForecastResultGeoJson.build_features(
         [r._asdict() for r in query_results]
     )
-    return ForecastResultGeoJson(features=features)
+    return ForecastResultGeoJson(instance_id=instance_id, features=features)
