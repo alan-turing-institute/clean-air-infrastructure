@@ -13,6 +13,7 @@ from ....experiment import (
     UpdateAirQualityExperiment,
     generate_air_quality_experiment,
 )
+from ....types.enum_types import ClusterId
 from ....metrics import AirQualityMetrics
 from ....mixins import InstanceMixin
 from ....models import ModelData
@@ -36,6 +37,7 @@ def size(experiment_name: ExperimentName, experiment_root: Path = ExperimentDir)
 @app.command()
 def setup(
     experiment_name: ExperimentName,
+    cluster_id: ClusterId = ClusterId.nc6,
     experiment_root: Path = ExperimentDir,
     use_cache: Optional[bool] = False,
     instance_root: Optional[Path] = None,
@@ -44,11 +46,11 @@ def setup(
     secretfile: str = state["secretfile"]
 
     # get the function that will generate instances
-    experiment_generator_function: Callable[[str], List[InstanceMixin]] = getattr(
-        generate_air_quality_experiment, experiment_name.value
-    )
+    experiment_generator_function: Callable[
+        [str, ClusterId], List[InstanceMixin]
+    ] = getattr(generate_air_quality_experiment, experiment_name.value)
     # generate the instances
-    instance_list = experiment_generator_function(secretfile)
+    instance_list = experiment_generator_function(secretfile, cluster_id=cluster_id)
 
     # create an experiment from generated instances
     setup_experiment = SetupAirQualityExperiment(
