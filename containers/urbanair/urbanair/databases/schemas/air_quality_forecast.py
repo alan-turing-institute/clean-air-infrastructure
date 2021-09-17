@@ -58,7 +58,7 @@ class ForecastResultGeoJson(BaseGeoJson):
     instance_id: str
 
     @staticmethod
-    def build_instance_id(instance_id: str):
+    def build_instance_id(instance_id: str) -> str:
         """Add instance_id to the GeoJSON endpoint - ! not true geojson"""
         return instance_id
 
