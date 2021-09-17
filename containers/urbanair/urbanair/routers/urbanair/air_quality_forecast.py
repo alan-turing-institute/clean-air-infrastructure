@@ -15,6 +15,7 @@ from ...databases.queries.air_quality_forecast import (
     cached_geometries_hexgrid,
     cached_instance_ids_on_run_date,
     cached_forecast_hexgrid_csv,
+    cached_forecast_hexgrid_pivot_csv,
 )
 from ...databases.schemas.air_quality_forecast import (
     ForecastResultGeoJson,
@@ -203,6 +204,54 @@ def forecast_hexgrid_1hr_csv(
 
     # Get forecasts in this range (using a bounding box if specified)
     query_results = cached_forecast_hexgrid_csv(
+        db,
+        instance_id=instance_id,
+        start_datetime=start_datetime,
+        end_datetime=end_datetime,
+        with_geometry=False,
+        bounding_box=bounding_box,
+    )
+    # Return the query results as a list of tuples
+    # This will be automatically converted to ForecastResultJson using from_orm
+    logger.info("Processing hexgrid CSV request took %.2fs", time() - request_start)
+    return CSVResponse(query_results)
+
+
+@router.get(
+    "/forecast/hexgrid/csv_pivot",
+    description="Most up-to-date hexgrid forecasts for a given hour in CSV",
+    response_class=CSVResponse,
+)
+def forecast_hexgrid_1hr_csv_pivot(
+    time_: datetime = Query(
+        None,
+        alias="time",
+        description="JSON forecasts for the hour containing this ISO-formatted time",
+        example="2021-08-12T06:00",
+    ),
+    db: Session = Depends(get_db),
+    bounding_box: Tuple[float] = Depends(bounding_box_params),
+) -> CSVResponse:
+    """Retrieve one hour of hexgrid forecasts containing the requested time in CSV
+
+    Args:
+        time (datetime): Time to retrieve forecasts for
+
+    Returns:
+        csv: CSV containing one hour of forecasts at each hexgrid point
+    """
+    request_start = time()
+
+    # Establish start and end datetimes
+    start_datetime = time_.replace(minute=0, second=0, microsecond=0)
+    end_datetime = start_datetime + timedelta(hours=1)
+
+    # Get the most recent instance ID among those which predict in the required interval
+    instance_ids = cached_instance_ids(db, start_datetime, end_datetime)
+    instance_id = instance_ids[0][0]
+
+    # Get forecasts in this range (using a bounding box if specified)
+    query_results = cached_forecast_hexgrid_pivot_csv(
         db,
         instance_id=instance_id,
         start_datetime=start_datetime,
@@ -416,6 +465,61 @@ def forecast_hexgrid_48hr_csv(
 
     # Get forecasts in this range (using a bounding box if specified)
     query_results = cached_forecast_hexgrid_csv(
+        db,
+        instance_id=instance_id,
+        start_datetime=start_datetime,
+        end_datetime=end_datetime,
+        with_geometry=False,
+        bounding_box=bounding_box,
+    )
+    # Return the query results as a list of tuples
+    # This will be automatically converted to ForecastResultJson using from_orm
+    logger.info("Processing hexgrid CSV request took %.2fs", time() - request_start)
+    return CSVResponse(query_results)
+
+
+@router.get(
+    "/forecast/hexgrid/csv_pivot/48hr",
+    description="Most up-to-date hexgrid forecasts for a given two days in CSV",
+    response_class=CSVResponse,
+)
+def forecast_hexgrid_48hr_csv_pivot(
+    run_date: date = Query(
+        None,
+        alias="date",
+        description="Forecasts for the two days starting on this date",
+        example="2021-08-12",
+    ),
+    db: Session = Depends(get_db),
+    bounding_box: Tuple[float] = Depends(bounding_box_params),
+) -> CSVResponse:
+    """Retrieve 48hrs of hexgrid forecasts in CSV
+
+    Args:
+        run_date (datetime): First day of the 48hr period to get data for
+
+    Returns:
+        json: CSV containing 48 hours of forecasts at each hexgrid point
+    """
+    request_start = time()
+
+    # Establish start and end datetimes
+    start_datetime = datetime.combine(run_date, datetime.min.time())
+    end_datetime = start_datetime + timedelta(days=2)
+
+    logger.info("Getting instance ids")
+
+    # Get the most recent instance ID among those which predict in the required interval
+    instance_ids = cached_instance_ids_on_run_date(db, run_date)
+    instance_id = instance_ids[0][0]
+
+    logger.info(f"Instance found: {instance_id}")
+    logger.info(
+        f"Getting data from {instance_id} between {start_datetime} and {start_datetime}"
+    )
+
+    # Get forecasts in this range (using a bounding box if specified)
+    query_results = cached_forecast_hexgrid_pivot_csv(
         db,
         instance_id=instance_id,
         start_datetime=start_datetime,
