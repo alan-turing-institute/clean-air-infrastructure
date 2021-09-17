@@ -14,6 +14,7 @@ class ClusterId(str, Enum):
 
     laptop = "laptop"
     pearl = "pearl"
+    aquifer = "aquifer"
     kubernetes = "kubernetes"
     orac = "orac"
     nc6 = "nc6"
