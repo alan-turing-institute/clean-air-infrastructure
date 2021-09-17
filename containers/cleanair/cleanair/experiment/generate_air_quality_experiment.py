@@ -230,7 +230,9 @@ def production_mrdgp_static(secretfile: str) -> List[InstanceMixin]:
     return [instance]
 
 
-def production_mrdgp_dynamic(secretfile: str, cluster_id: ClusterId = ClusterId.nc6) -> List[InstanceMixin]:
+def production_mrdgp_dynamic(
+    secretfile: str, cluster_id: ClusterId = ClusterId.nc6
+) -> List[InstanceMixin]:
     """The production version of the dynamic MRDGP"""
     train_upto = datetime_from_word("today")
     train_start = train_upto - timedelta(PRODUCTION_MRDGP_TRAIN_DAYS)

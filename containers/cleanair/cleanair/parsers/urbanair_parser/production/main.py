@@ -35,7 +35,9 @@ def svgp(
 
 @app.command()
 def mrdgp(
-    static_or_dynamic: StaticDynamic, machine: ClusterId = ClusterId.nc6, experiment_root: Path = ExperimentDir
+    static_or_dynamic: StaticDynamic,
+    machine: ClusterId = ClusterId.nc6,
+    experiment_root: Path = ExperimentDir,
 ) -> None:
     """Run the production MRDGP model"""
     if static_or_dynamic == StaticDynamic.dynamic:
