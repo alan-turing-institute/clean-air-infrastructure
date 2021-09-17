@@ -14,7 +14,7 @@ logger = logging.getLogger("fastapi")  # pylint: disable=invalid-name
 app = FastAPI(
     title="UrbanAir API",
     description="High resolution air pollution forecasts",
-    version="0.0.1",
+    version="0.0.2",
     root_path=get_settings().root_path,
 )
 
