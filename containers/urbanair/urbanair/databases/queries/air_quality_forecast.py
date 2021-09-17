@@ -1,4 +1,5 @@
 """Air quality forecast database queries and external api calls"""
+import csv
 import logging
 from time import time
 from datetime import datetime, date
@@ -342,6 +343,48 @@ def cached_forecast_hexgrid_csv(
         output_type="df",
     )
     return query.round({"NO2_mean": 3, "NO2_var": 3}).to_csv(index=False)
+
+
+# pylint: disable=C0103
+@cached(
+    cache=TTLCache(maxsize=256, ttl=2 * 60 * 60 * 24, timer=time),
+    key=lambda _, *args, **kwargs: hashkey(*args, **kwargs),
+)
+def cached_forecast_hexgrid_pivot_csv(
+    db: Session,
+    instance_id: str,
+    start_datetime: datetime,
+    end_datetime: datetime,
+    with_geometry: bool,
+    bounding_box: Optional[Tuple[float]] = None,
+) -> Optional[List[Tuple]]:
+    """Cache forecasts with geometry with optional bounding box"""
+    logger.info(
+        "Querying forecast geometries for %s between %s and %s",
+        instance_id,
+        start_datetime,
+        end_datetime,
+    )
+    if bounding_box:
+        logger.info("Restricting to bounding box (%s, %s => %s, %s)", *bounding_box)
+    data = query_forecasts_hexgrid_hex_id(
+        db,
+        instance_id=instance_id,
+        start_datetime=start_datetime,
+        end_datetime=end_datetime,
+        with_geometry=with_geometry,
+        bounding_box=bounding_box,
+        output_type="df",
+    )
+
+    data = data.round({"NO2_mean": 3, "NO2_var": 3})
+
+    data["NO2"] = data[["NO2_mean", "NO2_var"]].apply(tuple, axis=1)
+    data["NO2"] = data["NO2"].apply(lambda datum: f"[{datum[0]}; {datum[1]}]")
+
+    return data.pivot(
+        index="measurement_start_utc", columns="hex_id", values="NO2",
+    ).to_csv(quoting=csv.QUOTE_NONE)
 
 
 @cached(
