@@ -46,11 +46,11 @@ def setup(
     secretfile: str = state["secretfile"]
 
     # get the function that will generate instances
-    experiment_generator_function: Callable[[str], List[InstanceMixin]] = getattr(
+    experiment_generator_function: Callable[[str, ClusterId], List[InstanceMixin]] = getattr(
         generate_air_quality_experiment, experiment_name.value
     )
     # generate the instances
-    instance_list = experiment_generator_function(secretfile)
+    instance_list = experiment_generator_function(secretfile, cluster_id=cluster_id)
 
     # create an experiment from generated instances
     setup_experiment = SetupAirQualityExperiment(
