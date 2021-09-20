@@ -59,9 +59,9 @@ class ForecastResultGeoJson(BaseGeoJson):
     run_datetime: str
 
     @staticmethod
-    def build_run_datetime(run_datetime: datetime) -> str:
+    def build_run_datetime(run_datetime: str) -> str:
         "Add run_datetime to GeoJSON endpoint - ! not true geojson"
-        return f"ran_{run_datetime.replace(tzinfo=timezone.utc).strftime('%Y-%m-%d_%H:%M:%S')}"
+        return run_datetime
 
     @staticmethod
     def build_instance_id(instance_id: str) -> str:

@@ -356,7 +356,7 @@ def forecast_hexgrid_1hr_geojson(
 @router.get(
     "/forecast/hexgrid/json/48hr",
     description="Most up-to-date hexgrid forecasts for a given two days in JSON",
-    response_model=List[ForecastResultJson],
+    response_model=List[ForecastDatasetJson],
 )
 def forecast_hexgrid__48hr_json(
     run_date: date = Query(
@@ -410,7 +410,23 @@ def forecast_hexgrid__48hr_json(
     # Return the query results as a list of tuples
     # This will be automatically converted to ForecastResultJson using from_orm
     logger.info("Processing hexgrid JSON request took %.2fs", time() - request_start)
-    return query_results
+
+    response = {
+        "run_datetime": instance_run_date.replace(tzinfo=timezone.utc).strftime(
+            "ran_%Y-%m-%d_%H:%M:%S"
+        ),
+        "data": [
+            {
+                "measurement_start_utc": measurement[0],
+                "hex_id": measurement[1],
+                "NO2_mean": measurement[2],
+                "NO2_var": measurement[3],
+            }
+            for measurement in query_results
+        ],
+    }
+
+    return response
 
 
 @router.get(
