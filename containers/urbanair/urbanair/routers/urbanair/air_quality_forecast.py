@@ -175,7 +175,7 @@ def forecast_hexgrid_1hr_json(
 
     response = {
         "run_datetime": instance_run_date.replace(tzinfo=timezone.utc).strftime(
-            "%Y-%m-%d %H:%M:%S"
+            "ran_%Y-%m-%d_%H:%M:%S"
         ),
         "data": [
             {
@@ -405,7 +405,6 @@ def forecast_hexgrid__48hr_json(
         start_datetime=start_datetime,
         end_datetime=end_datetime,
         with_geometry=False,
-        run_datetime=instance_run_date,
         bounding_box=bounding_box,
     )
     # Return the query results as a list of tuples

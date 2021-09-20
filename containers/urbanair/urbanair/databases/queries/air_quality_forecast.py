@@ -357,8 +357,8 @@ def cached_forecast_hexgrid_pivot_csv(
 
 @cached(
     cache=TTLCache(maxsize=256, ttl=2 * 60 * 60 * 24, timer=time),
-    key=lambda _, instance_id, start_datetime, end_datetime, bounding_box: hashkey(
-        instance_id, start_datetime, end_datetime, bounding_box
+    key=lambda _, instance_id, start_datetime, end_datetime, run_datetime, bounding_box: hashkey(
+        instance_id, start_datetime, end_datetime, run_datetime, bounding_box
     ),
 )
 def cached_forecast_hexgrid_geojson(
