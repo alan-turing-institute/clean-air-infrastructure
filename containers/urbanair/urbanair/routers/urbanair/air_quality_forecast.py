@@ -364,7 +364,7 @@ def forecast_hexgrid__48hr_json(
     index: int = 0,
     db: Session = Depends(get_db),
     bounding_box: Tuple[float] = Depends(bounding_box_params),
-) -> Optional[List[Tuple]]:
+) -> Dict:
     """Retrieve 48hrs of hexgrid forecasts in JSON
 
     Args:
