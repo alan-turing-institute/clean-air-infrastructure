@@ -155,8 +155,7 @@ def forecast_hexgrid_1hr_json(
     # Get the most recent instance ID among those which predict in the required interval
     instance_ids = cached_instance_ids(db, start_datetime, end_datetime)
     if index < len(instance_ids):
-        instance_id = instance_ids[index][0]
-        instance_run_date = instance_ids[index][1]
+        instance_id, instance_run_date = instance_ids[index]
     else:
         raise HTTPException(status_code=404, detail="No forecasts cover this period")
 
@@ -224,8 +223,7 @@ def forecast_hexgrid_1hr_csv(
     # Get the most recent instance ID among those which predict in the required interval
     instance_ids = cached_instance_ids(db, start_datetime, end_datetime)
     if index < len(instance_ids):
-        instance_id = instance_ids[index][0]
-        instance_run_date = instance_ids[index][1]
+        instance_id, instance_run_date = instance_ids[index]
     else:
         raise HTTPException(status_code=404, detail="No forecasts cover this period")
 
@@ -278,8 +276,7 @@ def forecast_hexgrid_1hr_csv_pivot(
     # Get the most recent instance ID among those which predict in the required interval
     instance_ids = cached_instance_ids(db, start_datetime, end_datetime)
     if index < len(instance_ids):
-        instance_id = instance_ids[index][0]
-        instance_run_date = instance_ids[index][1]
+        instance_id, instance_run_date = instance_ids[index]
     else:
         raise HTTPException(status_code=404, detail="No forecasts cover this period")
 
@@ -333,8 +330,7 @@ def forecast_hexgrid_1hr_geojson(
     # Get the most recent instance ID among those which predict in the required interval
     instance_ids = cached_instance_ids(db, start_datetime, end_datetime)
     if index < len(instance_ids):
-        instance_id = instance_ids[index][0]
-        instance_run_date = instance_ids[index][1]
+        instance_id, instance_run_date = instance_ids[index]
     else:
         raise HTTPException(status_code=404, detail="No forecasts cover this period")
 
@@ -388,8 +384,7 @@ def forecast_hexgrid__48hr_json(
     # Get the most recent instance ID among those which predict in the required interval
     instance_ids = cached_instance_ids_on_run_date(db, run_date)
     if index < len(instance_ids):
-        instance_id = instance_ids[index][0]
-        instance_run_date = instance_ids[index][1]
+        instance_id, instance_run_date = instance_ids[index]
     else:
         raise HTTPException(status_code=404, detail="No forecasts cover this period")
 
@@ -465,8 +460,7 @@ def forecast_hexgrid__48hr_geojson(
     # Get the most recent instance ID among those which predict in the required interval
     instance_ids = cached_instance_ids_on_run_date(db, run_date)
     if index < len(instance_ids):
-        instance_id = instance_ids[index][0]
-        instance_run_date = instance_ids[index][1]
+        instance_id, instance_run_date = instance_ids[index]
     else:
         raise HTTPException(status_code=404, detail="No forecasts cover this period")
 
@@ -525,8 +519,7 @@ def forecast_hexgrid_48hr_csv(
     # Get the most recent instance ID among those which predict in the required interval
     instance_ids = cached_instance_ids_on_run_date(db, run_date)
     if index < len(instance_ids):
-        instance_id = instance_ids[index][0]
-        instance_run_date = instance_ids[index][1]
+        instance_id, instance_run_date = instance_ids[index]
     else:
         raise HTTPException(status_code=404, detail="No forecasts cover this period")
 
@@ -586,8 +579,7 @@ def forecast_hexgrid_48hr_csv_pivot(
     # Get the most recent instance ID among those which predict in the required interval
     instance_ids = cached_instance_ids_on_run_date(db, run_date)
     if index < len(instance_ids):
-        instance_id = instance_ids[index][0]
-        instance_run_date = instance_ids[index][1]
+        instance_id, instance_run_date = instance_ids[index]
     else:
         raise HTTPException(status_code=404, detail="No forecasts cover this period")
 
