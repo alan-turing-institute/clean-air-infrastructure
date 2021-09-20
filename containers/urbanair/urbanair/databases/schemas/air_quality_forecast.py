@@ -6,6 +6,7 @@ from geojson import Feature
 import shapely.wkt
 from urbanair.types import JSONType
 from .jamcam import UTCTime
+from datetime import datetime, timezone
 
 
 class BaseGeoJson(BaseModel):
@@ -55,7 +56,12 @@ class BaseGeoJson(BaseModel):
 class ForecastResultGeoJson(BaseGeoJson):
     """Forecast results as GeoJSON feature collection"""
 
-    instance_id: str
+    run_datetime: str
+
+    @staticmethod
+    def build_run_datetime(run_datetime: datetime) -> str:
+        "Add run_datetime to GeoJSON endpoint - ! not true geojson"
+        return f"ran_{run_datetime.replace(tzinfo=timezone.utc).strftime('%Y-%m-%d_%H:%M:%S')}"
 
     @staticmethod
     def build_instance_id(instance_id: str) -> str:
@@ -111,7 +117,7 @@ class ForecastResultJson(UTCTime):
 class ForecastDatasetJson(BaseModel):
     """A set of forecast results with forecast metadata"""
 
-    instance_id: str
+    run_datetime: str
     data: List[ForecastResultJson]
 
     class Config:

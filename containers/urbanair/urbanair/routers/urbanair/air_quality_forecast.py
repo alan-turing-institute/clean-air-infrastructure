@@ -1,6 +1,6 @@
 """Air quality forecast API routes"""
 import logging
-from datetime import datetime, timedelta, date
+from datetime import datetime, timedelta, date, timezone
 from time import time
 from typing import List, Tuple, Optional, cast, Dict
 
@@ -156,6 +156,7 @@ def forecast_hexgrid_1hr_json(
     instance_ids = cached_instance_ids(db, start_datetime, end_datetime)
     if index < len(instance_ids):
         instance_id = instance_ids[index][0]
+        instance_run_date = instance_ids[index][1]
     else:
         raise HTTPException(status_code=404, detail="No forecasts cover this period")
 
@@ -173,7 +174,9 @@ def forecast_hexgrid_1hr_json(
     logger.info("Processing hexgrid JSON request took %.2fs", time() - request_start)
 
     response = {
-        "instance_id": instance_id,
+        "run_datetime": instance_run_date.replace(tzinfo=timezone.utc).strftime(
+            "%Y-%m-%d %H:%M:%S"
+        ),
         "data": [
             {
                 "measurement_start_utc": measurement[0],
@@ -222,6 +225,7 @@ def forecast_hexgrid_1hr_csv(
     instance_ids = cached_instance_ids(db, start_datetime, end_datetime)
     if index < len(instance_ids):
         instance_id = instance_ids[index][0]
+        instance_run_date = instance_ids[index][1]
     else:
         raise HTTPException(status_code=404, detail="No forecasts cover this period")
 
@@ -232,6 +236,7 @@ def forecast_hexgrid_1hr_csv(
         start_datetime=start_datetime,
         end_datetime=end_datetime,
         with_geometry=False,
+        run_datetime=instance_run_date,
         bounding_box=bounding_box,
     )
     # Return the query results as a list of tuples
@@ -274,6 +279,7 @@ def forecast_hexgrid_1hr_csv_pivot(
     instance_ids = cached_instance_ids(db, start_datetime, end_datetime)
     if index < len(instance_ids):
         instance_id = instance_ids[index][0]
+        instance_run_date = instance_ids[index][1]
     else:
         raise HTTPException(status_code=404, detail="No forecasts cover this period")
 
@@ -284,6 +290,7 @@ def forecast_hexgrid_1hr_csv_pivot(
         start_datetime=start_datetime,
         end_datetime=end_datetime,
         with_geometry=False,
+        run_datetime=instance_run_date,
         bounding_box=bounding_box,
     )
     # Return the query results as a list of tuples
@@ -327,6 +334,7 @@ def forecast_hexgrid_1hr_geojson(
     instance_ids = cached_instance_ids(db, start_datetime, end_datetime)
     if index < len(instance_ids):
         instance_id = instance_ids[index][0]
+        instance_run_date = instance_ids[index][1]
     else:
         raise HTTPException(status_code=404, detail="No forecasts cover this period")
 
@@ -336,6 +344,7 @@ def forecast_hexgrid_1hr_geojson(
         instance_id=instance_id,
         start_datetime=start_datetime,
         end_datetime=end_datetime,
+        run_datetime=instance_run_date,
         bounding_box=bounding_box,
     )
 
@@ -380,6 +389,7 @@ def forecast_hexgrid__48hr_json(
     instance_ids = cached_instance_ids_on_run_date(db, run_date)
     if index < len(instance_ids):
         instance_id = instance_ids[index][0]
+        instance_run_date = instance_ids[index][1]
     else:
         raise HTTPException(status_code=404, detail="No forecasts cover this period")
 
@@ -395,6 +405,7 @@ def forecast_hexgrid__48hr_json(
         start_datetime=start_datetime,
         end_datetime=end_datetime,
         with_geometry=False,
+        run_datetime=instance_run_date,
         bounding_box=bounding_box,
     )
     # Return the query results as a list of tuples
@@ -440,6 +451,7 @@ def forecast_hexgrid__48hr_geojson(
     instance_ids = cached_instance_ids_on_run_date(db, run_date)
     if index < len(instance_ids):
         instance_id = instance_ids[index][0]
+        instance_run_date = instance_ids[index][1]
     else:
         raise HTTPException(status_code=404, detail="No forecasts cover this period")
 
@@ -454,6 +466,7 @@ def forecast_hexgrid__48hr_geojson(
         instance_id=instance_id,
         start_datetime=start_datetime,
         end_datetime=end_datetime,
+        run_datetime=instance_run_date,
         bounding_box=bounding_box,
     )
 
@@ -498,6 +511,7 @@ def forecast_hexgrid_48hr_csv(
     instance_ids = cached_instance_ids_on_run_date(db, run_date)
     if index < len(instance_ids):
         instance_id = instance_ids[index][0]
+        instance_run_date = instance_ids[index][1]
     else:
         raise HTTPException(status_code=404, detail="No forecasts cover this period")
 
@@ -513,6 +527,7 @@ def forecast_hexgrid_48hr_csv(
         start_datetime=start_datetime,
         end_datetime=end_datetime,
         with_geometry=False,
+        run_datetime=instance_run_date,
         bounding_box=bounding_box,
     )
     # Return the query results as a list of tuples
@@ -557,6 +572,7 @@ def forecast_hexgrid_48hr_csv_pivot(
     instance_ids = cached_instance_ids_on_run_date(db, run_date)
     if index < len(instance_ids):
         instance_id = instance_ids[index][0]
+        instance_run_date = instance_ids[index][1]
     else:
         raise HTTPException(status_code=404, detail="No forecasts cover this period")
 
@@ -572,6 +588,7 @@ def forecast_hexgrid_48hr_csv_pivot(
         start_datetime=start_datetime,
         end_datetime=end_datetime,
         with_geometry=False,
+        run_datetime=instance_run_date,
         bounding_box=bounding_box,
     )
     # Return the query results as a list of tuples
