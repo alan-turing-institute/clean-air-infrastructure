@@ -344,9 +344,9 @@ def cached_forecast_hexgrid_pivot_csv(
     data["NO2"] = data["NO2"].apply(lambda datum: f"[{datum[0]}; {datum[1]}]")
 
     table = pd.DataFrame(
-        data.pivot(index="measurement_start_utc", columns="hex_id", values="NO2",)
-        .drop(0, axis=1)
-        .to_records()
+        data.pivot(
+            index="measurement_start_utc", columns="hex_id", values="NO2",
+        ).to_records()
     )
     data[
         f"ran_{run_datetime.replace(tzinfo=timezone.utc).strftime('%Y-%m-%d_%H:%M:%S')}"
