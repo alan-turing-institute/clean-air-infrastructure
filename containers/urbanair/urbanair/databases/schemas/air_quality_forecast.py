@@ -55,7 +55,12 @@ class BaseGeoJson(BaseModel):
 class ForecastResultGeoJson(BaseGeoJson):
     """Forecast results as GeoJSON feature collection"""
 
-    instance_id: str
+    run_datetime: str
+
+    @staticmethod
+    def build_run_datetime(run_datetime: str) -> str:
+        "Add run_datetime to GeoJSON endpoint - ! not true geojson"
+        return run_datetime
 
     @staticmethod
     def build_instance_id(instance_id: str) -> str:
@@ -111,7 +116,7 @@ class ForecastResultJson(UTCTime):
 class ForecastDatasetJson(BaseModel):
     """A set of forecast results with forecast metadata"""
 
-    instance_id: str
+    run_datetime: str
     data: List[ForecastResultJson]
 
     class Config:

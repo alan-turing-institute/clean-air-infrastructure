@@ -1,7 +1,7 @@
 """Air quality forecast database queries and external api calls"""
 import csv
 import logging
-from datetime import datetime, date
+from datetime import datetime, date, timezone
 from time import time
 from typing import Optional, List, Tuple
 
@@ -276,14 +276,16 @@ def cached_forecast_hexgrid_csv(
     start_datetime: datetime,
     end_datetime: datetime,
     with_geometry: bool,
+    run_datetime: datetime,
     bounding_box: Optional[Tuple[float]] = None,
 ) -> Optional[List[Tuple]]:
     """Cache forecasts with geometry with optional bounding box"""
     logger.info(
-        "Querying forecast geometries for %s between %s and %s",
+        "Querying forecast geometries for %s between %s and %s, run time %s",
         instance_id,
         start_datetime,
         end_datetime,
+        run_datetime,
     )
     if bounding_box:
         logger.info("Restricting to bounding box (%s, %s => %s, %s)", *bounding_box)
@@ -296,7 +298,9 @@ def cached_forecast_hexgrid_csv(
         bounding_box=bounding_box,
         output_type="df",
     )
-    data[instance_id] = ""
+    data[
+        f"ran_{run_datetime.replace(tzinfo=timezone.utc).strftime('%Y-%m-%d_%H:%M:%S')}"
+    ] = ""
     return data.round({"NO2_mean": 3, "NO2_var": 3}).to_csv(index=False)
 
 
@@ -311,14 +315,16 @@ def cached_forecast_hexgrid_pivot_csv(
     start_datetime: datetime,
     end_datetime: datetime,
     with_geometry: bool,
+    run_datetime: datetime,
     bounding_box: Optional[Tuple[float]] = None,
 ) -> Optional[List[Tuple]]:
     """Cache forecasts with geometry with optional bounding box"""
     logger.info(
-        "Querying forecast geometries for %s between %s and %s",
+        "Querying forecast geometries for %s between %s and %s, run time %s",
         instance_id,
         start_datetime,
         end_datetime,
+        run_datetime,
     )
     if bounding_box:
         logger.info("Restricting to bounding box (%s, %s => %s, %s)", *bounding_box)
@@ -338,18 +344,20 @@ def cached_forecast_hexgrid_pivot_csv(
     data["NO2"] = data["NO2"].apply(lambda datum: f"[{datum[0]}; {datum[1]}]")
 
     table = pd.DataFrame(
-        data.pivot(
-            index="measurement_start_utc", columns="hex_id", values="NO2",
-        ).to_records()
+        data.pivot(index="measurement_start_utc", columns="hex_id", values="NO2",)
+        .drop(0, axis=1)
+        .to_records()
     )
-    table[instance_id] = ""
+    data[
+        f"ran_{run_datetime.replace(tzinfo=timezone.utc).strftime('%Y-%m-%d_%H:%M:%S')}"
+    ] = ""
     return table.to_csv(quoting=csv.QUOTE_NONE)
 
 
 @cached(
     cache=TTLCache(maxsize=256, ttl=2 * 60 * 60 * 24, timer=time),
-    key=lambda _, instance_id, start_datetime, end_datetime, bounding_box: hashkey(
-        instance_id, start_datetime, end_datetime, bounding_box
+    key=lambda _, instance_id, start_datetime, end_datetime, run_datetime, bounding_box: hashkey(
+        instance_id, start_datetime, end_datetime, run_datetime, bounding_box
     ),
 )
 def cached_forecast_hexgrid_geojson(
@@ -357,6 +365,7 @@ def cached_forecast_hexgrid_geojson(
     instance_id: str,
     start_datetime: datetime,
     end_datetime: datetime,
+    run_datetime: datetime,
     bounding_box: Optional[Tuple[float]] = None,
 ) -> ForecastResultGeoJson:
     """Cache forecasts with geometry with optional bounding box"""
@@ -372,4 +381,7 @@ def cached_forecast_hexgrid_geojson(
     features = ForecastResultGeoJson.build_features(
         [r._asdict() for r in query_results]
     )
-    return ForecastResultGeoJson(instance_id=instance_id, features=features)
+    return ForecastResultGeoJson(
+        run_datetime=f"ran_{run_datetime.replace(tzinfo=timezone.utc).strftime('%Y-%m-%d_%H:%M:%S')}",
+        features=features,
+    )
