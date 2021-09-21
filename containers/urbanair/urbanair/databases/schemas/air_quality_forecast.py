@@ -6,8 +6,6 @@ from geojson import Feature
 import shapely.wkt
 from urbanair.types import JSONType
 from .jamcam import UTCTime
-from datetime import datetime, timezone
-
 
 class BaseGeoJson(BaseModel):
     """Tile geometries as GeoJSON feature collection"""

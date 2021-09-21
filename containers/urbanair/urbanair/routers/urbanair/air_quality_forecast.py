@@ -19,7 +19,6 @@ from ...databases.queries.air_quality_forecast import (
 )
 from ...databases.schemas.air_quality_forecast import (
     ForecastResultGeoJson,
-    ForecastResultJson,
     GeometryGeoJson,
     ForecastDatasetJson,
 )

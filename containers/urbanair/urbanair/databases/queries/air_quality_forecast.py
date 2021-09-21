@@ -23,7 +23,6 @@ from cleanair.types import DynamicFeatureNames, StaticFeatureNames
 
 from ..database import all_or_404
 from ..schemas.air_quality_forecast import ForecastResultGeoJson, GeometryGeoJson
-from ..schemas.jamcam import UTCTime
 
 logger = logging.getLogger("fastapi")  # pylint: disable=invalid-name
 
