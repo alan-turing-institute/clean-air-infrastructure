@@ -1,5 +1,5 @@
 """Util functions for interacting with Azure blob storage"""
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional, List
 
 from azure.common.client_factory import get_client_from_cli_profile
@@ -148,8 +148,10 @@ def list_blobs(
     blobs = list(blob_container_client.list_blobs(name_starts_with=name_starts_with))
 
     if start:
+        start = start.replace(tzinfo=timezone.utc)
         blobs = [blob for blob in blobs if blob.creation_time >= start]
     if end:
+        end = end.replace(tzinfo=timezone.utc)
         blobs = [blob for blob in blobs if blob.creation_time <= end]
 
     return blobs

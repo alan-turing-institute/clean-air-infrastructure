@@ -11,8 +11,6 @@ from cleanair.databases.tables import (
 )
 from urbanair.databases.queries.air_quality_forecast import query_forecasts_hexgrid
 
-from containers.tests.test_urbanair.conftest import MODEL_DATA_ID, MODEL_INSTANCE_ID
-
 
 def test_hexgrid_query(
     secretfile,
@@ -20,6 +18,8 @@ def test_hexgrid_query(
     mock_air_quality_instance,
     mock_air_quality_data,
     mock_air_quality_model,
+    mock_data_id,
+    mock_instance_id,
     sample_hexgrid_points,
 ):
     """Test that the query for the API will convert NaNs into Nones"""
@@ -43,16 +43,16 @@ def test_hexgrid_query(
     db_instance.commit_records(
         [
             AirQualityResultTable(
-                data_id=MODEL_DATA_ID,
-                instance_id=MODEL_INSTANCE_ID,
+                data_id=mock_data_id,
+                instance_id=mock_instance_id,
                 point_id=sample_hexgrid_points[0]["point_id"],
                 measurement_start_utc=start_time,
                 NO2_mean=nan,
                 NO2_var=nan,
             ),
             AirQualityResultTable(
-                data_id=MODEL_DATA_ID,
-                instance_id=MODEL_INSTANCE_ID,
+                data_id=mock_data_id,
+                instance_id=mock_instance_id,
                 point_id=sample_hexgrid_points[1]["point_id"],
                 measurement_start_utc=start_time,
                 NO2_mean=1.0,
@@ -67,7 +67,7 @@ def test_hexgrid_query(
 
         output = query_forecasts_hexgrid(
             db=session,
-            instance_id=MODEL_INSTANCE_ID,
+            instance_id=mock_instance_id,
             start_datetime=start_time,
             end_datetime=end_time,
             with_geometry=False,
@@ -76,13 +76,13 @@ def test_hexgrid_query(
         results = output.all()
         print(output.all())
         assert len(results) == 2
-        assert results[0][1] == start_time
-        assert results[1][1] == start_time
+        assert results[0][0] == start_time
+        assert results[1][0] == start_time
         assert (results[0][2] is None) ^ (results[1][2] is None)
 
         output = query_forecasts_hexgrid(
             db=session,
-            instance_id=MODEL_INSTANCE_ID,
+            instance_id=mock_instance_id,
             start_datetime=start_time,
             end_datetime=end_time,
             with_geometry=True,
@@ -91,6 +91,6 @@ def test_hexgrid_query(
         results = output.all()
         print(output.all())
         assert len(results) == 2
-        assert results[0][1] == start_time
-        assert results[1][1] == start_time
+        assert results[0][0] == start_time
+        assert results[1][0] == start_time
         assert (results[0][2] is None) ^ (results[1][2] is None)

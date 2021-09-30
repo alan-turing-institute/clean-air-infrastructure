@@ -9,8 +9,10 @@ from sqlalchemy.orm import sessionmaker
 import numpy as np
 from cleanair.databases import DBReader
 from cleanair.databases.tables import HexGrid, MetaPoint
-from urbanair import urbanair, odysseus, databases
+from cleanair.params import PRODUCTION_STATIC_FEATURES, PRODUCTION_DYNAMIC_FEATURES
+from cleanair.types import ModelName
 from urbanair.types import DetectionClass
+from urbanair import urbanair, odysseus, databases
 
 # pylint: disable=C0103,W0621
 
@@ -126,42 +128,70 @@ def video_stat_records():
     ]
 
 
-MODEL_INSTANCE_ID = "d2c0a1c0de9f49cb9fbf6073fb08a213e02800325bd04aae83c6ab6b76618ca4"
 MODEL_GIT_HASH = "89c214e6aeb44cc88ddccb22e4ffcadc4222ea74"
 MODEL_PARAM_ID = "552aded33bfc43b3a018144d15e1e21e368447b6654d4d9596de53848bb55a81"
-MODEL_DATA_ID = "3d1032591d8e4e07ae48a823a64f4739f2d241c0c9d24d6b833133f46e3c7085"
-MODEL_NAME = "svgp"
 
 
 @pytest.fixture(scope="module")
-def mock_air_quality_data():
-    """Fake data for air quality routes test"""
-    records = [{"data_id": MODEL_DATA_ID, "data_config": {}, "preprocessing": {},}]
-    return records
+def mock_model_name() -> str:
+    """Model name string"""
+    return ModelName.mrdgp.value
 
 
 @pytest.fixture(scope="module")
-def mock_air_quality_model():
+def mock_instance_id() -> str:
+    """"Mock instance id"""
+    return "d2c0a1c0de9f49cb9fbf6073fb08a213e02800325bd04aae83c6ab6b76618ca4"
+
+
+@pytest.fixture(scope="module")
+def mock_data_id() -> str:
+    """Mock data id"""
+    return "3d1032591d8e4e07ae48a823a64f4739f2d241c0c9d24d6b833133f46e3c7085"
+
+
+@pytest.fixture(scope="module")
+def mock_air_quality_data(mock_data_id):
     """Fake data for air quality routes test"""
     records = [
-        {"model_name": MODEL_NAME, "param_id": MODEL_PARAM_ID, "model_params": {},}
+        {
+            "data_id": mock_data_id,
+            "data_config": {
+                "static_features": [
+                    feature.value for feature in PRODUCTION_STATIC_FEATURES
+                ],
+                "dynamic_features": [
+                    feature.value for feature in PRODUCTION_DYNAMIC_FEATURES
+                ],
+            },
+            "preprocessing": {},
+        }
     ]
     return records
 
 
 @pytest.fixture(scope="module")
-def mock_air_quality_instance():
+def mock_air_quality_model(mock_model_name):
+    """Fake data for air quality routes test"""
+    records = [
+        {"model_name": mock_model_name, "param_id": MODEL_PARAM_ID, "model_params": {},}
+    ]
+    return records
+
+
+@pytest.fixture(scope="module")
+def mock_air_quality_instance(mock_model_name, mock_instance_id, mock_data_id):
     """Fake data for air quality routes test"""
     records = [
         {
-            "instance_id": MODEL_INSTANCE_ID,
+            "instance_id": mock_instance_id,
             "tag": "production",
             "git_hash": MODEL_GIT_HASH,
             "fit_start_time": datetime.now(),
             "cluster_id": "kubernetes",
-            "model_name": MODEL_NAME,
+            "model_name": mock_model_name,
             "param_id": MODEL_PARAM_ID,
-            "data_id": MODEL_DATA_ID,
+            "data_id": mock_data_id,
         }
     ]
     return records
@@ -174,6 +204,7 @@ def sample_hexgrid_points(secretfile, connection_class):
     with reader.dbcnxn.open_session() as session:
         points = (
             session.query(
+                HexGrid.hex_id,
                 HexGrid.point_id,
                 func.ST_AsText(func.ST_Transform(HexGrid.geom, 4326)).label("geom"),
                 func.ST_AsText(MetaPoint.location).label("location"),
@@ -191,7 +222,7 @@ def sample_hexgrid_points(secretfile, connection_class):
 
 @pytest.fixture(scope="class")
 def mock_air_quality_result(
-    sample_hexgrid_points,
+    sample_hexgrid_points, mock_data_id, mock_instance_id,
 ):  # pylint: disable=redefined-outer-name
     """Fake data for air quality routes test"""
     measurement_datetimes = rrule.rrule(
@@ -201,9 +232,35 @@ def mock_air_quality_result(
     )
     records = [
         {
-            "instance_id": MODEL_INSTANCE_ID,
+            "instance_id": mock_instance_id,
             "point_id": point["point_id"],
-            "data_id": MODEL_DATA_ID,
+            "data_id": mock_data_id,
+            "measurement_start_utc": measurement_datetime,
+            "NO2_mean": np.random.poisson(60),
+            "NO2_var": 0.5 + abs(np.random.normal(5, 1)),
+        }
+        for measurement_datetime in measurement_datetimes
+        for point in sample_hexgrid_points
+    ]
+    return records
+
+
+@pytest.fixture(scope="class")
+def mock_air_quality_result_result(
+    sample_hexgrid_points, mock_data_id, mock_instance_id,
+):  # pylint: disable=redefined-outer-name
+    """Fake data for air quality routes test"""
+    measurement_datetimes = rrule.rrule(
+        rrule.HOURLY,
+        dtstart=datetime.now().replace(minute=0, second=0, microsecond=0),
+        until=datetime.now() + timedelta(hours=48),
+    )
+    records = [
+        {
+            "instance_id": mock_instance_id,
+            "point_id": point["point_id"],
+            "hex_id": point["hex_id"],
+            "data_id": mock_data_id,
             "measurement_start_utc": measurement_datetime,
             "NO2_mean": np.random.poisson(60),
             "NO2_var": 0.5 + abs(np.random.normal(5, 1)),

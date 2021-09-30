@@ -17,7 +17,7 @@ echo "Starting. Loading urbanair connection info..."
 urbanair init local --secretfile "$DB_SECRET_FILE" >> $LOGFILE 2>&1
 
 echo "Initialising model..."
-urbanair production mrdgp dynamic >> $LOGFILE 2>&1
+urbanair production mrdgp dynamic --machine aquifer >> $LOGFILE 2>&1
 
 echo "Model run attempt complete. Uploading logfiles..."
 urbanair logs upload $LOGFILE

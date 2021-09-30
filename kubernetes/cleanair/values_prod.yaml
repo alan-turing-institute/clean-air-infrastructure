@@ -317,6 +317,8 @@ cronjobs:
     env:
       - name: DB_SECRET_FILE
         value: "/secrets/db_secrets.json"
+      - name: HTTP_SECRET_FILE
+        value: "/secrets/http_priming_secret"
     envFrom:
     - secretRef:
         name: cleanair-log-storage-key
@@ -347,7 +349,7 @@ cronjobs:
           cpu: "3"
           nvidia.com/gpu: 1
 
-  - name: test-jamcam-cron-on-hour
+  - name: jamcam-cron-on-hour
     schedule: "0 4-19 * * *"
     concurrencyPolicy: Allow
     restartPolicy: OnFailure
@@ -380,13 +382,13 @@ cronjobs:
         sizeLimit: "200Gi"
     imagePullSecrets:
         - name: regcred
-    nodeSelector:
-        agentpool: jamcam
     tolerations:
       - key: "group"
         operator: "Equal"
         value: "gpu"
         effect: "NoSchedule"
+    nodeSelector:
+        agentpool: jamcamp
     resources:
       limits:
           cpu: "23"
@@ -421,7 +423,7 @@ cronjobs:
       limits:
         cpu: "0.5"
 
-  - name: test-jamcam-cron-on-half-hour
+  - name: jamcam-cron-on-half-hour
     schedule: "30 4-19 * * *"
     concurrencyPolicy: Allow
     restartPolicy: OnFailure
@@ -454,13 +456,13 @@ cronjobs:
         sizeLimit: "200Gi"
     imagePullSecrets:
         - name: regcred
-    nodeSelector:
-        agentpool: jamcam
     tolerations:
       - key: "group"
         operator: "Equal"
         value: "gpu"
         effect: "NoSchedule"
+    nodeSelector:
+        agentpool: jamcamp
     resources:
       limits:
         cpu: "23"
@@ -582,7 +584,7 @@ deployments:
             secretName: secrets
       resources:
         requests:
-            cpu: "0.5"
+            cpu: "2.0"
 
     - name: odysseus-api
       replicas: 1
@@ -709,3 +711,9 @@ letsencryptIssuer:
       email: ogiles@turing.ac.uk
       server: https://acme-v02.api.letsencrypt.org/directory
       secretName: cleanair-certs-prod
+
+ingress-nginx:
+  controller:
+    service:
+      externalTrafficPolicy: Local
+    replicaCount: 1
