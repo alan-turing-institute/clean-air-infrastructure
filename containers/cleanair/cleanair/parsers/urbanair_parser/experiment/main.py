@@ -196,8 +196,10 @@ def download(
     experiment_root: Path = ExperimentDir,
 ) -> None:
     """Downloads an instance from the experiment archive"""
-
+    download_root = experiment_root / experiment_name.value
+    experiment_root.mkdir(exist_ok=True, parents=False)
+    download_root.mkdir(exist_ok=True, parents=False)
     FileManager(
-        experiment_root / Path(experiment_name.value) / Path(instance_id),
-        blob_id=instance_id,
+        download_root / instance_id, blob_id=instance_id,
     )
+    logging.info("Saving instance to %s", download_root / instance_id)
