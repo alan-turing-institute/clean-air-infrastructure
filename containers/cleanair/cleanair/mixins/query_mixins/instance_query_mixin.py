@@ -102,7 +102,7 @@ class InstanceQueryMixin:
 
         Args:
             limit: Number of instances returned
-        
+
         Returns:
             Most recent instances
         """
