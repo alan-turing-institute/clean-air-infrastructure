@@ -97,6 +97,23 @@ class InstanceQueryMixin:
             return instance
 
     @db_query()
+    def most_recent_instances(self, limit: int):
+        """Get the most recent instances
+
+        Args:
+            limit: Number of instances returned
+
+        Returns:
+            Most recent instances
+        """
+        with self.dbcnxn.open_session() as session:
+            readings = session.query(self.instance_table).order_by(
+                self.instance_table.fit_start_time.desc()
+            )
+            readings = readings.limit(limit)
+            return readings
+
+    @db_query()
     def get_instances(  # pylint: disable=too-many-arguments
         self,
         tag: str = None,

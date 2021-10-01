@@ -98,7 +98,9 @@ def __static_features_fix(data_config: DataConfig) -> DataConfig:
     return data_config
 
 
-def production_svgp_static(secretfile: str) -> List[InstanceMixin]:
+def production_svgp_static(
+    secretfile: str, cluster_id: ClusterId = ClusterId.nc6
+) -> List[InstanceMixin]:
     """The production version of the static SVGP"""
     train_upto = datetime_from_word("today")
     train_start = train_upto - timedelta(PRODUCTION_SVGP_TRAIN_DAYS)
@@ -138,12 +140,14 @@ def production_svgp_static(secretfile: str) -> List[InstanceMixin]:
         ModelName.svgp,
         model_params,
         tag=Tag.production,
-        cluster_id=ClusterId.nc6,
+        cluster_id=cluster_id,
     )
     return [instance]
 
 
-def production_svgp_dynamic(secretfile: str) -> List[InstanceMixin]:
+def production_svgp_dynamic(
+    secretfile: str, cluster_id: ClusterId = ClusterId.nc6
+) -> List[InstanceMixin]:
     """The production version of the dynamic SVGP"""
     train_upto = datetime_from_word("today")
     train_start = train_upto - timedelta(PRODUCTION_SVGP_TRAIN_DAYS)
@@ -183,12 +187,14 @@ def production_svgp_dynamic(secretfile: str) -> List[InstanceMixin]:
         ModelName.svgp,
         model_params,
         tag=Tag.production,
-        cluster_id=ClusterId.nc6,
+        cluster_id=cluster_id,
     )
     return [instance]
 
 
-def production_mrdgp_static(secretfile: str) -> List[InstanceMixin]:
+def production_mrdgp_static(
+    secretfile: str, cluster_id: ClusterId = ClusterId.nc6
+) -> List[InstanceMixin]:
     """The production version of the dynamic MRDGP"""
     train_upto = datetime_from_word("today")
     train_start = train_upto - timedelta(PRODUCTION_MRDGP_TRAIN_DAYS)
@@ -225,7 +231,7 @@ def production_mrdgp_static(secretfile: str) -> List[InstanceMixin]:
         ModelName.mrdgp,
         model_params,
         tag=Tag.production,
-        cluster_id=ClusterId.nc6,
+        cluster_id=cluster_id,
     )
     return [instance]
 
@@ -274,7 +280,9 @@ def production_mrdgp_dynamic(
     return [instance]
 
 
-def svgp_vary_standard(secretfile: str) -> List[InstanceMixin]:
+def svgp_vary_standard(
+    secretfile: str, cluster_id: ClusterId = ClusterId.nc6
+) -> List[InstanceMixin]:
     """Default SVGP with changing static features"""
     # default model parameters for every model
     instance_list: List[InstanceMixin] = []
@@ -311,14 +319,20 @@ def svgp_vary_standard(secretfile: str) -> List[InstanceMixin]:
 
         # create instance and add to list
         instance = InstanceMixin(
-            full_data_config, ModelName.svgp, model_params, tag=Tag.validation
+            full_data_config,
+            ModelName.svgp,
+            model_params,
+            tag=Tag.validation,
+            cluster_id=cluster_id,
         )
         instance_list.append(instance)
 
     return instance_list
 
 
-def dgp_vary_standard(secretfile: str) -> List[InstanceMixin]:
+def dgp_vary_standard(
+    secretfile: str, cluster_id: ClusterId = ClusterId.nc6
+) -> List[InstanceMixin]:
     """Default SVGP with changing static features"""
     # default model parameters for every model
     instance_list: List[InstanceMixin] = []
@@ -349,14 +363,20 @@ def dgp_vary_standard(secretfile: str) -> List[InstanceMixin]:
 
         # create instance and add to list
         instance = InstanceMixin(
-            full_data_config, ModelName.mrdgp, model_params, tag=Tag.validation
+            full_data_config,
+            ModelName.mrdgp,
+            model_params,
+            tag=Tag.validation,
+            cluster_id=cluster_id,
         )
         instance_list.append(instance)
 
     return instance_list
 
 
-def cached_instance(secretfile: str) -> List[InstanceMixin]:
+def cached_instance(
+    secretfile: str, cluster_id: ClusterId = ClusterId.nc6
+) -> List[InstanceMixin]:
     """Instance will features and sources. Used as a cached dataset."""
 
     instance_list: List[InstanceMixin] = []
@@ -383,14 +403,20 @@ def cached_instance(secretfile: str) -> List[InstanceMixin]:
 
     # create instance and add to list
     instance = InstanceMixin(
-        full_data_config, ModelName.svgp, model_params, tag=Tag.validation
+        full_data_config,
+        ModelName.svgp,
+        model_params,
+        tag=Tag.validation,
+        cluster_id=cluster_id,
     )
     instance_list.append(instance)
 
     return instance_list
 
 
-def svgp_vary_static_features(secretfile: str) -> List[InstanceMixin]:
+def svgp_vary_static_features(
+    secretfile: str, cluster_id: ClusterId = ClusterId.nc6
+) -> List[InstanceMixin]:
     """Default SVGP with changing static features and buffer sizes"""
     instance_list: List[InstanceMixin] = []
     model_config = ModelConfig(secretfile=secretfile)
@@ -415,13 +441,19 @@ def svgp_vary_static_features(secretfile: str) -> List[InstanceMixin]:
 
         # create instance and add to list
         instance = InstanceMixin(
-            full_data_config, ModelName.svgp, model_params, tag=Tag.validation
+            full_data_config,
+            ModelName.svgp,
+            model_params,
+            tag=Tag.validation,
+            cluster_id=cluster_id,
         )
         instance_list.append(instance)
     return instance_list
 
 
-def svgp_vary_num_inducing_points(secretfile: str) -> List[InstanceMixin]:
+def svgp_vary_num_inducing_points(
+    secretfile: str, cluster_id: ClusterId = ClusterId.nc6
+) -> List[InstanceMixin]:
     """Vary the number of inducing points in an SVGP"""
     instance_list: List[InstanceMixin] = []
     model_config = ModelConfig(secretfile=secretfile)
@@ -447,13 +479,19 @@ def svgp_vary_num_inducing_points(secretfile: str) -> List[InstanceMixin]:
             input_dim=input_dim,
         )
         instance = InstanceMixin(
-            full_data_config, ModelName.svgp, model_params, tag=Tag.validation
+            full_data_config,
+            ModelName.svgp,
+            model_params,
+            tag=Tag.validation,
+            cluster_id=cluster_id,
         )
         instance_list.append(instance)
     return instance_list
 
 
-def dgp_vary_static_features(secretfile: str) -> List[InstanceMixin]:
+def dgp_vary_static_features(
+    secretfile: str, cluster_id: ClusterId = ClusterId.nc6
+) -> List[InstanceMixin]:
     """Default DGP with changing static features"""
     instance_list: List[InstanceMixin] = []
     model_config = ModelConfig(secretfile=secretfile)
@@ -475,14 +513,20 @@ def dgp_vary_static_features(secretfile: str) -> List[InstanceMixin]:
 
         # create instance and add to list
         instance = InstanceMixin(
-            full_data_config, ModelName.mrdgp, model_params, tag=Tag.validation
+            full_data_config,
+            ModelName.mrdgp,
+            model_params,
+            tag=Tag.validation,
+            cluster_id=cluster_id,
         )
         instance_list.append(instance)
 
     return instance_list
 
 
-def dgp_vary_inducing_and_maxiter(secretfile: str) -> List[InstanceMixin]:
+def dgp_vary_inducing_and_maxiter(
+    secretfile: str, cluster_id: ClusterId = ClusterId.nc6
+) -> List[InstanceMixin]:
     """MRDGP with various combinations of number of inducing points and max iterations"""
     inducing_point_sizes = [100, 200, 500]
     iters = [1000, 5000, 10000]
@@ -509,14 +553,20 @@ def dgp_vary_inducing_and_maxiter(secretfile: str) -> List[InstanceMixin]:
 
         # create instance and add to list
         instance = InstanceMixin(
-            full_data_config, ModelName.mrdgp, model_params, tag=Tag.validation
+            full_data_config,
+            ModelName.mrdgp,
+            model_params,
+            tag=Tag.validation,
+            cluster_id=cluster_id,
         )
         instance_list.append(instance)
 
     return instance_list
 
 
-def dgp_small_inducing_and_maxiter(secretfile: str) -> List[InstanceMixin]:
+def dgp_small_inducing_and_maxiter(
+    secretfile: str, cluster_id: ClusterId = ClusterId.nc6
+) -> List[InstanceMixin]:
     """MRDGP with a single combination of number of inducing points and max iterations"""
     # TODO: can probably refactor this and dgp_vary_inducing_and_maxiter
     inducing_point_sizes = [300]
@@ -540,14 +590,20 @@ def dgp_small_inducing_and_maxiter(secretfile: str) -> List[InstanceMixin]:
 
         # create instance and add to list
         instance = InstanceMixin(
-            full_data_config, ModelName.mrdgp, model_params, tag=Tag.validation
+            full_data_config,
+            ModelName.mrdgp,
+            model_params,
+            tag=Tag.validation,
+            cluster_id=cluster_id,
         )
         instance_list.append(instance)
 
     return instance_list
 
 
-def svgp_small_inducing_and_maxiter(secretfile: str) -> List[InstanceMixin]:
+def svgp_small_inducing_and_maxiter(
+    secretfile: str, cluster_id: ClusterId = ClusterId.nc6
+) -> List[InstanceMixin]:
     """SVGP with a single combination of number of inducing points and max iterations and on hexgrid"""
     inducing_point_sizes = [1000]
     iters = [10000]
@@ -574,14 +630,20 @@ def svgp_small_inducing_and_maxiter(secretfile: str) -> List[InstanceMixin]:
 
         # create instance and add to list
         instance = InstanceMixin(
-            full_data_config, ModelName.svgp, model_params, tag=Tag.validation
+            full_data_config,
+            ModelName.svgp,
+            model_params,
+            tag=Tag.validation,
+            cluster_id=cluster_id,
         )
         instance_list.append(instance)
 
     return instance_list
 
 
-def dryrun_svgp(secretfile: str) -> List[InstanceMixin]:
+def dryrun_svgp(
+    secretfile: str, cluster_id: ClusterId = ClusterId.nc6
+) -> List[InstanceMixin]:
     """SVGP on just one day of training/test data with small
     inducing points and maxiter to make it run very fast"""
     model_config = ModelConfig(secretfile=secretfile)
@@ -600,4 +662,12 @@ def dryrun_svgp(secretfile: str) -> List[InstanceMixin]:
         active_dims=active_dims,
         input_dim=input_dim,
     )
-    return [InstanceMixin(full_data_config, ModelName.svgp, model_params, tag=Tag.test)]
+    return [
+        InstanceMixin(
+            full_data_config,
+            ModelName.svgp,
+            model_params,
+            tag=Tag.test,
+            cluster_id=cluster_id,
+        )
+    ]

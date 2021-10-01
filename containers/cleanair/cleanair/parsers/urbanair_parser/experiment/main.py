@@ -4,8 +4,7 @@ import logging
 from typing import Callable, List, Optional
 from pathlib import Path
 import typer
-from cleanair.utils import FileManager
-
+from ....databases.queries import AirQualityInstanceQuery
 from ....experiment import (
     ExperimentMixin,
     RunnableAirQualityExperiment,
@@ -20,6 +19,7 @@ from ....models import ModelData
 from ..shared_args import ExperimentDir
 from ..state import state
 from ....types import ExperimentName
+from ....utils import FileManager
 
 app = typer.Typer(help="Experiment CLI")
 
@@ -141,6 +141,15 @@ def update(
 
 
 @app.command()
+def recent(limit: int) -> None:
+    """Get the most recent instances"""
+    secretfile: str = state["secretfile"]
+    query = AirQualityInstanceQuery(secretfile)
+    tabular = query.most_recent_instances(limit, output_type="tabulate")
+    print(tabular)
+
+
+@app.command()
 def metrics(
     experiment_name: ExperimentName, experiment_root: Path = ExperimentDir
 ) -> None:
@@ -187,8 +196,10 @@ def download(
     experiment_root: Path = ExperimentDir,
 ) -> None:
     """Downloads an instance from the experiment archive"""
-
+    download_root = experiment_root / experiment_name.value
+    experiment_root.mkdir(exist_ok=True, parents=False)
+    download_root.mkdir(exist_ok=True, parents=False)
     FileManager(
-        experiment_root / Path(experiment_name.value) / Path(instance_id),
-        blob_id=instance_id,
+        download_root / instance_id, blob_id=instance_id,
     )
+    logging.info("Saving instance to %s", download_root / instance_id)
