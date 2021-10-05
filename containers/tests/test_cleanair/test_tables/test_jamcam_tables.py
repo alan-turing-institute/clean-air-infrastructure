@@ -1,6 +1,4 @@
 from datetime import datetime, timedelta
-
-import pytest
 from cleanair.databases import DBWriter
 from cleanair.databases.tables import JamCamDayStats
 

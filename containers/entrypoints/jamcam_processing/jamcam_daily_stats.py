@@ -7,7 +7,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import DeferredReflection
 from sqlalchemy.orm import sessionmaker, Session
 from cleanair.databases.tables import JamCamDayStats
-from cleanair.mixins import DBConnectionMixin
+from cleanair.databases.mixins import DBConnectionMixin
 from urbanair.config import get_settings
 from urbanair.databases.queries import get_jamcam_hourly
 from urbanair.types import DetectionClass

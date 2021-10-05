@@ -1,17 +1,26 @@
 """Air quality forecast database queries and external api calls"""
-from datetime import datetime
+import csv
 import logging
+from datetime import datetime, date, timezone
+from time import time
 from typing import Optional, List, Tuple
+
+import pandas as pd
 from cachetools import cached, LRUCache, TTLCache
 from cachetools.keys import hashkey
-from sqlalchemy import func
+from sqlalchemy import func, DATE
 from sqlalchemy.orm import Session, Query
+
 from cleanair.databases.tables import (
     AirQualityInstanceTable,
     AirQualityResultTable,
     HexGrid,
+    AirQualityDataTable,
 )
 from cleanair.decorators import db_query
+from cleanair.params import PRODUCTION_STATIC_FEATURES, PRODUCTION_DYNAMIC_FEATURES
+from cleanair.types import DynamicFeatureNames, StaticFeatureNames
+
 from ..database import all_or_404
 from ..schemas.air_quality_forecast import ForecastResultGeoJson, GeometryGeoJson
 
@@ -20,7 +29,11 @@ logger = logging.getLogger("fastapi")  # pylint: disable=invalid-name
 
 @db_query()
 def query_instance_ids(
-    db: Session, start_datetime: datetime, end_datetime: datetime,
+    db: Session,
+    start_datetime: datetime,
+    end_datetime: datetime,
+    static_features: List[StaticFeatureNames],
+    dynamic_features: List[DynamicFeatureNames],
 ) -> Query:
     """
     Check which model IDs produced forecasts between start_datetime and end_datetime.
@@ -30,15 +43,28 @@ def query_instance_ids(
             AirQualityResultTable.instance_id,
             AirQualityResultTable.measurement_start_utc,
         )
+        .filter(
+            AirQualityResultTable.measurement_start_utc >= start_datetime,
+            AirQualityResultTable.measurement_start_utc < end_datetime,
+        )
+        .join(HexGrid, HexGrid.point_id == AirQualityResultTable.point_id)
         .join(
             AirQualityInstanceTable,
             AirQualityInstanceTable.instance_id == AirQualityResultTable.instance_id,
         )
         .filter(
             AirQualityInstanceTable.tag == "production",
-            AirQualityInstanceTable.model_name == "svgp",
-            AirQualityResultTable.measurement_start_utc >= start_datetime,
-            AirQualityResultTable.measurement_start_utc < end_datetime,
+            AirQualityInstanceTable.model_name == "mrdgp",
+        )
+        .join(
+            AirQualityDataTable,
+            AirQualityInstanceTable.data_id == AirQualityDataTable.data_id,
+        )
+        .filter(
+            AirQualityDataTable.data_config["static_features"]
+            == [feature.value for feature in static_features],
+            AirQualityDataTable.data_config["dynamic_features"]
+            == [feature.value for feature in dynamic_features],
         )
     )
 
@@ -51,20 +77,78 @@ def query_instance_ids(
     return query.order_by(AirQualityInstanceTable.fit_start_time.desc())
 
 
+@db_query()
+def query_instance_ids_on_date(
+    db: Session,
+    run_date: date,
+    static_features: List[StaticFeatureNames],
+    dynamic_features: List[DynamicFeatureNames],
+) -> Query:
+    """
+    Check which model IDs produced forecasts on date.
+    """
+    query = (
+        db.query(
+            AirQualityInstanceTable.instance_id, AirQualityInstanceTable.fit_start_time,
+        )
+        .join(
+            AirQualityDataTable,
+            AirQualityInstanceTable.data_id == AirQualityDataTable.data_id,
+        )
+        .filter(
+            func.cast(AirQualityInstanceTable.fit_start_time, DATE) == run_date,
+            AirQualityInstanceTable.tag == "production",
+            AirQualityInstanceTable.model_name == "mrdgp",
+            AirQualityDataTable.data_config["static_features"]
+            == [feature.value for feature in static_features],
+            AirQualityDataTable.data_config["dynamic_features"]
+            == [feature.value for feature in dynamic_features],
+        )
+    )
+
+    # Order by fit start time
+    return query.order_by(AirQualityInstanceTable.fit_start_time.desc())
+
+
 @cached(
-    cache=TTLCache(maxsize=256, ttl=60),
+    cache=TTLCache(maxsize=256, ttl=2 * 60 * 60 * 24, timer=time),
     key=lambda _, *args, **kwargs: hashkey(*args, **kwargs),
 )
 def cached_instance_ids(
     db: Session, start_datetime: datetime, end_datetime: datetime,
 ) -> Optional[List[Tuple]]:
-    """Cache available model instances"""
+    """Cache available model instances that cover the datetime range"""
     logger.info(
         "Querying available instance IDs between %s and %s",
         start_datetime,
         end_datetime,
     )
-    return query_instance_ids(db, start_datetime, end_datetime).all()
+    return query_instance_ids(
+        db=db,
+        start_datetime=start_datetime,
+        end_datetime=end_datetime,
+        static_features=PRODUCTION_STATIC_FEATURES,
+        dynamic_features=PRODUCTION_DYNAMIC_FEATURES,
+    ).all()
+
+
+@cached(
+    cache=TTLCache(maxsize=256, ttl=2 * 60 * 60 * 24, timer=time),
+    key=lambda _, *args, **kwargs: hashkey(*args, **kwargs),
+)
+def cached_instance_ids_on_run_date(
+    db: Session, run_date: date,
+) -> Optional[List[Tuple]]:
+    """Cache available model instances run on this date"""
+    logger.info(
+        "Querying available instance IDs on %s", run_date,
+    )
+    return query_instance_ids_on_date(
+        db=db,
+        run_date=run_date,
+        static_features=PRODUCTION_STATIC_FEATURES,
+        dynamic_features=PRODUCTION_DYNAMIC_FEATURES,
+    ).all()
 
 
 @db_query()
@@ -76,6 +160,7 @@ def query_geometries_hexgrid(
     """
     query = db.query(
         HexGrid.point_id,
+        HexGrid.hex_id,
         func.ST_AsText(func.ST_Transform(HexGrid.geom, 4326)).label("geom"),
     )
     # Note that SRID 4326 is not aligned with lat/lon so we return all geometries that
@@ -84,7 +169,7 @@ def query_geometries_hexgrid(
         query = query.filter(
             func.ST_Intersects(HexGrid.geom, func.ST_MakeEnvelope(*bounding_box, 4326))
         )
-    return query.distinct()
+    return query.distinct().order_by(HexGrid.hex_id)
 
 
 @cached(
@@ -117,18 +202,18 @@ def query_forecasts_hexgrid(
     """
     if with_geometry:
         query = db.query(
-            AirQualityResultTable.point_id,
-            AirQualityResultTable.measurement_start_utc,
-            AirQualityResultTable.NO2_mean,
-            AirQualityResultTable.NO2_var,
+            AirQualityResultTable.measurement_start_utc.label("measurement_start_utc"),
+            HexGrid.hex_id.label("hex_id"),
+            func.nullif(AirQualityResultTable.NO2_mean, "NaN").label("NO2_mean"),
+            func.nullif(AirQualityResultTable.NO2_var, "NaN").label("NO2_var"),
             func.ST_AsText(func.ST_Transform(HexGrid.geom, 4326)).label("geom"),
         )
     else:
         query = db.query(
-            AirQualityResultTable.point_id,
-            AirQualityResultTable.measurement_start_utc,
-            AirQualityResultTable.NO2_mean,
-            AirQualityResultTable.NO2_var,
+            AirQualityResultTable.measurement_start_utc.label("measurement_start_utc"),
+            HexGrid.hex_id.label("hex_id"),
+            func.nullif(AirQualityResultTable.NO2_mean, "NaN").label("NO2_mean"),
+            func.nullif(AirQualityResultTable.NO2_var, "NaN").label("NO2_var"),
         )
 
     # Restrict to hexgrid points for the given instance and times
@@ -150,7 +235,8 @@ def query_forecasts_hexgrid(
 
 
 @cached(
-    cache=LRUCache(maxsize=256), key=lambda _, *args, **kwargs: hashkey(*args, **kwargs)
+    cache=TTLCache(maxsize=256, ttl=2 * 60 * 60 * 24, timer=time),
+    key=lambda _, *args, **kwargs: hashkey(*args, **kwargs),
 )
 def cached_forecast_hexgrid_json(
     db: Session,
@@ -181,13 +267,105 @@ def cached_forecast_hexgrid_json(
 
 
 @cached(
-    cache=LRUCache(maxsize=256), key=lambda _, *args, **kwargs: hashkey(*args, **kwargs)
+    cache=TTLCache(maxsize=256, ttl=2 * 60 * 60 * 24, timer=time),
+    key=lambda _, *args, **kwargs: hashkey(*args, **kwargs),
+)
+def cached_forecast_hexgrid_csv(
+    db: Session,
+    instance_id: str,
+    start_datetime: datetime,
+    end_datetime: datetime,
+    with_geometry: bool,
+    run_datetime: datetime,
+    bounding_box: Optional[Tuple[float]] = None,
+) -> Optional[List[Tuple]]:
+    """Cache forecasts with geometry with optional bounding box"""
+    logger.info(
+        "Querying forecast geometries for %s between %s and %s, run time %s",
+        instance_id,
+        start_datetime,
+        end_datetime,
+        run_datetime,
+    )
+    if bounding_box:
+        logger.info("Restricting to bounding box (%s, %s => %s, %s)", *bounding_box)
+    data = query_forecasts_hexgrid(
+        db,
+        instance_id=instance_id,
+        start_datetime=start_datetime,
+        end_datetime=end_datetime,
+        with_geometry=with_geometry,
+        bounding_box=bounding_box,
+        output_type="df",
+    )
+    data[
+        f"ran_{run_datetime.replace(tzinfo=timezone.utc).strftime('%Y-%m-%d_%H:%M:%S')}"
+    ] = ""
+    return data.round({"NO2_mean": 3, "NO2_var": 3}).to_csv(index=False)
+
+
+# pylint: disable=C0103
+@cached(
+    cache=TTLCache(maxsize=256, ttl=2 * 60 * 60 * 24, timer=time),
+    key=lambda _, *args, **kwargs: hashkey(*args, **kwargs),
+)
+def cached_forecast_hexgrid_pivot_csv(
+    db: Session,
+    instance_id: str,
+    start_datetime: datetime,
+    end_datetime: datetime,
+    with_geometry: bool,
+    run_datetime: datetime,
+    bounding_box: Optional[Tuple[float]] = None,
+) -> Optional[List[Tuple]]:
+    """Cache forecasts with geometry with optional bounding box"""
+    logger.info(
+        "Querying forecast geometries for %s between %s and %s, run time %s",
+        instance_id,
+        start_datetime,
+        end_datetime,
+        run_datetime,
+    )
+    if bounding_box:
+        logger.info("Restricting to bounding box (%s, %s => %s, %s)", *bounding_box)
+    data = query_forecasts_hexgrid(
+        db,
+        instance_id=instance_id,
+        start_datetime=start_datetime,
+        end_datetime=end_datetime,
+        with_geometry=with_geometry,
+        bounding_box=bounding_box,
+        output_type="df",
+    )
+
+    data = data.round({"NO2_mean": 3, "NO2_var": 3})
+
+    data["NO2"] = data[["NO2_mean", "NO2_var"]].apply(tuple, axis=1)
+    data["NO2"] = data["NO2"].apply(lambda datum: f"[{datum[0]}; {datum[1]}]")
+
+    table = pd.DataFrame(
+        data.pivot(
+            index="measurement_start_utc", columns="hex_id", values="NO2",
+        ).to_records()
+    )
+    table[
+        f"ran_{run_datetime.replace(tzinfo=timezone.utc).strftime('%Y-%m-%d_%H:%M:%S')}"
+    ] = ""
+    return table.to_csv(quoting=csv.QUOTE_NONE, index=False)
+
+
+@cached(
+    cache=TTLCache(maxsize=256, ttl=2 * 60 * 60 * 24, timer=time),
+    key=lambda _, instance_id, start_datetime, end_datetime, run_datetime, bounding_box: hashkey(
+        instance_id, start_datetime, end_datetime, run_datetime, bounding_box
+    ),
 )
 def cached_forecast_hexgrid_geojson(
     db: Session,
     instance_id: str,
     start_datetime: datetime,
     end_datetime: datetime,
+    run_datetime: datetime,
     bounding_box: Optional[Tuple[float]] = None,
 ) -> ForecastResultGeoJson:
     """Cache forecasts with geometry with optional bounding box"""
@@ -203,4 +381,7 @@ def cached_forecast_hexgrid_geojson(
     features = ForecastResultGeoJson.build_features(
         [r._asdict() for r in query_results]
     )
-    return ForecastResultGeoJson(features=features)
+    return ForecastResultGeoJson(
+        run_datetime=f"ran_{run_datetime.replace(tzinfo=timezone.utc).strftime('%Y-%m-%d_%H:%M:%S')}",
+        features=features,
+    )

@@ -64,7 +64,7 @@ def svgp(
     )
 
     # Save model parameters
-    file_manager.save_model_params(model_params)
+    file_manager.save_model_initial_params(model_params)
 
 
 @app.command()
@@ -154,4 +154,4 @@ def mrdgp(
         num_prediction_samples=1,
     )
     # Save model parameters
-    file_manager.save_model_params(model_params)
+    file_manager.save_model_initial_params(model_params)

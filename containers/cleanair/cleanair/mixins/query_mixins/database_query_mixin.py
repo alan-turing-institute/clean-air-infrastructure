@@ -1,10 +1,11 @@
 """
 Mixin for useful database queries
 """
-from typing import List
 from datetime import datetime
-from sqlalchemy import func
-from ...decorators import db_query
+from typing import List
+
+from sqlalchemy import func, or_, desc
+
 from ...databases.materialised_views import LondonBoundaryView
 from ...databases.tables import (
     AQEReading,
@@ -14,8 +15,8 @@ from ...databases.tables import (
     SatelliteForecast,
     SatelliteGrid,
 )
+from ...decorators import db_query
 from ...loggers import get_logger
-from ...timestamps import as_datetime
 from ...types import Species
 
 
@@ -35,7 +36,6 @@ class DBQueryMixin:
         """Query LondonBoundary to obtain the bounding geometry for London.
         Only get the first row as should only be one entry"""
         with self.dbcnxn.open_session() as session:
-
             return session.query(LondonBoundaryView.geom).limit(1)
 
     @db_query()
@@ -105,6 +105,15 @@ class DBQueryMixin:
         all_species = [spc.value for spc in species]
 
         with self.dbcnxn.open_session() as session:
+            # Get the latest forecast date
+
+            latest_forecast = (
+                session.query(SatelliteForecast.reference_start_utc)
+                .distinct()
+                .order_by(desc(SatelliteForecast.reference_start_utc))
+                .limit(1)
+                .all()[0]
+            )
 
             # The sort by is very important for creating numpy arrays
             sat_q = (
@@ -118,8 +127,12 @@ class DBQueryMixin:
                 .filter(
                     SatelliteForecast.measurement_start_utc >= start_date.isoformat(),
                     SatelliteForecast.measurement_start_utc < end_date.isoformat(),
-                    func.date(SatelliteForecast.measurement_start_utc)
-                    == func.date(SatelliteForecast.reference_start_utc),
+                    or_(
+                        func.date(SatelliteForecast.measurement_start_utc)
+                        == func.date(SatelliteForecast.reference_start_utc),
+                        func.date(latest_forecast)
+                        == func.date(SatelliteForecast.reference_start_utc),
+                    ),
                     SatelliteForecast.species_code.in_(all_species),
                 )
                 .join(SatelliteGrid, SatelliteForecast.box_id == SatelliteGrid.box_id)
@@ -131,31 +144,3 @@ class DBQueryMixin:
             )
 
             return sat_q
-
-    @db_query()
-    def get_satellite_readings_pred(self, start_date, end_date, species):
-        """Get Satellite data for the prediction period
-           Gets up to 72 hours of predicted data from the satellite readings
-           from the same reference_start_utc date as start_date
-        """
-
-        if (
-            int(
-                (as_datetime(end_date) - as_datetime(start_date)).total_seconds()
-                // 60
-                // 60
-            )
-            > 72
-        ):
-            raise ValueError(
-                "You may only request forecast data up to 72 hours from start_date"
-            )
-
-        with self.dbcnxn.open_session() as session:
-            return session.query(SatelliteForecast).filter(
-                SatelliteForecast.measurement_start_utc >= start_date,
-                SatelliteForecast.measurement_start_utc < end_date,
-                func.date(SatelliteForecast.reference_start_utc)
-                == as_datetime(start_date).date().isoformat(),
-                SatelliteForecast.species_code.in_(species),
-            )

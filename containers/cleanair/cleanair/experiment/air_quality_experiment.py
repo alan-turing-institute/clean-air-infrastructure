@@ -1,10 +1,26 @@
 """Experiments for air quality model validation"""
 
 from __future__ import annotations
+from datetime import datetime
+from logging import Logger
 from pathlib import Path
-from typing import Dict, Optional, TYPE_CHECKING, List
+from typing import Any, Dict, List, Optional, TYPE_CHECKING
 import pandas as pd
-from .experiment import RunnableExperimentMixin, SetupExperimentMixin
+from .air_quality_result import AirQualityResult
+from ..databases import DBWriter
+from ..databases.tables import (
+    AirQualityDataTable,
+    AirQualityInstanceTable,
+    AirQualityModelTable,
+    AirQualityResultTable,
+)
+from .experiment import (
+    RunnableExperimentMixin,
+    SetupExperimentMixin,
+    UpdateExperimentMixin,
+)
+from ..loggers import get_logger
+from ..metrics import TrainingMetrics
 from ..models import ModelData, ModelDataExtractor, MRDGP, SVGP
 from ..types import ExperimentName, IndexedDatasetDict, ModelName, Source, TargetDict
 from ..utils import FileManager
@@ -180,7 +196,7 @@ class SetupAirQualityExperiment(SetupExperimentMixin):
         file_manager.save_data_config(self._data_config_lookup[data_id], full=True)
         file_manager.save_training_data(training_dataset)
         file_manager.save_test_data(test_dataset)
-        file_manager.save_model_params(instance.model_params)
+        file_manager.save_model_initial_params(instance.model_params)
         file_manager.write_instance_to_json(instance)
 
 
@@ -192,6 +208,7 @@ class RunnableAirQualityExperiment(RunnableExperimentMixin):
         self._models: Dict[str, Model] = dict()
         self._training_result: Dict[str, TargetDict] = dict()
         self._test_result: Dict[str, TargetDict] = dict()
+        self._training_metrics: Dict[str, TrainingMetrics] = dict()
 
     def find_instance_id_from_data_id(self, data_id: str) -> str:
         """Search through instances to find the instance id matching the data id"""
@@ -238,7 +255,26 @@ class RunnableAirQualityExperiment(RunnableExperimentMixin):
         instance = self._instances[instance_id]
         model = self._models[instance_id]
         X_train, Y_train, _ = self._training_dataset[instance.data_id]
+        fit_start_time = datetime.now()
         model.fit(X_train, Y_train)
+        fit_end_time = datetime.now()
+        self._training_metrics[instance_id] = TrainingMetrics(
+            fit_end_time=fit_end_time,
+            fit_start_time=fit_start_time,
+            instance_id=instance_id,
+        )
+
+    def save_training_metrics(self, instance_id) -> None:
+        """Save the training metrics of the instance"""
+        file_manager = self.get_file_manager(instance_id)
+        training_metrics = self._training_metrics[instance_id]
+        file_manager.write_training_metrics_to_json(training_metrics)
+
+    def save_model_parameters(self, instance_id) -> None:
+        """Save the model parameters from the model object"""
+        self._file_managers[instance_id].save_model_final_params(
+            self._models[instance_id].params()
+        )
 
     def predict_on_training_set(self, instance_id: str) -> TargetDict:
         """Predict on the training set"""
@@ -270,6 +306,109 @@ class RunnableAirQualityExperiment(RunnableExperimentMixin):
         y_forecast = self._test_result[instance_id]
         file_manager.save_pred_training_to_pickle(y_training_result)
         file_manager.save_forecast_to_pickle(y_forecast)
+        file_manager.save_elbo(self._models[instance_id].elbo)
+
+
+class UpdateAirQualityExperiment(DBWriter, UpdateExperimentMixin):
+    """Write an experiment to the database"""
+
+    def __init__(
+        self,
+        name: ExperimentName,
+        experiment_root: Path,
+        secretfile: Optional[str] = None,
+        connection: Optional[Any] = None,
+        **kwargs,
+    ):
+        DBWriter.__init__(self, secretfile=secretfile, connection=connection, **kwargs)
+        UpdateExperimentMixin.__init__(self, name, experiment_root)
+        self.secretfile = secretfile
+        self.connection = connection
+
+    @property
+    def data_table(self) -> AirQualityDataTable:
+        """The data config table."""
+        return AirQualityDataTable
+
+    @property
+    def instance_table(self) -> AirQualityInstanceTable:
+        """The instance table."""
+        return AirQualityInstanceTable
+
+    @property
+    def model_table(self) -> AirQualityModelTable:
+        """The modelling table."""
+        return AirQualityModelTable
+
+    @property
+    def result_table(self) -> AirQualityResultTable:
+        """The result table."""
+        return AirQualityResultTable
+
+    def update_result_tables(self):
+        """Update the result tables"""
+        for instance_id, instance in self._instances.items():
+            file_manager = self._file_managers[instance_id]
+            y_pred_training = file_manager.load_pred_training_from_pickle()
+            y_forecast = file_manager.load_forecast_from_pickle()
+            train_data = file_manager.load_training_data()
+            test_data = file_manager.load_test_data()
+            # TODO do we need to write the CSVs to file?
+            update_predictions_on_dataset(
+                train_data,
+                y_pred_training,
+                instance_id,
+                instance.data_id,
+                self.secretfile,
+                connection=self.connection,
+            )
+            update_predictions_on_dataset(
+                test_data,
+                y_forecast,
+                instance_id,
+                instance.data_id,
+                self.secretfile,
+                connection=self.connection,
+            )
+
+    def update_remote_tables(self):
+        """Write instances to air quality tables"""
+        return UpdateExperimentMixin.update_remote_tables(self)
+
+
+def update_predictions_on_dataset(
+    dataset: Dict[Source, pd.DataFrame],
+    prediction: TargetDict,
+    instance_id: str,
+    data_id: str,
+    secretfile: str,
+    connection: Optional[Any] = None,
+    logger: Logger = get_logger("update-predictions"),
+) -> None:
+    """For each source (except satellite), join the dataset with prediction
+    on space-time columns, then create a Result object which writes to the DB
+
+    Args:
+        dataset: Keys are sources (LAQN, hexgrid) and values are dataframes
+        prediction: For each source and each pollutant is a predicted mean and variance
+        instance_id: The ID of the instance
+        data_id: The ID of the dataset
+        secretfile: The location of your database secrets
+        connection: Connection object for database
+    """
+
+    for source, dataframe in dataset.items():
+        logger.info("Writing %s results for instance %s.", source, instance_id)
+        if source == Source.satellite:
+            continue
+        pred_df = ModelDataExtractor.join_forecast_on_dataframe(
+            dataframe, prediction[source]
+        )
+        pred_df["point_id"] = pred_df.point_id.apply(str)
+        result = AirQualityResult(
+            instance_id, data_id, pred_df, secretfile=secretfile, connection=connection
+        )
+        result.update_remote_tables()
 
 
 def construct_feature_name(buffer_size, feature):

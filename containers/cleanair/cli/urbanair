@@ -7,8 +7,11 @@ from cleanair.parsers.urbanair_parser import (
     experiment,
     init,
     inputs,
+    logs,
     features,
+    metrics,
     model,
+    production,
 )
 
 has_prophet = importlib.util.find_spec("fbprophet")
@@ -19,9 +22,11 @@ app.add_typer(config.app, name="config")
 app.add_typer(experiment.app, name="experiment")
 app.add_typer(init.app, name="init")
 app.add_typer(inputs.app, name="inputs")
+app.add_typer(logs.app, name="logs")
 app.add_typer(features.app, name="features")
+app.add_typer(metrics.app, name="metrics")
 app.add_typer(model.app, name="model")
-
+app.add_typer(production.app, name="production")
 
 if has_prophet and has_pystan:
     from cleanair.parsers.urbanair_parser import processors

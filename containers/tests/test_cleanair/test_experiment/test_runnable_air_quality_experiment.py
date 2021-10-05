@@ -1,5 +1,6 @@
 """Test runnable AQ experiment"""
 
+
 import pytest
 from cleanair.types import PredictionDict, Source
 from cleanair.utils import FileManager
@@ -87,6 +88,20 @@ class TestRunnableAirQualityExperiment:
             model = runnable_aq_experiment.load_model(instance_id)
             runnable_aq_experiment.train_model(instance_id)
             assert model.epoch > 0
+
+    def test_save_training_metrics(self, runnable_aq_experiment, tf_session):
+        """Test the model is fit to the data"""
+        runnable_aq_experiment.load_datasets()
+        for instance_id in runnable_aq_experiment.get_instance_ids():
+            runnable_aq_experiment.load_model(instance_id)
+            runnable_aq_experiment.train_model(instance_id)
+            runnable_aq_experiment.save_training_metrics(instance_id)
+            file_manager: FileManager = runnable_aq_experiment.get_file_manager(
+                instance_id
+            )
+            assert (
+                file_manager.input_dir / file_manager.MODEL_TRAINING_METRICS_JSON
+            ).exists()
 
     def test_predict_on_training_set(self, runnable_aq_experiment, tf_session):
         """Test preditions are made on the training set"""

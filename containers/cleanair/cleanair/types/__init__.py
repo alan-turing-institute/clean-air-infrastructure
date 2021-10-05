@@ -30,7 +30,9 @@ from .model_types import (
     BaseModelParams,
     KernelParams,
     MRDGPParams,
+    CompiledMRDGPParams,
     SVGPParams,
+    model_params_from_dict,
 )
 
 
@@ -49,6 +51,7 @@ __all__ = [
     "InterestPointDict",
     "KernelType",
     "MRDGPParams",
+    "CompiledMRDGPParams",
     "NDArrayTuple",
     "PredictionDict",
     "SVGPParams",

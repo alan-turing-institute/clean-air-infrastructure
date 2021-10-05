@@ -32,7 +32,7 @@ class TestSetupAirQualityExperiment:
             training_data = setup_aq_experiment.load_training_dataset(instance.data_id)
             # for pollutant in instance.data_config.species:
             #     assert pollutant.value in training.columns
-            for source, training_source_df in training_data.items():
+            for training_source_df in training_data.values():
                 assert_statements_for_dataset_df(
                     training_source_df, instance.data_config
                 )
@@ -42,7 +42,7 @@ class TestSetupAirQualityExperiment:
         for instance_id in setup_aq_experiment.get_instance_ids():
             instance = setup_aq_experiment.get_instance(instance_id)
             test_data = setup_aq_experiment.load_test_dataset(instance.data_id)
-            for source, test_source_df in test_data.items():
+            for test_source_df in test_data.values():
                 assert_statements_for_dataset_df(test_source_df, instance.data_config)
 
     def test_write_instance_to_file(self, setup_aq_experiment):
@@ -57,7 +57,9 @@ class TestSetupAirQualityExperiment:
             ).exists()
             assert not (file_manager.input_dir / file_manager.TEST_DATA_PICKLE).exists()
             assert not (file_manager.input_dir / file_manager.DATA_CONFIG_FULL).exists()
-            assert not (file_manager.input_dir / file_manager.MODEL_PARAMS).exists()
+            assert not (
+                file_manager.input_dir / file_manager.INITIAL_MODEL_PARAMS
+            ).exists()
 
             # write the instance files
             setup_aq_experiment.write_instance_to_file(instance_id)
@@ -66,4 +68,4 @@ class TestSetupAirQualityExperiment:
             assert (file_manager.input_dir / file_manager.TRAINING_DATA_PICKLE).exists()
             assert (file_manager.input_dir / file_manager.TEST_DATA_PICKLE).exists()
             assert (file_manager.input_dir / file_manager.DATA_CONFIG_FULL).exists()
-            assert (file_manager.input_dir / file_manager.MODEL_PARAMS).exists()
+            assert (file_manager.input_dir / file_manager.INITIAL_MODEL_PARAMS).exists()

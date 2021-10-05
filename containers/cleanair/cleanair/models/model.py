@@ -133,6 +133,10 @@ class ModelMixin:
         """
         ModelMixin.check_test_set_is_valid(x_test)
 
+    @abstractmethod
+    def params(self) -> Union[MRDGPParams, SVGPParams]:
+        """Get the model parameters"""
+
     @staticmethod
     def check_training_set_is_valid(x_train: FeaturesDict, y_train: TargetDict) -> None:
         """
@@ -304,6 +308,14 @@ class ModelMixin:
             y_array: Target array cleaned of NaNs
         """
         idx = ~np.isnan(y_array[:, 0])
+        x_array = x_array[idx, :]
+        y_array = y_array[idx, :]
+
+        # TODO Consider removing this nan search in x_array when updating queries that get the data
+        # there should be no nans in here anyway
+        idx = np.isnan(x_array[:, :])
+        idx = [not (True in row) for row in idx]
+
         x_array = x_array[idx, :]
         y_array = y_array[idx, :]
 
