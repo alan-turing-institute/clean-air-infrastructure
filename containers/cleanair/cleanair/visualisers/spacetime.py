@@ -26,7 +26,8 @@ def plot_polygon_collection(
     patches = []
 
     for poly in geoms:
-        a = np.asarray(poly.geoms[0].exterior)
+        #a = np.asarray(poly.geoms[0].exterior)
+        a = np.asarray(poly.exterior)
 
         if poly.has_z:
             poly = shapely.geometry.Polygon(zip(*poly.geoms[0].exterior.xy))

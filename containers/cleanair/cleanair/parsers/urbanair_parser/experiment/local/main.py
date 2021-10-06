@@ -158,7 +158,6 @@ def get_hexgrid_forecast(file_manager, hexgrid_file):
     hexgrid_file["geom"] = hexgrid_file["geom"].apply(wkt.loads)
     hexgrid_file["point_id"] = hexgrid_file["point_id"].apply(uuid.UUID)
 
-    breakpoint()
     hexgrid_df = hexgrid_df.merge(hexgrid_file, on="point_id", how="left")
 
     hexgrid_df = gpd.GeoDataFrame(hexgrid_df, geometry="geom")
