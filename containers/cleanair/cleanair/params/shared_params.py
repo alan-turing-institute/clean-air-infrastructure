@@ -13,6 +13,9 @@ PRODUCTION_DYNAMIC_FEATURES = [
 PRODUCTION_FORECAST_DAYS = 2
 
 PRODUCTION_STATIC_FEATURES = [
+    StaticFeatureNames.flat,
+    StaticFeatureNames.max_canyon_ratio,
     StaticFeatureNames.total_a_road_primary_length,
+    StaticFeatureNames.total_a_road_length,
 ]
 PRODUCTION_BUFFER_SIZES = [FeatureBufferSize.two_hundred]
