@@ -12,7 +12,7 @@ from ..types import KernelParams, KernelType, Source, Species, SVGPParams
 JITTER: float = 1e-5
 SVGP_NUM_INDUCING_POINTS = 2000
 SVGP_INPUT_DIM = 3
-SVGP_MAXITER = 10000
+SVGP_MAXITER = 15000
 
 # production data config settings for the svgp
 PRODUCTION_SVGP_TRAIN_DAYS = 5
