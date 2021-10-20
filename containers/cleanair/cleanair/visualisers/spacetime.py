@@ -245,6 +245,9 @@ class ST_TimeSeriesPlot(object):
     def get_time_series(self, _id, data):
         d = self.train_df[self.train_df[self.columns["id"]] == _id]
 
+        print(f'Plotting timeseries: {_id}')
+
+
         d = d.sort_values(by=self.columns["epoch"])
 
         epochs = d[self.columns["epoch"]].astype(np.float32)
@@ -257,7 +260,7 @@ class ST_TimeSeriesPlot(object):
     def plot(self, _id):
         epochs, var, pred, observed = self.get_time_series(_id, self.train_df)
 
-        self.var_plot = self.ax.fill_between(epochs, pred - var, pred + var)
+        self.var_plot = self.ax.fill_between(epochs, pred - 1.96*np.sqrt(var), pred + 1.96*np.sqrt(var))
         self.observed_scatter = self.ax.scatter(epochs, observed)
         self.pred_plot = self.ax.plot(epochs, pred)
         self.ax.set_xlim([self.min_test_epoch, self.max_test_epoch])
