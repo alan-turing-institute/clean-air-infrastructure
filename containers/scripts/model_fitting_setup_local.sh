@@ -1,5 +1,5 @@
 #load required variables
-source ../../.secrets/model_fitting_settings.sh
+source ../../../.secrets/model_fitting_settings.sh
 
 # exit when any command fails
 set -e

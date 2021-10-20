@@ -8,6 +8,7 @@ Experiments go through 3 stages:
 
 from datetime import timedelta
 import itertools
+import inspect
 
 from typing import List
 from ..params.shared_params import (
@@ -450,6 +451,42 @@ def svgp_vary_static_features(
         instance_list.append(instance)
     return instance_list
 
+def svgp_test(secretfile: str) -> List[InstanceMixin]:
+    """Default SVGP with changing static features"""
+    # default model parameters for every model
+    instance_list: List[InstanceMixin] = []
+
+    model_config = ModelConfig(secretfile=secretfile)
+    for static_features in STATIC_FEATURES_LIST:
+        if len(static_features) == 0:
+            active_dims = [0, 1, 2]  # work around so that no features are used
+            static_features = [
+                StaticFeatureNames.park
+            ]  # tempory feature which wont be used by model
+            input_dim = 3
+        else:
+            active_dims = None  # use all features
+            input_dim = 3
+
+        model_params = default_svgp_model_params(
+            active_dims=active_dims, input_dim=input_dim, maxiter=500
+        )
+
+        # create a data config from static_features
+        data_config = default_laqn_data_config()
+        data_config.static_features = static_features
+        model_config.validate_config(data_config)
+        full_data_config = model_config.generate_full_config(data_config)
+
+        # create instance and add to list
+        instance = InstanceMixin(
+            full_data_config, ModelName.svgp, model_params, tag=Tag.validation
+        )
+        instance_list.append(instance)
+        break
+    return instance_list
+
+
 
 def svgp_vary_num_inducing_points(
     secretfile: str, cluster_id: ClusterId = ClusterId.nc6
@@ -522,6 +559,11 @@ def dgp_vary_static_features(
         instance_list.append(instance)
 
     return instance_list
+
+def enumerate_enum(enum):
+    return [e for e in enum]
+
+
 
 
 def dgp_vary_inducing_and_maxiter(

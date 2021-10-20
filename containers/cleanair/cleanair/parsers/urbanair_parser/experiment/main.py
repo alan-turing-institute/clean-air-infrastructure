@@ -19,9 +19,13 @@ from ....models import ModelData
 from ..shared_args import ExperimentDir
 from ..state import state
 from ....types import ExperimentName
+from .local import app as local_app
 from ....utils import FileManager
 
 app = typer.Typer(help="Experiment CLI")
+
+# Add local experiment cli to main experiment cli
+app.add_typer(local_app, name="local")
 
 
 @app.command()
