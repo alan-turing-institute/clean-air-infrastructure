@@ -655,6 +655,7 @@ def dryrun_svgp(
     input_dim = total_num_features(data_config)
     active_dims = list(range(input_dim))  # explicitly calculate active dims
     data_config = __static_features_fix(data_config)
+    model_config.validate_config(data_config)
     full_data_config = model_config.generate_full_config(data_config)
     model_params = default_svgp_model_params(
         num_inducing_points=100,

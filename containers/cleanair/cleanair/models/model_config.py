@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta
 from typing import List
-from sqlalchemy import func, text, cast, String
+from sqlalchemy import func, text, cast, String, and_
 
 from cleanair.types.enum_types import DynamicFeatureNames
 
@@ -103,6 +103,7 @@ class ModelConfig(
         )
         self.logger.info(green("Requested static features are available"))
 
+        # TODO if no dynamic features are required then don't validate
         self.check_dynamic_features_available(
             config.dynamic_features, config.train_start_date, config.pred_end_date
         )
@@ -193,8 +194,13 @@ class ModelConfig(
         end_date: datetime,
     ) -> None:
         """Check that all requested dynamic features exist in the database"""
-
-        available_features = self.get_available_dynamic_features(output_type="list")
+        # if len(features) > 0:
+        self.logger.debug("Requested dynamic features: %s", features)
+        available_features_list = self.get_available_dynamic_features(
+            start_date, end_date, output_type="list"
+        )
+        available_features = set(available_features_list)
+        self.logger.debug("Available dynamic features: %s", available_features)
         unavailable_features = []
 
         for feature in features:
@@ -204,7 +210,7 @@ class ModelConfig(
         if unavailable_features:
             raise MissingFeatureError(
                 """The following features are not available the cleanair database: {}.
-                   If requesting dynamic features they may not be available for the selected dates""".format(
+                If requesting dynamic features they may not be available for the selected dates""".format(
                     unavailable_features
                 )
             )
@@ -267,14 +273,22 @@ class ModelConfig(
             return feature_types_q
 
     @db_query()
-    def get_available_dynamic_features(self):
+    def get_available_dynamic_features(
+        self, start_datetime: datetime, upto_datetime: datetime
+    ):
         """Return available dynamic features from the CleanAir database
+
+        Notes:
+            The list of available features may not be unique
         """
 
         with self.dbcnxn.open_session() as session:
 
-            feature_types_q = session.query(DynamicFeature.feature_name).distinct(
-                DynamicFeature.feature_name
+            feature_types_q = session.query(DynamicFeature.feature_name).filter(
+                and_(
+                    DynamicFeature.measurement_start_utc >= start_datetime,
+                    DynamicFeature.measurement_start_utc < upto_datetime,
+                )
             )
 
             return feature_types_q
