@@ -194,26 +194,26 @@ class ModelConfig(
         end_date: datetime,
     ) -> None:
         """Check that all requested dynamic features exist in the database"""
-        # if len(features) > 0:
-        self.logger.debug("Requested dynamic features: %s", features)
-        available_features_list = self.get_available_dynamic_features(
-            start_date, end_date, output_type="list"
-        )
-        available_features = set(available_features_list)
-        self.logger.debug("Available dynamic features: %s", available_features)
-        unavailable_features = []
-
-        for feature in features:
-            if feature.value not in available_features:
-                unavailable_features.append(feature)
-
-        if unavailable_features:
-            raise MissingFeatureError(
-                """The following features are not available the cleanair database: {}.
-                If requesting dynamic features they may not be available for the selected dates""".format(
-                    unavailable_features
-                )
+        if len(features) > 0:
+            self.logger.debug("Requested dynamic features: %s", features)
+            available_features_list = self.get_available_dynamic_features(
+                start_date, end_date, output_type="list"
             )
+            available_features = set(available_features_list)
+            self.logger.debug("Available dynamic features: %s", available_features)
+            unavailable_features = []
+
+            for feature in features:
+                if feature.value not in available_features:
+                    unavailable_features.append(feature)
+
+            if unavailable_features:
+                raise MissingFeatureError(
+                    """The following features are not available the cleanair database: {}.
+                    If requesting dynamic features they may not be available for the selected dates""".format(
+                        unavailable_features
+                    )
+                )
 
     def check_sources_available(self, sources: List[Source]):
         """Check that sources are available in the database
