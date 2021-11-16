@@ -1,4 +1,20 @@
 """CleanAir Exceptions"""
-from .exceptions import MissingFeatureError, MissingSourceError
+from .exceptions import (
+    AuthenticationException,
+    DatabaseAuthenticationException,
+    DatabaseAccessTokenException,
+    DatabaseUserAuthenticationException,
+    MissingFeatureError,
+    MissingSourceError,
+    UrbanairException,
+)
 
-__all__ = ["MissingFeatureError", "MissingSourceError"]
+__all__ = [
+    "AuthenticationException",
+    "DatabaseAuthenticationException",
+    "DatabaseAccessTokenException",
+    "DatabaseUserAuthenticationException",
+    "MissingFeatureError",
+    "MissingSourceError",
+    "UrbanairException",
+]
