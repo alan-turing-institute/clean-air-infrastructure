@@ -28,6 +28,7 @@ setuptools.setup(
         "holidays==0.9.8",
         "nptyping==1.2.0",
         "numpy==1.18.5",
+        "packaging>=20.5",
         "pathos==0.2.5",
         "pandas==1.0.5",
         "pathos==0.2.5",
