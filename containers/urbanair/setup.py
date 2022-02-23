@@ -22,7 +22,7 @@ setuptools.setup(
     install_requires=[
         "cleanair",
         "fastapi[all]==0.60.1",
-        "jinja2",
+        "jinja2==2.11.3",
         "aiofiles",
         "cachetools",
         "geojson",
