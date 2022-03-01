@@ -32,7 +32,7 @@ setuptools.setup(
         "pathos==0.2.5",
         "pandas==1.0.5",
         "pathos==0.2.5",
-        "pydantic==1.6.1",
+        "pydantic==1.9.0",
         "pyeccodes==0.1.1",
         "python-dateutil==2.8.1",
         "pytz==2019.3",
@@ -59,7 +59,7 @@ setuptools.setup(
     use_scm_version={
         "root": "../..",
         "relative_to": __file__,
-        "fallback_version": "0.0.3",
+        "fallback_version": "0.2.7",
     },
     python_requires=">=3.6",
     scripts=["cli/urbanair"],
