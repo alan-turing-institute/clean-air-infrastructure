@@ -10,7 +10,13 @@ To view our Azure infrastructure, you can visit the [Azure portal](https://porta
 ## Sign into the Azure CLI
 
 You can access features of Azure via the [Azure CLI](https://docs.microsoft.com/en-us/cli/azure/).
-By [installing the cleanair package](installation.md), the Azure CLI will also be installed.
+By [installing the cleanair package](installation.md), the Azure CLI should also be installed.
+
+Incase of problems, try installing `azure-cli` with pip (you may bump into dependency conflicts with `cleanair`, but these can usually be safely ignored).
+
+```bash
+pip install azure-cli
+```
 
 Now simply login using your Azure account:
 

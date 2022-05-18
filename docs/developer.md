@@ -1,4 +1,4 @@
-# Developer
+# Developer guide
 
 **Make sure you have [installed the packages](installation.md) before following this guide.**
 
@@ -44,13 +44,19 @@ docker run --name database -e POSTGRES_HOST_AUTH_METHOD=trust -p 5432:5432 datab
 ### Create a secrets file
 
 We are going to store the settings for the docker database in a JSON file.
-Create a variable `DB_SECRET_FILE` to store the `.db_secrets_docker.json` filepath:
+First create a hidden directory to store our secrets inside:
 
-```
-export DB_SECRET_FILE=$(pwd)/.secrets/.db_secrets_docker.json
+```bash
+mkdir "$(pwd)/.secrets"
 ```
 
-Create `.db_secrets_docker.json`:
+Now create a variable `DB_SECRET_FILE` to store the `.db_secrets_docker.json` filepath:
+
+```bash
+export DB_SECRET_FILE="$(pwd)/.secrets/.db_secrets_docker.json"
+```
+
+Next create `.db_secrets_docker.json`:
 
 ```bash
 echo '{
@@ -171,6 +177,7 @@ Here are some useful non-python tools that may be useful for working with the da
 - [Lens](https://k8slens.dev/) for interacting with the Kubernetes cluster.
 - [Visual Studio Code](https://code.visualstudio.com/) is an IDE with lots of extensions for Docker, python, GitHub, etc.
 
+***
 ## Working on an issue
 The general workflow for contributing to the project is to first choose and issue (or create one) to work on and assign yourself to the issues.
 
