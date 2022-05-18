@@ -20,7 +20,7 @@ jobs:
         - source .travis/env.sh
 
       install:
-        - pip install -r containers/requirements.txt
+        - pip install -r containers/requirements.txt --use-deprecated=backtrack-on-build-failures
         - pip install -e 'containers/cleanair'
         - pip install -e 'containers/cleanair[models]'
         - pip install -e 'containers/cleanair[traffic]'
