@@ -17,7 +17,7 @@ setuptools.setup(
         "azure-cli==2.36.0",
         "azure-storage-blob==12.12.0",
         "azure-mgmt-storage==20.0.0",
-        "azure-common==1.1.28",
+        "azure-common==1.1.28", # TODO should this be removed
         "boto3==1.10.37",
         "cdsapi==0.2.8",
         "cfgrib==0.9.8.1",
