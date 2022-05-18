@@ -53,7 +53,7 @@ jobs:
         - source .travis/env.sh
 
       install:
-        - pip install -r containers/requirements.txt
+        - pip install -r containers/requirements.txt --use-deprecated=backtrack-on-build-failures
         - pip install -e 'containers/cleanair'
         - pip install -e 'containers/odysseus'
 
@@ -75,7 +75,7 @@ jobs:
         - source .travis/env.sh
 
       install:
-        - pip install -r containers/requirements.txt
+        - pip install -r containers/requirements.txt  --use-deprecated=backtrack-on-build-failures
         - pip install -e 'containers/cleanair'
         - pip install -e 'containers/urbanair'
 
@@ -93,7 +93,7 @@ jobs:
 
     - name: "code_style_formatting"
       install:
-        - pip install -r containers/requirements.txt
+        - pip install -r containers/requirements.txt  --use-deprecated=backtrack-on-build-failures
 
       script:
         # Check black formatting would not make any chages
