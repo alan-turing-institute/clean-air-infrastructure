@@ -131,7 +131,8 @@ def production_svgp_static(
 
     # create model params and change
     model_params = default_svgp_model_params(
-        active_dims=active_dims, input_dim=input_dim,
+        active_dims=active_dims,
+        input_dim=input_dim,
     )
 
     # create instance and add to list
@@ -178,7 +179,8 @@ def production_svgp_dynamic(
 
     # create model params and change
     model_params = default_svgp_model_params(
-        active_dims=active_dims, input_dim=input_dim,
+        active_dims=active_dims,
+        input_dim=input_dim,
     )
 
     # create instance and add to list
@@ -293,7 +295,9 @@ def svgp_vary_standard(
     model_config = ModelConfig(secretfile=secretfile)
 
     for static_features, lengthscale, sig_y in itertools.product(
-        TUNING_STATIC_FEATURES, VARY_LENGTHSCALES, VARY_LIKELIHOOD_VARIANCE,
+        TUNING_STATIC_FEATURES,
+        VARY_LENGTHSCALES,
+        VARY_LIKELIHOOD_VARIANCE,
     ):
         # create data config
         data_config = default_laqn_data_config()
@@ -343,7 +347,9 @@ def dgp_vary_standard(
     model_config = ModelConfig(secretfile=secretfile)
 
     for static_features, lengthscale, sig_y in itertools.product(
-        TUNING_STATIC_FEATURES, VARY_LENGTHSCALES, VARY_LIKELIHOOD_VARIANCE,
+        TUNING_STATIC_FEATURES,
+        VARY_LENGTHSCALES,
+        VARY_LIKELIHOOD_VARIANCE,
     ):
         # create a data config from static_features
         data_config = default_sat_data_config()

@@ -55,7 +55,9 @@ class ScootReader(DateRangeMixin, ScootQueryMixin, DBReader):
 
                 expected_date_times = session.query(
                     func.generate_series(
-                        start_date, reference_end_date_minus_1h, ONE_HOUR_INTERVAL,
+                        start_date,
+                        reference_end_date_minus_1h,
+                        ONE_HOUR_INTERVAL,
                     ).label("measurement_start_utc")
                 )
             else:
@@ -168,7 +170,10 @@ class ScootReader(DateRangeMixin, ScootQueryMixin, DBReader):
                 reading_status_sq.c.detector_id,
                 reading_status_sq.c.expected_measurement_start_utc.label("day"),
                 (
-                    cast(func.sum(cast(missing_row == False, Integer)), Float,)
+                    cast(
+                        func.sum(cast(missing_row == False, Integer)),
+                        Float,
+                    )
                     / cast(func.count(missing_row), Float)
                 ).label("percent_complete"),
             ).group_by(
@@ -291,7 +296,8 @@ class ScootWriter(DateRangeMixin, DBWriter, ScootQueryMixin):
 
     @db_query()
     def __check_detectors_processed(
-        self, measurement_start_utc: datetime.datetime,
+        self,
+        measurement_start_utc: datetime.datetime,
     ) -> Any:
         "Return detector ids which are in the database at a given hour"
 
@@ -345,7 +351,9 @@ class ScootWriter(DateRangeMixin, DBWriter, ScootQueryMixin):
         return file_list
 
     def request_remote_data(
-        self, start_datetime_utc: datetime.datetime, detector_ids: List[str],
+        self,
+        start_datetime_utc: datetime.datetime,
+        detector_ids: List[str],
     ) -> pd.DataFrame:
         """
         Request all readings for the hour starting at start_datetime_utc
@@ -547,10 +555,13 @@ class ScootWriter(DateRangeMixin, DBWriter, ScootQueryMixin):
         # Commit the records to the database
         start_session = time.time()
         self.commit_records(
-            site_record_drop_null, on_conflict="overwrite", table=ScootReading,
+            site_record_drop_null,
+            on_conflict="overwrite",
+            table=ScootReading,
         )
         self.logger.info(
-            "Insertion took %s", green(duration(start_session, time.time())),
+            "Insertion took %s",
+            green(duration(start_session, time.time())),
         )
 
         return

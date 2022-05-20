@@ -57,7 +57,9 @@ def default_base_laqn_model_params(
 ) -> BaseModelParams:
     """Default model parameters for the base LAQN GP"""
     base_laqn_kernel = default_base_laqn_kernel(
-        n_features, lengthscales=lengthscales, variance=variance,
+        n_features,
+        lengthscales=lengthscales,
+        variance=variance,
     )
     base_laqn = BaseModelParams(
         kernel=base_laqn_kernel,
@@ -97,7 +99,9 @@ def default_base_sat_model_params(
 ) -> BaseModelParams:
     """Default base model params for Satellite GP"""
     base_sat_kernel = default_base_sat_kernel(
-        n_features, lengthscales=lengthscales, variance=variance,
+        n_features,
+        lengthscales=lengthscales,
+        variance=variance,
     )
     base_sat = BaseModelParams(
         kernel=base_sat_kernel,
@@ -152,7 +156,9 @@ def default_dgp_sat_model_params(
 ) -> BaseModelParams:
     """Default model parameters for the Deep GP satellite model"""
     dgp_sat_kernel = default_dgp_sat_kernel(
-        n_features, lengthscales=lengthscales, variance=variance,
+        n_features,
+        lengthscales=lengthscales,
+        variance=variance,
     )
     dgp_sat = BaseModelParams(
         kernel=dgp_sat_kernel,

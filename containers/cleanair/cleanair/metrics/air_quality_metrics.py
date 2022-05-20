@@ -118,7 +118,10 @@ class AirQualityMetrics(DBWriter, InstanceQueryMixin, ResultQueryMixin):
         """Load the results for the instance."""
         self.logger.info("Reading results for LAQN for instance %s.", self.instance_id)
         result_df = self.query_results(
-            self.instance_id, Source.laqn, output_type="df", with_location=False,
+            self.instance_id,
+            Source.laqn,
+            output_type="df",
+            with_location=False,
         )
         result_df = preprocess_dataframe_types(result_df)
         return result_df
@@ -179,7 +182,9 @@ class AirQualityMetrics(DBWriter, InstanceQueryMixin, ResultQueryMixin):
     ) -> None:
         """Evaluate metrics by grouping by point id."""
         joined_df = observation_df.merge(
-            result_df, on=["point_id", "measurement_start_utc"], how="inner",
+            result_df,
+            on=["point_id", "measurement_start_utc"],
+            how="inner",
         )
         joined_df = remove_rows_with_nans(joined_df, self.data_config.species)
         self.logger.info(

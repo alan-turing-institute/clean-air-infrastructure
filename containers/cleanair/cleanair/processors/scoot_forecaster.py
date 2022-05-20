@@ -272,7 +272,9 @@ class ScootPerDetectorForecaster(DateRangeMixin, DBWriter):
 
                 # Commit and override any existing forecasts
                 self.commit_records(
-                    forecast_records, on_conflict="overwrite", table=ScootForecast,
+                    forecast_records,
+                    on_conflict="overwrite",
+                    table=ScootForecast,
                 )
                 n_records += len(forecast_records)
 

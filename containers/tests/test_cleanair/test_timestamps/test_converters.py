@@ -11,7 +11,8 @@ from cleanair.timestamps import (
 
 
 @pytest.mark.parametrize(
-    "timestring", TIMESTRINGS,
+    "timestring",
+    TIMESTRINGS,
 )
 def test_datetime_from_word(timestring):
     """Test the test_datetime_from_word function"""

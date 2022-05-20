@@ -57,7 +57,10 @@ while date != today:
         sys.stdout.write(f"Fetching data for: {date} - {detection_class_string}\r")
         sys.stdout.flush()
         query = get_jamcam_hourly(
-            session, camera_id=None, detection_class=detection_class, starttime=date,
+            session,
+            camera_id=None,
+            detection_class=detection_class,
+            starttime=date,
         )
         result = query.all()
 

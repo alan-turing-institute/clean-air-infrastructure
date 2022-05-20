@@ -12,7 +12,9 @@ from nptyping import NDArray, Float64
 
 
 def test_confidence_interval(
-    y_test: NDArray[Float64], y_pred: NDArray[Float64], y_var: NDArray[Float64],
+    y_test: NDArray[Float64],
+    y_pred: NDArray[Float64],
+    y_var: NDArray[Float64],
 ) -> None:
     """Test the confidence intervals metrics."""
     assert confidence_interval(y_test, y_pred, y_var) == confidence_interval_95(

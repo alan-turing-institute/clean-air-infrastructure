@@ -35,11 +35,14 @@ def check(
     nhours: int = NHours,
     ndays: int = NDays,
     feature_name: List[valid_feature_names] = typer.Option(
-        None, help="Features to process. If non given will process all",
+        None,
+        help="Features to process. If non given will process all",
     ),
     source: List[ValidSources] = Sources,
     only_missing: bool = typer.Option(
-        False, "--only-missing", help="Only show missing data",
+        False,
+        "--only-missing",
+        help="Only show missing data",
     ),
     web: bool = Web,
 ):
@@ -90,7 +93,8 @@ def fill(
     nhours: int = NHours,
     ndays: int = NDays,
     feature_name: List[valid_feature_names] = typer.Option(
-        None, help="Features to process. If non given will process all",
+        None,
+        help="Features to process. If non given will process all",
     ),
     source: List[ValidSources] = Sources,
     insert_method: ValidInsertMethods = InsertMethod,
