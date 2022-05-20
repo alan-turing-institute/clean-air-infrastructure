@@ -251,7 +251,9 @@ def laqn_reading_records(laqn_site_records, dataset_start_date, dataset_end_date
             for species in Species:
 
                 for measurement_start_time in rrule.rrule(
-                    rrule.HOURLY, dtstart=dataset_start_date, until=dataset_end_date,
+                    rrule.HOURLY,
+                    dtstart=dataset_start_date,
+                    until=dataset_end_date,
                 ):
 
                     laqn_readings.append(
@@ -276,7 +278,9 @@ def aqe_reading_records(aqe_site_records, dataset_start_date, dataset_end_date):
             for species in Species:
 
                 for measurement_start_time in rrule.rrule(
-                    rrule.HOURLY, dtstart=dataset_start_date, until=dataset_end_date,
+                    rrule.HOURLY,
+                    dtstart=dataset_start_date,
+                    until=dataset_end_date,
                 ):
 
                     aqe_readings.append(
@@ -379,7 +383,9 @@ def satellite_meta_point_and_box_records(satellite_box_records):
 
 @pytest.fixture(scope="module")
 def satellite_forecast(
-    satellite_box_records, dataset_start_date, dataset_end_date,
+    satellite_box_records,
+    dataset_start_date,
+    dataset_end_date,
 ):
     """Generate satellitee forecast data"""
 
@@ -388,10 +394,14 @@ def satellite_forecast(
     for box in box_ids:
         for species in Species:
             for reference_start_utc in rrule.rrule(
-                rrule.DAILY, dtstart=dataset_start_date, until=dataset_end_date,
+                rrule.DAILY,
+                dtstart=dataset_start_date,
+                until=dataset_end_date,
             ):
                 for measurement_start_utc in rrule.rrule(
-                    rrule.HOURLY, dtstart=reference_start_utc, count=72,
+                    rrule.HOURLY,
+                    dtstart=reference_start_utc,
+                    count=72,
                 ):
 
                     all_satellite_forecast.append(
@@ -454,12 +464,16 @@ def fake_laqn_static_dataset(
 
     # Insert meta data
     writer.commit_records(
-        [i.dict() for i in meta_records], on_conflict="overwrite", table=MetaPoint,
+        [i.dict() for i in meta_records],
+        on_conflict="overwrite",
+        table=MetaPoint,
     )
 
     # Insert LAQNSite data
     writer.commit_records(
-        [i.dict() for i in laqn_site_records], on_conflict="overwrite", table=LAQNSite,
+        [i.dict() for i in laqn_site_records],
+        on_conflict="overwrite",
+        table=LAQNSite,
     )
 
     # Insert LAQNReading data
@@ -495,7 +509,9 @@ def fake_cleanair_dataset(
 
     # Insert AQESite data
     writer.commit_records(
-        [i.dict() for i in aqe_site_records], on_conflict="overwrite", table=AQESite,
+        [i.dict() for i in aqe_site_records],
+        on_conflict="overwrite",
+        table=AQESite,
     )
 
     # Insert AQEReading data
@@ -516,7 +532,8 @@ def fake_cleanair_dataset(
     sat_box_map = satellite_meta_point_and_box_records[1]
     # For some reason this insert fails using core
     writer.commit_records(
-        [SatelliteGrid(**i.dict()) for i in sat_box_map], on_conflict="overwrite",
+        [SatelliteGrid(**i.dict()) for i in sat_box_map],
+        on_conflict="overwrite",
     )
 
     # Insert satellite readings
@@ -558,7 +575,10 @@ def laqn_full_config(fake_laqn_static_dataset, laqn_config, model_config):
 
 @pytest.fixture(scope="function")
 def scoot_generator(
-    secretfile, connection, dataset_start_date, dataset_end_date,
+    secretfile,
+    connection,
+    dataset_start_date,
+    dataset_end_date,
 ) -> ScootGenerator:
     """Write scoot data to database"""
     return ScootGenerator(
@@ -573,7 +593,10 @@ def scoot_generator(
 
 @pytest.fixture(scope="function")
 def scoot_single_detector_generator(
-    secretfile, connection, dataset_start_date, dataset_end_date,
+    secretfile,
+    connection,
+    dataset_start_date,
+    dataset_end_date,
 ):
     """Write scoot data to database"""
     return ScootGenerator(
@@ -620,7 +643,8 @@ def scoot_writer(
     "Return a ScootWriter instance which inserts data for all detectors but one"
 
     def request_remote_data(
-        start_datetime_utc, detector_ids,
+        start_datetime_utc,
+        detector_ids,
     ):
         """Patch the request_remote_data method
 
@@ -689,7 +713,10 @@ def base_model(matern32_params: KernelParams) -> BaseModelParams:
 @pytest.fixture(scope="class")
 def svgp_model_params(base_model: BaseModelParams) -> SVGPParams:
     """Create a model params pydantic class."""
-    return SVGPParams(**base_model.dict(), jitter=0.1,)
+    return SVGPParams(
+        **base_model.dict(),
+        jitter=0.1,
+    )
 
 
 @pytest.fixture(scope="class")

@@ -51,7 +51,7 @@ def test_refresh_materialised_view(secretfile, connection, londonView):
 
 def test_materialised_view_not_persisted(secretfile, connection):
     """Check that materialized view isnt persisted during tests
-    
+
     If this fails another test is probably not using connection fixture"""
 
     db_instance = DBWriter(

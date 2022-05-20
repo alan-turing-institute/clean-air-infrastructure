@@ -142,7 +142,8 @@ class StaticWriter(DBWriter):
             ] + extra_args
 
             subprocess.run(
-                command, check=True,
+                command,
+                check=True,
             )
         except subprocess.CalledProcessError:
             self.logger.error("Running ogr2ogr failed!")

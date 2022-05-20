@@ -152,7 +152,12 @@ class SatelliteWriter(
                     "time": "00:00",
                     "type": "forecast",
                     "variable": [self.species_to_copernicus[species]],
-                    "area": [59.35, -9.84, 47.27, 5.63,],
+                    "area": [
+                        59.35,
+                        -9.84,
+                        47.27,
+                        5.63,
+                    ],
                     "level": "0",
                 },
                 grib_file_path,
@@ -276,7 +281,9 @@ class SatelliteWriter(
         )
 
         self.commit_records(
-            reading_entries, on_conflict="overwrite", table=SatelliteForecast,
+            reading_entries,
+            on_conflict="overwrite",
+            table=SatelliteForecast,
         )
 
     def update_interest_points(self):
@@ -286,7 +293,8 @@ class SatelliteWriter(
         # Request satellite data from today for an arbitary pollutant and convert to a dataframe
 
         grib_data_df = self.request_satellite_data(
-            datetime.date.today().strftime("%Y-%m-%d"), species=Species.NO2.value,
+            datetime.date.today().strftime("%Y-%m-%d"),
+            species=Species.NO2.value,
         )
 
         # Construct a SatelliteBox for each box, a SatelliteGrid for each

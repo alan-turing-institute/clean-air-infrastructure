@@ -118,7 +118,9 @@ def get_jamcam_available(
 
     # Filter by time
     if starttime:
-        res = res.filter(JamCamVideoStats.video_upload_datetime >= starttime,)
+        res = res.filter(
+            JamCamVideoStats.video_upload_datetime >= starttime,
+        )
     if endtime:
         res = res.filter(JamCamVideoStats.video_upload_datetime < endtime)
 

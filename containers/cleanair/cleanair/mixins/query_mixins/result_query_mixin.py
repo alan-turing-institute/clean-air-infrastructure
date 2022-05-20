@@ -16,7 +16,10 @@ class ResultQueryMixin:
     dbcnxn: Any
 
     # tables with polygon geom columns
-    POLYGON_GEOMS = dict(hexgrid=HexGrid, grid_100=RectGrid100,)
+    POLYGON_GEOMS = dict(
+        hexgrid=HexGrid,
+        grid_100=RectGrid100,
+    )
 
     @property
     @abstractmethod
