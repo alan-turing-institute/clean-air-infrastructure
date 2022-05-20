@@ -9,7 +9,7 @@ import zipfile
 from datetime import datetime, timedelta
 
 import termcolor
-from azure.common.client_factory import get_client_from_cli_profile
+from azure.identity import AzureCliCredential
 from azure.mgmt.storage import StorageManagementClient
 from azure.storage.blob import (
     BlobServiceClient,
@@ -68,8 +68,9 @@ def emphasised(text):
 
 def generate_sas_token(resource_group, storage_container_name, days, hours):
     """Generate a SAS token when logged in using az login"""
-
-    storage_mgmt_client = get_client_from_cli_profile(StorageManagementClient)
+    
+    subscription_id = os.environ['AZURE_SUBSCRIPTION_ID']
+    storage_mgmt_client = StorageManagementClient(AzureCliCredential(), subscription_id)
     storage_key_list = storage_mgmt_client.storage_accounts.list_keys(
         resource_group, storage_container_name,
     )
