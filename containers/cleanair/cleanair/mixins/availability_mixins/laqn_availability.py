@@ -121,7 +121,9 @@ class LAQNAvailabilityMixin:
 
                 expected_date_times = session.query(
                     func.generate_series(
-                        start_date, reference_end_date_minus_1h, ONE_HOUR_INTERVAL,
+                        start_date,
+                        reference_end_date_minus_1h,
+                        ONE_HOUR_INTERVAL,
                     ).label("measurement_start_utc")
                 )
             else:
@@ -136,7 +138,9 @@ class LAQNAvailabilityMixin:
             # Generate expected species
             species_sub_q = session.query(
                 Values(
-                    [column("species_code", String),],
+                    [
+                        column("species_code", String),
+                    ],
                     *[(polutant,) for polutant in species],
                     alias_name="t2",
                 )
@@ -252,6 +256,9 @@ class LAQNAvailabilityMixin:
                     .label("total_full_data"),
                     func.count(daily_laqn_avail.c.date).label("total"),
                 )
-                .group_by(daily_laqn_avail.c.date, daily_laqn_avail.c.species_code,)
+                .group_by(
+                    daily_laqn_avail.c.date,
+                    daily_laqn_avail.c.species_code,
+                )
                 .order_by(daily_laqn_avail.c.species_code, daily_laqn_avail.c.date)
             )

@@ -28,7 +28,9 @@ class TestSVGP:
         model_data = ModelDataExtractor()
         model = SVGP(svgp_model_params)
         X_train, Y_train, _ = model_data.get_data_arrays(
-            laqn_full_config, laqn_training_data, prediction=False,
+            laqn_full_config,
+            laqn_training_data,
+            prediction=False,
         )
         model.fit(X_train, Y_train)
         assert model.epoch == svgp_model_params.maxiter

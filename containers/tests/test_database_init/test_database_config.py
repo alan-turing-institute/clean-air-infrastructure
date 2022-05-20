@@ -41,7 +41,10 @@ def test_create_and_list_roles(secretfile, config_file, roles, connection):
 
 
 def test_configure_role(
-    secretfile, config_file, connection_module, readonly_user_login,
+    secretfile,
+    config_file,
+    connection_module,
+    readonly_user_login,
 ):
     "Test roles and users are created"
 

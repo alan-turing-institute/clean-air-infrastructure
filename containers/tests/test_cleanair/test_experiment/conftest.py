@@ -152,7 +152,10 @@ def runnable_aq_experiment(
 
 @pytest.fixture(scope="function")
 def update_aq_experiment(
-    runnable_aq_experiment, experiment_dir, secretfile, connection_class,
+    runnable_aq_experiment,
+    experiment_dir,
+    secretfile,
+    connection_class,
 ) -> UpdateAirQualityExperiment:
     """Fixture for updating experiment"""
     runnable_aq_experiment.load_datasets()

@@ -106,7 +106,7 @@ def create_table_from_selectable(
 def create_materialized_view(
     name, selectable, metadata, indexes=None, aliases=None, schema="public", owner=None
 ):
-    """ Create a view on a given metadata
+    """Create a view on a given metadata
 
     :param name: The name of the view to create.
     :param selectable: An SQLAlchemy selectable e.g. a select() statement.
@@ -152,7 +152,7 @@ def create_materialized_view(
 
 
 def create_view(name, selectable, metadata, cascade_on_drop=True):
-    """ Create a view on a given metadata
+    """Create a view on a given metadata
 
     :param name: The name of the view to create.
     :param selectable: An SQLAlchemy selectable e.g. a select() statement.
@@ -198,7 +198,7 @@ def create_view(name, selectable, metadata, cascade_on_drop=True):
 
 
 def refresh_materialized_view(session, name, concurrently=False):
-    """ Refreshes an already existing materialized view
+    """Refreshes an already existing materialized view
 
     :param session: An SQLAlchemy Session instance.
     :param name: The name of the materialized view to refresh.

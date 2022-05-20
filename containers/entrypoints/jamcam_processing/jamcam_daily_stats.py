@@ -48,7 +48,10 @@ data = {}
 for detection_class in DETECTION_CLASSES:
     detection_class_string = DETECTION_CLASS_MAP[detection_class]
     query = get_jamcam_hourly(
-        session, camera_id=None, detection_class=detection_class, starttime=DATE,
+        session,
+        camera_id=None,
+        detection_class=detection_class,
+        starttime=DATE,
     )
     result = query.all()
 
