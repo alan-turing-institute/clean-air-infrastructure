@@ -1,7 +1,7 @@
 # Project information
 site_name: CleanAir Development Docs
 site_description: Documentation for the CleanAir project
-site_author: Oscar Giles, James Robinson, Patrick O'Hara, Christy Nakou, David Pérez-Suárez, Tim Spain
+site_author: Oscar Giles, James Robinson, Patrick O'Hara, Ollie Hamelijnck, Christy Nakou, David Pérez-Suárez, Tim Spain
 site_url: https://urbanair.turing.ac.uk/dev/package/docs
 
 # Repository
@@ -54,6 +54,7 @@ plugins:
 docs_dir: 'docs_src/'
 nav:
   - Cleanair: index.md
+  - Experiment: experiment.md
   - Minikube: minikube.md
   - Cluster: managing_cluster.md
   - Models:

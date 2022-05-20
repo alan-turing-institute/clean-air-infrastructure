@@ -3,7 +3,7 @@ Mixin for loading database loggin info and creating connection strings
 """
 import json
 import os
-from ..loggers import get_logger, green, red
+from ...loggers import get_logger, green, red
 
 
 class DBConnectionMixin:
@@ -51,6 +51,12 @@ class DBConnectionMixin:
             "options": "keepalives=1&keepalives_idle=10",
             **self.connection_info,
         }
+
+        if (
+            "ssl_mode" in self.connection_info
+            and self.connection_info["ssl_mode"] == "require"
+        ):
+            self.connection_dict["options"] += "&sslmode=require"
 
     @property
     def connection_keys(self):

@@ -1,6 +1,11 @@
+import os
 import numpy as np
 import tensorflow as tf
 
+# turn off tensorflow warnings for gpflow
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
+tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
+# pylint: disable=wrong-import-position,wrong-import-order
 from gpflow.likelihoods import Likelihood
 from gpflow import params_as_tensors
 from gpflow import transforms
@@ -30,9 +35,9 @@ class MR_Gaussian(Likelihood):
     @params_as_tensors
     def variational_expectations(self, Fmu, Fvar, Y):
         """
-            Fmu: N x S x 1
-            Fvar: N x S x S
-            Y: N x 1
+        Fmu: N x S x 1
+        Fvar: N x S x S
+        Y: N x 1
         """
         S = tf.shape(Fmu)[1]
         ell = (

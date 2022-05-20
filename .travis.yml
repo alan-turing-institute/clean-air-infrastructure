@@ -20,9 +20,11 @@ jobs:
         - source .travis/env.sh
 
       install:
-        - pip install -r containers/requirements.txt
-        - pip install 'containers/cleanair[models,traffic,dashboard]'
-        - pip install 'containers/urbanair'
+        - pip install -r containers/requirements.txt --use-deprecated=backtrack-on-build-failures
+        - pip install -e 'containers/cleanair'
+        - pip install -e 'containers/cleanair[models]'
+        - pip install -e 'containers/cleanair[traffic]'
+        - pip install -e 'containers/urbanair'
 
       before_script:
         - sh .travis/before_script.sh
@@ -39,8 +41,8 @@ jobs:
         - pylint --rcfile=.pylintrc --ignore=mr_dgp,cleanair.egg-info containers/cleanair/*
         # run linting for the mrdgp module but only detect warnings and errors
         - pylint --rcfile=.pylintrc --disable=R,C containers/cleanair/cleanair/models/mr_dgp/*
-        # run linting for the tests
-        - pylint --rcfile=.pylintrc containers/tests/test_cleanair containers/tests/test_database_init
+        # run linting for the tests but only detect warnings and errors
+        - pylint --rcfile=.pylintrc --disable=R,C containers/tests/test_cleanair/* containers/tests/test_database_init/*
         # Run type checking
         - mypy --config-file .mypy.ini containers/cleanair
   
@@ -51,9 +53,9 @@ jobs:
         - source .travis/env.sh
 
       install:
-        - pip install -r containers/requirements.txt
-        - pip install 'containers/cleanair'
-        - pip install 'containers/odysseus'
+        - pip install -r containers/requirements.txt --use-deprecated=backtrack-on-build-failures
+        - pip install -e 'containers/cleanair'
+        - pip install -e 'containers/odysseus'
 
       before_script:
         - sh .travis/before_script.sh
@@ -73,8 +75,8 @@ jobs:
         - source .travis/env.sh
 
       install:
-        - pip install -r containers/requirements.txt
-        - pip install 'containers/cleanair'
+        - pip install -r containers/requirements.txt  --use-deprecated=backtrack-on-build-failures
+        - pip install -e 'containers/cleanair'
         - pip install -e 'containers/urbanair'
 
       before_script:
@@ -91,7 +93,7 @@ jobs:
 
     - name: "code_style_formatting"
       install:
-        - pip install -r containers/requirements.txt
+        - pip install -r containers/requirements.txt  --use-deprecated=backtrack-on-build-failures
 
       script:
         # Check black formatting would not make any chages

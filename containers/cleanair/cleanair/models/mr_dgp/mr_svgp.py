@@ -111,7 +111,7 @@ class MR_SVGP(Parameterized):
         KL = -0.5 * tf.cast(self.num_inducing, settings.float_type)
         KL -= 0.5 * tf.reduce_sum(tf.log(tf.matrix_diag_part(self.q_sqrt) ** 2))
         KL += 0.5 * tf.reduce_sum(tf.square(self.q_sqrt))
-        KL += 0.5 * tf.reduce_sum(self.q_mu ** 2)
+        KL += 0.5 * tf.reduce_sum(self.q_mu**2)
         return KL
 
     @params_as_tensors

@@ -10,6 +10,7 @@ from ..loggers import get_logger
 from ..types import (
     FeaturesDict,
     NDArrayTuple,
+    PredictionDict,
     Species,
     TargetDict,
     SVGPParams,
@@ -47,6 +48,7 @@ class ModelMixin:
             raise NotImplementedError("Multiple pollutants not supported yet.")
         # other misc arguments
         self.model = None
+        self.elbo: List[float] = []
         self.epoch = 0
         self.batch_size = batch_size
         self.refresh = refresh
@@ -100,7 +102,7 @@ class ModelMixin:
         """
 
     @abstractmethod
-    def predict(self, x_test: FeaturesDict) -> TargetDict:
+    def predict(self, x_test: FeaturesDict) -> PredictionDict:
         """Predict using the model.
 
         Args:
@@ -130,6 +132,10 @@ class ModelMixin:
             }
         """
         ModelMixin.check_test_set_is_valid(x_test)
+
+    @abstractmethod
+    def params(self) -> Union[MRDGPParams, SVGPParams]:
+        """Get the model parameters"""
 
     @staticmethod
     def check_training_set_is_valid(x_train: FeaturesDict, y_train: TargetDict) -> None:
@@ -197,20 +203,21 @@ class ModelMixin:
             if x_test[source].shape[0] == 0:
                 raise ValueError("x_test has no data for {src}.".format(src=source))
 
-    def elbo_logger(self, logger_arg) -> None:
+    def elbo_logger(self, logger_arg) -> None:  # pylint: disable=unused-argument
         """Log optimisation progress.
 
         Args:
             logger_arg: Argument passed as a callback from GPFlow optimiser.
         """
+        # save elbo every epoch
+        session = self.model.enquire_session()
+        objective = self.model.objective.eval(session=session)
+        self.elbo.append(objective)
         if (self.epoch % self.refresh) == 0:
-            session = self.model.enquire_session()
-            objective = self.model.objective.eval(session=session)
             self.logger.info(
-                "Model fitting. Iteration: %s, ELBO: %s, Arg: %s",
+                "Iteration: %s, ELBO: %s",
                 self.epoch,
                 objective,
-                logger_arg,
             )
         self.epoch += 1
 
@@ -266,7 +273,7 @@ class ModelMixin:
         self,
         x_test: FeaturesDict,
         predict_fn: Callable[[NDArray[Float64]], NDArrayTuple],
-    ) -> TargetDict:
+    ) -> PredictionDict:
         """Predict using the model at the laqn sites for NO2.
 
         Args:
@@ -282,7 +289,9 @@ class ModelMixin:
         for src, x_src in x_test.items():
             for pollutant in self.tasks:
                 self.logger.info(
-                    "Batch predicting for %s on %s", pollutant, src,
+                    "Batch predicting for %s on %s",
+                    pollutant,
+                    src,
                 )
                 y_mean, y_var = self.batch_predict(x_src, predict_fn)
                 y_dict[src] = {pollutant: dict(mean=y_mean, var=y_var)}
@@ -303,6 +312,14 @@ class ModelMixin:
             y_array: Target array cleaned of NaNs
         """
         idx = ~np.isnan(y_array[:, 0])
+        x_array = x_array[idx, :]
+        y_array = y_array[idx, :]
+
+        # TODO Consider removing this nan search in x_array when updating queries that get the data
+        # there should be no nans in here anyway
+        idx = np.isnan(x_array[:, :])
+        idx = [not (True in row) for row in idx]
+
         x_array = x_array[idx, :]
         y_array = y_array[idx, :]
 

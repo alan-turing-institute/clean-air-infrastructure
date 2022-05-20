@@ -1,18 +1,22 @@
+import os
 import numpy as np
 import tensorflow as tf
+
+# turn off tensorflow warnings for gpflow
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
+tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
+# pylint: disable=wrong-import-position,wrong-import-order
 import gpflow
-from gpflow import settings
-from gpflow import params_as_tensors
 
 
 class MR_MATERN_32(gpflow.kernels.Stationary):
     """Multi-resolution Matern 32 kernel."""
 
-    @params_as_tensors
+    @gpflow.params_as_tensors
     def Kdiag(self, X, presliced=False):
         return tf.fill(tf.shape(X)[:-1], tf.squeeze(self.variance))
 
-    @params_as_tensors
+    @gpflow.params_as_tensors
     def K(self, X, X2=None, presliced=False):
         # Only implemented for input_dimension = 1
 
@@ -44,11 +48,11 @@ class MR_MATERN_32(gpflow.kernels.Stationary):
 
         if jitter_flag:
             # val =  util.add_jitter(val, self.context.jitter)
-            jit = tf.cast(settings.jitter, settings.float_type)
+            jit = tf.cast(gpflow.settings.jitter, gpflow.settings.float_type)
             k = k + (jit * tf.eye(tf.shape(k)[1]))[None, :, :]
 
         return k
 
-    @params_as_tensors
+    @gpflow.params_as_tensors
     def K_r(self, r):
         raise NotImplementedError("Function not needed - feel free to contribute.")

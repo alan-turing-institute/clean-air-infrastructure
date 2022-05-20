@@ -4,7 +4,7 @@ import os
 import json
 from enum import Enum
 import typer
-from ..state import DATA_CACHE
+from ..state import DATA_CACHE, EXPERIMENT_CACHE
 from ....features import FEATURE_CONFIG, FEATURE_CONFIG_DYNAMIC
 from ....timestamps import as_datetime, TIMESTRINGS
 from ....types import Source as ValidSources
@@ -44,8 +44,8 @@ def NDays_callback(value: int) -> int:
 
 def NWorkers_callback(value: int) -> int:
     "cap workers"
-    if value > 2:
-        raise ValueError("nworkers must be less than 3")
+    if value > 6:
+        raise ValueError("nworkers must be less than 7")
     return value
 
 
@@ -135,10 +135,25 @@ CopernicusKey = typer.Option(
     callback=CopernicusKey_callback,
 )
 
-Web = typer.Option(False, help="Show outputs in browser", show_default=True,)
+Web = typer.Option(
+    False,
+    help="Show outputs in browser",
+    show_default=True,
+)
 
 InputDir = typer.Argument(
     DATA_CACHE,
+    dir_okay=True,
+    file_okay=False,
+    writable=True,
+    readable=True,
+    resolve_path=True,
+    exists=False,
+)
+
+ExperimentDir = typer.Option(
+    EXPERIMENT_CACHE,
+    help="Directory to save experiment data",
     dir_okay=True,
     file_okay=False,
     writable=True,

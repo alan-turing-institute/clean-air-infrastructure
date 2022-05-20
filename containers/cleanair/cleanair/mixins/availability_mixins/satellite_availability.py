@@ -170,7 +170,9 @@ class SatelliteAvailabilityMixin:
             # Generate expected species
             species_sub_q = session.query(
                 Values(
-                    [column("species", String),],
+                    [
+                        column("species", String),
+                    ],
                     *[(polutant,) for polutant in species],
                     alias_name="t2",
                 )

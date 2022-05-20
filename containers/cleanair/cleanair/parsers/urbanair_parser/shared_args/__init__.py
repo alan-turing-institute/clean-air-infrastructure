@@ -1,5 +1,5 @@
 """Shared arguments"""
-from .instance_options import (
+from .experiment_options import (
     ClusterIdOption,
     TagOption,
 )
@@ -12,12 +12,15 @@ from .model_options import (
     KernelVariance,
     MaxIter,
     MinibatchSize,
-    NumInducingPoints,
+    MRDGPNumInducingPoints,
+    SVGPNumInducingPoints,
+    Refresh,
 )
 from .shared_args import (
     AWSId,
     AWSKey,
     CopernicusKey,
+    ExperimentDir,
     From,
     InputDir,
     InsertMethod,
@@ -43,6 +46,7 @@ __all__ = [
     "AWSKey",
     "ClusterIdOption",
     "CopernicusKey",
+    "ExperimentDir",
     "From",
     "InputDir",
     "InsertMethod",
@@ -56,10 +60,12 @@ __all__ = [
     "NHours",
     "MaxIter",
     "MinibatchSize",
-    "NumInducingPoints",
+    "MRDGPNumInducingPoints",
+    "Refresh",
     "ScootDetectors",
     "Sources",
     "Species",
+    "SVGPNumInducingPoints",
     "UpTo_callback",
     "UpTo",
     "TagOption",

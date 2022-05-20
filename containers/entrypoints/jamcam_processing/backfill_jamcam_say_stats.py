@@ -11,7 +11,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import DeferredReflection
 from sqlalchemy.orm import sessionmaker, Session
 from cleanair.databases.tables import JamCamDayStats
-from cleanair.mixins import DBConnectionMixin
+from cleanair.databases.mixins import DBConnectionMixin
 from urbanair.config import get_settings
 from urbanair.databases.queries import get_jamcam_hourly
 from urbanair.types import DetectionClass
@@ -57,7 +57,10 @@ while date != today:
         sys.stdout.write(f"Fetching data for: {date} - {detection_class_string}\r")
         sys.stdout.flush()
         query = get_jamcam_hourly(
-            session, camera_id=None, detection_class=detection_class, starttime=date,
+            session,
+            camera_id=None,
+            detection_class=detection_class,
+            starttime=date,
         )
         result = query.all()
 

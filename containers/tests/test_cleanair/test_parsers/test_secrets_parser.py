@@ -1,5 +1,5 @@
 """Tests for the secret parser mixin"""
-from argparse import ArgumentParser, ArgumentTypeError
+from argparse import ArgumentParser
 import pytest
 from cleanair.mixins import SecretFileParserMixin
 from cleanair.databases import DBInteractor
@@ -56,7 +56,6 @@ def test_parser_mixins(secretfile):
     secret_parser = SecretFileParser(add_help=False)
     verbosity_parser = VerbosityParser(add_help=False)
     source_parser = SourceParser(sources=["laqn", "aqe"], add_help=False)
-    duration_parser = DurationParser(ndays=5, end="tomorrow")
 
     myparser = ArgumentParser(parents=[secret_parser, verbosity_parser, source_parser])
     args = myparser.parse_args(
@@ -113,7 +112,7 @@ def test_subparser():
     main_parser = ArgumentParser(parents=[duration_parser])
 
     subparsers = main_parser.add_subparsers(required=True, dest="command")
-    parser_check = subparsers.add_parser(
+    subparsers.add_parser(
         "check",
         help="Check what satellite readings are available in the cleanair database",
         parents=[web_parser],
@@ -129,11 +128,9 @@ def test_duration_parser_n_days(secretfile):
 
     def check():
         "fake check function"
-        pass
 
     def fill():
         "fake fill function"
-        pass
 
     parser = create_satellite_input_parser(check, fill)
 

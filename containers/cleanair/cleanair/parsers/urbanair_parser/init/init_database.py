@@ -1,6 +1,5 @@
 """CLI for connecting to databases."""
 
-import subprocess
 import os
 import json
 from pathlib import Path
@@ -15,6 +14,10 @@ from ..state import (
 from ....loggers.logcolours import red, green
 from ....databases import DBInteractor
 from ..state import state
+from ....utils.database_authentication import (
+    get_database_access_token,
+    get_database_username,
+)
 
 app = typer.Typer(help="Initialise the CLI to connect to a database.")
 
@@ -36,61 +39,26 @@ def production() -> None:
 
     Ensure you have run 'az login' first"""
 
-    try:
-        user_cmd = subprocess.run(
-            ["az", "ad", "signed-in-user", "show", "-o", "json"],
-            capture_output=True,
-            check=True,
-        )
-
-        username = json.loads(user_cmd.stdout.decode())["userPrincipalName"]
-
-    except Exception:
-        typer.echo("Could not get active user. Have you run 'az login'")
-        raise typer.Abort()
-
     # Create app dir
     if not os.path.isdir(APP_DIR):
         os.mkdir(APP_DIR)
+
+    username = get_database_username()
 
     # Request an access token
     typer.echo(
         f"Requesting access token for {green(username)} to connect to {green(PROD_HOST)}"
     )
 
-    try:
-        token_cmd = subprocess.run(
-            [
-                "az",
-                "account",
-                "get-access-token",
-                "--resource-type",
-                "oss-rdbms",
-                "--query",
-                "accessToken",
-                "-o",
-                "tsv",
-            ],
-            check=True,
-            capture_output=True,
-        )
-    except:
-        typer.echo(
-            f"Failed to get an access token for {green(username)}. Do you have DB access?"
-        )
-        raise typer.Abort()
-
-    token = token_cmd.stdout.decode("utf-8")[:-1]
-
-    PROD_SECRET_DICT["password"] = token
-    PROD_SECRET_DICT["username"] = username + "@cleanair-inputs-server"
+    PROD_SECRET_DICT["password"] = get_database_access_token()
+    PROD_SECRET_DICT["username"] = username
 
     # Create config secretfile
     with open(CONFIG_SECRETFILE_PATH, "w") as secretfile:
         json.dump(PROD_SECRET_DICT, secretfile, indent=4)
 
     typer.echo(
-        f"Credentials for {green(username)} writen to {CONFIG_SECRETFILE_PATH}\n"
+        f"Credentials for {green(username)} written to {CONFIG_SECRETFILE_PATH}\n"
         f"To remove credentials call {green('urbanair remove_config')}\n"
         f"{red('Credentials will expire after 5-60 minutes.')} If access required for longer contact admin"
     )

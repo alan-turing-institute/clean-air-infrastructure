@@ -1,6 +1,10 @@
 FROM tiangolo/uvicorn-gunicorn-fastapi:python3.7
 
-RUN pip install mkdocs-material==5.5.12 mkdocstrings==0.13.2
+RUN pip install mkdocs==1.1.2 mkdocs-material==5.5.12 mkdocstrings==0.13.2
+
+# set the version of cleanair
+ARG urbanair_version
+ENV SETUPTOOLS_SCM_PRETEND_VERSION ${urbanair_version}
 
 # Copy the cleanair package into the container and install
 COPY cleanair /apps/cleanair
