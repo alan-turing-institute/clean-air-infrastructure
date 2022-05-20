@@ -8,7 +8,8 @@ from ..shared_args import InputDir
 from ..shared_args.model_options import Refresh
 from ....models import SVGP, MRDGP, ModelDataExtractor
 from ....types import ModelName, Source
-from ....utils import FileManager, tf1
+from ....utils import tf1
+from ....utils.file_manager import FileManager
 
 if TYPE_CHECKING:
     from ....models import ModelMixin

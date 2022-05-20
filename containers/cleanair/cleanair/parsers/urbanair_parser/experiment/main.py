@@ -20,7 +20,7 @@ from ....models import ModelData
 from ..shared_args import ExperimentDir
 from ..state import state
 from ....types import ExperimentName
-from ....utils import FileManager
+from ....utils.file_manager import FileManager
 
 app = typer.Typer(help="Experiment CLI")
 

@@ -9,7 +9,7 @@ import gpflow
 import pandas as pd
 from cleanair.metrics import TrainingMetrics
 from cleanair.types import ModelName, Source
-from cleanair.utils import FileManager
+from cleanair.utils.file_manager import FileManager
 from cleanair.utils.tf1 import load_gpflow1_model_from_file, save_gpflow1_model_to_file
 
 if TYPE_CHECKING:

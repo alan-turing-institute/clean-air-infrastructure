@@ -23,7 +23,7 @@ from ..loggers import get_logger
 from ..metrics import TrainingMetrics
 from ..models import ModelData, ModelDataExtractor, MRDGP, SVGP
 from ..types import ExperimentName, IndexedDatasetDict, ModelName, Source, TargetDict
-from ..utils import FileManager
+from ..utils.file_manager import FileManager
 
 if TYPE_CHECKING:
     import os

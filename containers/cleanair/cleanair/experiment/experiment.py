@@ -18,7 +18,7 @@ from ..databases.mixins import (
 from ..loggers import get_logger
 from ..mixins import InstanceMixin
 from ..types import ExperimentConfig, ExperimentName
-from ..utils import FileManager
+from ..utils.file_manager import FileManager
 
 
 class ExperimentMixin:
