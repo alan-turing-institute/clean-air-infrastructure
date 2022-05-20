@@ -10,6 +10,7 @@ from azure.keyvault import KeyVaultClient
 from azure.mgmt.keyvault import KeyVaultManagementClient
 from azure.mgmt.resource.subscriptions import SubscriptionClient
 from azure.mgmt.compute import ComputeManagementClient
+from cleanair.utils.azure import get_urbanair_az_subscription_id
 
 
 def emphasised(text):
@@ -83,10 +84,11 @@ def main():
     logging.getLogger("azure").setLevel(logging.WARNING)
 
     # Get subscription
-    
+
     # Acquire a credential object using CLI-based authentication.
     credential = AzureCliCredential()
-    _, subscription_id = os.environ['AZURE_SUBSCRIPTION_ID']
+    subscription_id = get_urbanair_az_subscription_id(credential)
+
     # Obtain the management object for resources.
     subscription_client = SubscriptionClient(credential)
     subscription_name = subscription_client.subscriptions.get(

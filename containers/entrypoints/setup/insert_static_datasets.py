@@ -20,6 +20,7 @@ from azure.storage.blob import (
 from cleanair.databases import Connector, DBInteractor
 from cleanair.inputs import StaticWriter
 from cleanair.parsers import DatabaseSetupParser
+from cleanair.utils.azure import get_urbanair_az_subscription_id
 
 DATASETS = {
     "rectgrid_100": {
@@ -68,9 +69,9 @@ def emphasised(text):
 
 def generate_sas_token(resource_group, storage_container_name, days, hours):
     """Generate a SAS token when logged in using az login"""
-    
-    subscription_id = os.environ['AZURE_SUBSCRIPTION_ID']
-    storage_mgmt_client = StorageManagementClient(AzureCliCredential(), subscription_id)
+    credential = AzureCliCredential()
+    subscription_id = get_urbanair_az_subscription_id(credential)
+    storage_mgmt_client = StorageManagementClient(credential, subscription_id)
     storage_key_list = storage_mgmt_client.storage_accounts.list_keys(
         resource_group,
         storage_container_name,
