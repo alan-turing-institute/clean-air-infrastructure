@@ -7,8 +7,19 @@ Azure Infrastructure for the [Clean Air project](https://www.turing.ac.uk/resear
 
 Provides 48h high-resolution air pollution forecasts over London via the [UrbanAir-API](https://urbanair.turing.ac.uk/apidocs/).
 
-Currently repurposed to assess `busyness` in London during the COVID-19 pandemic - providing busyness data via the [ip-whitelisted API](https://urbanair.turing.ac.uk/apidocs/).
+Previously repurposed to assess `busyness` in London during the COVID-19 pandemic - providing busyness data via the [ip-whitelisted API](https://urbanair.turing.ac.uk/apidocs/).
 
+## Contents
+
+- [Installation](docs/installation.md)
+- [Developer guide](docs/developer.md)
+- [Azure infrastructure](docs/azure.md)
+- [Datasets](docs/datasets.md)
+- [Cheat sheet](docs/cheat.md)
+- [Contributors](docs/contributors.md)
+
+<details>
+  <summary>See the old README file!</summary>
 
 # Contributors :dancers:
 
@@ -971,3 +982,5 @@ terraform destroy
 
 You can check everything was removed on the Azure portal.
 Then login to TravisCI and delete the Azure Container repo environment variables.
+
+</details>
