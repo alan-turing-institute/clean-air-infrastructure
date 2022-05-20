@@ -449,7 +449,9 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
             # Get a row with all the point ids requested
             point_id_sq = session.query(
                 Values(
-                    [column("point_id", String),],
+                    [
+                        column("point_id", String),
+                    ],
                     *[(point_id,) for point_id in point_ids],
                     alias_name="point_ids",
                 )
@@ -457,7 +459,9 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
 
             feature_sq = session.query(
                 Values(
-                    [column("feature_name", String),],
+                    [
+                        column("feature_name", String),
+                    ],
                     *[(feature.value,) for feature in features],
                     alias_name="features",
                 )
@@ -545,7 +549,10 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
 
     @db_query(StaticFeatureLocSchema)
     def select_static_features(
-        self, point_ids: List[str], features: List[StaticFeatureNames], source: Source,
+        self,
+        point_ids: List[str],
+        features: List[StaticFeatureNames],
+        source: Source,
     ):
         """
         Return static features from the database for a list of point ids
@@ -564,7 +571,9 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
             # Get a row with all the point ids requested
             point_id_sq = session.query(
                 Values(
-                    [column("point_id", String),],
+                    [
+                        column("point_id", String),
+                    ],
                     *[(point_id,) for point_id in point_ids],
                     alias_name="point_ids",
                 )
@@ -572,7 +581,9 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
 
             feature_sq = session.query(
                 Values(
-                    [column("feature_name", String),],
+                    [
+                        column("feature_name", String),
+                    ],
                     *[(feature.value,) for feature in features],
                     alias_name="features",
                 )
@@ -600,7 +611,11 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
                         "in_london"
                     ),
                 )
-                .join(MetaPoint, MetaPoint.id == StaticFeature.point_id, isouter=True,)
+                .join(
+                    MetaPoint,
+                    MetaPoint.id == StaticFeature.point_id,
+                    isouter=True,
+                )
                 .filter(
                     MetaPoint.id.in_(point_ids),
                     StaticFeature.feature_name.in_(features),
@@ -661,7 +676,9 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
 
             cols.append(
                 Values(
-                    [column("species_code", String),],
+                    [
+                        column("species_code", String),
+                    ],
                     *[(polutant.value,) for polutant in species],
                     alias_name="t2",
                 )
@@ -709,11 +726,18 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
                 f"Source must be one of {[Source.laqn, Source.aqe, Source.satellite]}"
             )
 
-        return self.join_features_to_sensors(static_features, sensor_readings, source,)
+        return self.join_features_to_sensors(
+            static_features,
+            sensor_readings,
+            source,
+        )
 
     @db_query(StaticFeaturesWithSensors)
     def join_features_to_sensors(
-        self, static_features: Alias, sensor_readings: Alias, source: Source,
+        self,
+        static_features: Alias,
+        sensor_readings: Alias,
+        source: Source,
     ):
         """Join sensor readings and static features"""
         columns = [

@@ -29,7 +29,10 @@ def get_git_hash() -> str:
 
 
 def instance_id_from_hash(
-    model_name: str, param_id: str, data_id: str, git_hash: str,
+    model_name: str,
+    param_id: str,
+    data_id: str,
+    git_hash: str,
 ) -> str:
     """Return an instance id by hashing the arguments.
 

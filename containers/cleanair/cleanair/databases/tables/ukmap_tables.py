@@ -13,7 +13,11 @@ class UKMap(Base):
     __tablename__ = "ukmap"
     __table_args__ = {"schema": "static_data"}
 
-    geographic_type_number = Column(Integer, primary_key=True, nullable=False,)
+    geographic_type_number = Column(
+        Integer,
+        primary_key=True,
+        nullable=False,
+    )
     date_of_feature_edit = Column(DATE)
     feature_type = Column(String(200), index=True)
     landuse = Column(String(200), index=True)

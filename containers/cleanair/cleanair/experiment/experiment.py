@@ -73,7 +73,8 @@ class ExperimentMixin:
     def get_experiment_config(self) -> ExperimentConfig:
         """Get the experiment settings"""
         return ExperimentConfig(
-            name=self.name, instance_id_list=self.get_instance_ids(),
+            name=self.name,
+            instance_id_list=self.get_instance_ids(),
         )
 
     def get_instance(self, instance_id: str) -> InstanceMixin:
@@ -295,13 +296,19 @@ class UpdateExperimentMixin(ExperimentMixin):
 
         # write records to the database
         self.commit_records(
-            data_config_records, on_conflict="overwrite", table=self.data_table,
+            data_config_records,
+            on_conflict="overwrite",
+            table=self.data_table,
         )
         self.commit_records(
-            model_records, on_conflict="overwrite", table=self.model_table,
+            model_records,
+            on_conflict="overwrite",
+            table=self.model_table,
         )
         self.commit_records(
-            instance_records, on_conflict="overwrite", table=self.instance_table,
+            instance_records,
+            on_conflict="overwrite",
+            table=self.instance_table,
         )
 
     @abstractmethod

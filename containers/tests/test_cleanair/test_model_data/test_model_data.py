@@ -37,7 +37,10 @@ class TestModelData:
         features = [StaticFeatureNames.building_height, StaticFeatureNames.grass]
         # Get a single valid point id
         dat = model_data.select_static_features(
-            point_id, features, source, output_type="all",
+            point_id,
+            features,
+            source,
+            output_type="all",
         )
 
         assert len(dat) == len(features)
@@ -46,8 +49,8 @@ class TestModelData:
 
     def test_select_static_features_invalid(self, model_data):
         """When we request a point ID not in the database we should
-            get empty features back. However, if we validate with
-            a pydantic model it should raise a runtime error
+        get empty features back. However, if we validate with
+        a pydantic model it should raise a runtime error
         """
         point_id = [str(uuid.uuid4())]
 
@@ -56,7 +59,10 @@ class TestModelData:
 
         # Get a single valid point id
         dat = model_data.select_static_features(
-            point_id, features, source, output_type="query",
+            point_id,
+            features,
+            source,
+            output_type="query",
         ).all()
 
         assert len(dat) == len(features)
@@ -68,12 +74,20 @@ class TestModelData:
 
         with pytest.raises(ValidationError):
             model_data.select_static_features(
-                point_id, features, source, output_type="all",
+                point_id,
+                features,
+                source,
+                output_type="all",
             )
 
     @pytest.mark.parametrize("source", [Source.laqn, Source.aqe, Source.satellite])
     def test_select_static_features_config(
-        self, model_data, point_ids_all, point_ids_valid, valid_full_config, source,
+        self,
+        model_data,
+        point_ids_all,
+        point_ids_valid,
+        valid_full_config,
+        source,
     ):
         """
         Test that we get the correct static features.
@@ -165,7 +179,12 @@ class TestModelData:
         "species", [[Species.NO2], [Species.PM10], [Species.NO2, Species.PM10]]
     )
     def test_get_training_data_inputs(
-        self, model_data, valid_full_config, source, species, lookup_sensor_reading,
+        self,
+        model_data,
+        valid_full_config,
+        source,
+        species,
+        lookup_sensor_reading,
     ):
 
         # Id's from config file

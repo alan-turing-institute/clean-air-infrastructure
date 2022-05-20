@@ -33,7 +33,8 @@ def generate_sas_token(
     if not storage_account_key:
         storage_mgmt_client = get_client_from_cli_profile(StorageManagementClient)
         storage_key_list = storage_mgmt_client.storage_accounts.list_keys(
-            resource_group, storage_account_name,
+            resource_group,
+            storage_account_name,
         )
         storage_account_key = [
             k.value for k in storage_key_list.keys if k.key_name == "key1"
@@ -159,7 +160,8 @@ def list_blobs(
 
 if __name__ == "__main__":
     SAS_TOKEN = generate_sas_token(
-        resource_group="Datasets", storage_account_name="londonaqdatasets",
+        resource_group="Datasets",
+        storage_account_name="londonaqdatasets",
     )
 
     download_blob(

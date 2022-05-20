@@ -135,7 +135,11 @@ CopernicusKey = typer.Option(
     callback=CopernicusKey_callback,
 )
 
-Web = typer.Option(False, help="Show outputs in browser", show_default=True,)
+Web = typer.Option(
+    False,
+    help="Show outputs in browser",
+    show_default=True,
+)
 
 InputDir = typer.Argument(
     DATA_CACHE,

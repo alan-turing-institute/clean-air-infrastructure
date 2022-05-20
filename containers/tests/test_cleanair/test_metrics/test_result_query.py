@@ -64,7 +64,10 @@ class TestResultQuery:
         # run simple query
         # then query the same result
         result_df = svgp_result.query_results(
-            svgp_result.instance_id, Source.laqn, with_location=False, output_type="df",
+            svgp_result.instance_id,
+            Source.laqn,
+            with_location=False,
+            output_type="df",
         )
 
         assert len(result_df) == len(svgp_result.result_df)
@@ -113,7 +116,10 @@ class TestResultQuery:
         # run simple query
         # then query the same result
         result_df = svgp_result.query_results(
-            svgp_result.instance_id, Source.laqn, with_location=True, output_type="df",
+            svgp_result.instance_id,
+            Source.laqn,
+            with_location=True,
+            output_type="df",
         )
         assert len(result_df) == len(svgp_result.result_df)
 

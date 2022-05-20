@@ -52,7 +52,9 @@ class StaticFeatureAvailabilityMixin:
                     MetaPoint.id,
                     MetaPoint.source,
                     Values(
-                        [column("feature_name", String),],
+                        [
+                            column("feature_name", String),
+                        ],
                         *[(feature,) for feature in feature_names],
                         alias_name="t2",
                     ),
@@ -62,7 +64,8 @@ class StaticFeatureAvailabilityMixin:
             )
 
             available_data_q = session.query(
-                expected_values, in_data_cte.c.point_id.isnot(None).label("has_data"),
+                expected_values,
+                in_data_cte.c.point_id.isnot(None).label("has_data"),
             ).join(
                 in_data_cte,
                 (in_data_cte.c.point_id == expected_values.c.id)
@@ -77,5 +80,6 @@ class StaticFeatureAvailabilityMixin:
                 )
 
             return available_data_q.order_by(
-                expected_values.c.source, expected_values.c.feature_name,
+                expected_values.c.source,
+                expected_values.c.feature_name,
             )

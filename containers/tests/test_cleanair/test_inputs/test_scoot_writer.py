@@ -103,7 +103,8 @@ def test_process_hour(scoot_detector_single_hour, scoot_writer, dataset_start_da
 
     # Check data in database is expected
     assert_frame_equal(
-        retrieved_cols_df_drop_null, expected_cols_df,
+        retrieved_cols_df_drop_null,
+        expected_cols_df,
     )
 
     # # Check the missing hour is for the missing detector
@@ -123,12 +124,18 @@ def test_scoot_reader(scoot_writer, dataset_start_date, connection, secretfile):
     # Check the hour
     end = dataset_start_date + timedelta(hours=1)
     scoot_reader = ScootReader(
-        end=end, nhours=1, secretfile=secretfile, connection=connection,
+        end=end,
+        nhours=1,
+        secretfile=secretfile,
+        connection=connection,
     )
 
     # Check we have 100% of readings
     assert (
-        scoot_reader.get_percentage_quantiles(output_type="df",).iloc[0]["1"] == 100.0
+        scoot_reader.get_percentage_quantiles(output_type="df",).iloc[
+            0
+        ]["1"]
+        == 100.0
     )
 
     # Check we got all data except one sensor
