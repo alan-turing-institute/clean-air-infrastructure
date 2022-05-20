@@ -8,4 +8,6 @@ Before starting this guide, please make sure have completed the following tasks:
 
 The recommended way of accessing the database is via our cleanair package and the `urbanair` CLI.
 
-
+```bash
+urbanair init production
+```
