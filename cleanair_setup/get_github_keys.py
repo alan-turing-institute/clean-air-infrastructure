@@ -4,6 +4,7 @@ Authenticate with Azure and get relevant keys
 # pylint: skip-file
 import logging
 import termcolor
+import os
 from azure.identity import AzureCliCredential
 from azure.keyvault import KeyVaultClient
 from azure.mgmt.keyvault import KeyVaultManagementClient
@@ -85,9 +86,9 @@ def main():
     
     # Acquire a credential object using CLI-based authentication.
     credential = AzureCliCredential()
-    _, subscription_id = AzureCliCredential()
+    _, subscription_id = os.environ['AZURE_SUBSCRIPTION_ID']
     # Obtain the management object for resources.
-    subscription_client = SubscriptionClient(credential, subscription_id)
+    subscription_client = SubscriptionClient(credential)
     subscription_name = subscription_client.subscriptions.get(
         subscription_id
     ).display_name

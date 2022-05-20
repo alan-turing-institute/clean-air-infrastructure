@@ -1,6 +1,7 @@
 """Util functions for interacting with Azure blob storage"""
 from datetime import datetime, timedelta, timezone
 from typing import Optional, List
+import os
 
 from azure.identity import AzureCliCredential
 from azure.mgmt.storage import StorageManagementClient

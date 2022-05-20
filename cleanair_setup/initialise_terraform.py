@@ -142,8 +142,9 @@ def generate_new_storage_account(storage_mgmt_client, resource_group, location):
 
 def get_azure_credentials():
     """Get subscription and tenant IDs"""
-    _, subscription_id, tenant_id = AzureCliCredential(tenant_id=tenant_id)
-    subscription_client = SubscriptionClient(AzureCliCredential())
+
+    credential = AzureCliCredential()
+    subscription_client = SubscriptionClient(credential)
     subscription_name = subscription_client.subscriptions.get(
         subscription_id
     ).display_name
