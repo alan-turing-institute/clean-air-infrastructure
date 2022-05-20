@@ -46,13 +46,16 @@ setuptools.setup(
         "shapely==1.7.1",
         "tabulate==0.8.7",
         "termcolor==1.1.0",
-        "typer==0.2.1",
+        "typer==0.4.1",
         "uuid==1.30",
         "xarray==0.15.1",
         "orjson==3.6.0",
     ],
     extras_require={
-        "traffic": ["pystan==2.19.1.1", "fbprophet==0.6",],
+        "traffic": [
+            "pystan==2.19.1.1",
+            "fbprophet==0.6",
+        ],
         "models": ["gpflow==1.5.1", "tensorflow==1.15.0"],
     },
     setup_requires=["setuptools_scm"],

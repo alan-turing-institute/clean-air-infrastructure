@@ -63,8 +63,7 @@ class ModelConfig(
         buffer_sizes: List[FeatureBufferSize],
         norm_by: str,
     ) -> DataConfig:
-        """Return a configuration class
-        """
+        """Return a configuration class"""
 
         return DataConfig(
             train_start_date=(
@@ -121,7 +120,7 @@ class ModelConfig(
 
     def generate_full_config(self, config: DataConfig) -> FullDataConfig:
         """Generate a full config file by querying the cleanair
-           database to check available interest point sources and features"""
+        database to check available interest point sources and features"""
 
         # Get interest points from database
         config.train_interest_points = self.get_interest_point_ids(
@@ -261,8 +260,7 @@ class ModelConfig(
 
     @db_query()
     def get_available_static_features(self):
-        """Return available static features from the CleanAir database
-        """
+        """Return available static features from the CleanAir database"""
 
         with self.dbcnxn.open_session() as session:
 

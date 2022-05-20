@@ -36,7 +36,10 @@ def check(
     )
 
     print(
-        scoot_reader.get_percentage_quantiles(missing=missing, output_type="tabulate",)
+        scoot_reader.get_percentage_quantiles(
+            missing=missing,
+            output_type="tabulate",
+        )
     )
 
 

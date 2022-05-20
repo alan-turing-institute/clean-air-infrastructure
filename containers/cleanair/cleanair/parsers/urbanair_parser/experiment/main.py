@@ -203,6 +203,7 @@ def download(
     experiment_root.mkdir(exist_ok=True, parents=False)
     download_root.mkdir(exist_ok=True, parents=False)
     FileManager(
-        download_root / instance_id, blob_id=instance_id,
+        download_root / instance_id,
+        blob_id=instance_id,
     )
     logging.info("Saving instance to %s", download_root / instance_id)

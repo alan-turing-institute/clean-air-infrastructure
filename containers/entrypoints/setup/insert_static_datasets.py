@@ -72,7 +72,8 @@ def generate_sas_token(resource_group, storage_container_name, days, hours):
     subscription_id = os.environ['AZURE_SUBSCRIPTION_ID']
     storage_mgmt_client = StorageManagementClient(AzureCliCredential(), subscription_id)
     storage_key_list = storage_mgmt_client.storage_accounts.list_keys(
-        resource_group, storage_container_name,
+        resource_group,
+        storage_container_name,
     )
     storage_account_key = [
         k.value for k in storage_key_list.keys if k.key_name == "key1"
@@ -134,7 +135,10 @@ def generate(args):
 
     sys.stdout.write(
         generate_sas_token(
-            args.resource_group, args.storage_container_name, args.days, args.hours,
+            args.resource_group,
+            args.storage_container_name,
+            args.days,
+            args.hours,
         )
     )
     sys.exit(0)

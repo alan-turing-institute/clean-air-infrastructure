@@ -8,7 +8,9 @@ import pandas as pd
 
 
 def remove_outliers(
-    scoot_df: pd.DataFrame, sigmas: int = 3, col: str = "n_vehicles_in_interval",
+    scoot_df: pd.DataFrame,
+    sigmas: int = 3,
+    col: str = "n_vehicles_in_interval",
 ) -> pd.DataFrame:
     r"""Remove outliers $x$ where $|x - \mu| > k \sigma$ for each detector where $k$ is `sigmas`.
 
@@ -30,7 +32,9 @@ def remove_outliers(
 
 
 def get_index_of_outliers(
-    scoot_df: pd.DataFrame, sigmas: int = 3, col: str = "n_vehicles_in_interval",
+    scoot_df: pd.DataFrame,
+    sigmas: int = 3,
+    col: str = "n_vehicles_in_interval",
 ) -> List:
     """Returns a list of indices that are outliers."""
     # remove outliers

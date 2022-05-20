@@ -26,7 +26,9 @@ def check(upto: str = UpTo, nhours: int = NHours, ndays: int = NDays) -> None:
 @app.command()
 def forecast(
     trainupto: str = typer.Option(
-        "today", callback=UpTo_callback, help="Up to what datetime to train the model",
+        "today",
+        callback=UpTo_callback,
+        help="Up to what datetime to train the model",
     ),
     traindays: int = typer.Option(
         14,

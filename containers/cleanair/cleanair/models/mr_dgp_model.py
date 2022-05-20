@@ -91,7 +91,7 @@ class MRDGP(ModelMixin):
         self, dataset: List[List[NDArray]], parent_mixtures=None, name_prefix: str = ""
     ) -> MR_Mixture:
         """
-            Construct the DGP multi-res mixture
+        Construct the DGP multi-res mixture
         """
 
         k_base_1 = get_kernel(self.model_params.base_laqn.kernel, "base_laqn")
@@ -185,7 +185,7 @@ class MRDGP(ModelMixin):
         mask: Optional[Dict[Source, List[bool]]] = None,
     ) -> None:
         """
-            Fit MR_DGP to the multi resolution x_train and y_train
+        Fit MR_DGP to the multi resolution x_train and y_train
         """
 
         self.logger.info(self.model_params.json(sort_keys=True, indent=3))
@@ -316,13 +316,13 @@ class MRDGP(ModelMixin):
 
 def get_sample_mean_var(ys_mean, ys_var):
     """
-        Return estimated mean and variance of the predictive distribution from monte carlo samples.
+    Return estimated mean and variance of the predictive distribution from monte carlo samples.
     """
     ys_mean_samples = ys_mean[:, :, 0, :]
     ys_var_samples = ys_var[:, :, 0, :]
     ys_mean = np.mean(ys_mean_samples, axis=0)
     ys_sig = (
-        np.mean(ys_var_samples + ys_mean_samples ** 2, axis=0)
+        np.mean(ys_var_samples + ys_mean_samples**2, axis=0)
         - np.mean(ys_mean_samples, axis=0) ** 2
     )
     return ys_mean, ys_sig
@@ -330,7 +330,7 @@ def get_sample_mean_var(ys_mean, ys_var):
 
 def get_mixing_weight(name, param=None):
     """
-        The mixing weight defines how to the mix the mixture of Gaussians.
+    The mixing weight defines how to the mix the mixture of Gaussians.
     """
     weight_dict = {
         "dgp_only": MR_DGP_Only,
@@ -353,7 +353,7 @@ def get_mixing_weight(name, param=None):
 
 def get_inducing_points(X, num_z=None):
     """
-        Returns num_z inducing points locations using kmeans
+    Returns num_z inducing points locations using kmeans
     """
     if len(X.shape) == 3:
         X = X.reshape([X.shape[0] * X.shape[1], X.shape[2]])
@@ -367,7 +367,7 @@ def get_inducing_points(X, num_z=None):
 
 def get_kernel(kernels: List[KernelParams], base_name):
     """
-        Returns product of kernels
+    Returns product of kernels
     """
 
     kernel_dict = {KernelType.mr_linear: MR_Linear, KernelType.mr_se: MR_SE}

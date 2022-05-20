@@ -117,7 +117,10 @@ def test_save_load_data_config(file_manager, valid_config: DataConfig) -> None:
         assert value == getattr(loaded_config, key)
 
 
-def test_save_load_mrdgp_params(file_manager, mrdgp_model_params: MRDGPParams,) -> None:
+def test_save_load_mrdgp_params(
+    file_manager,
+    mrdgp_model_params: MRDGPParams,
+) -> None:
     """Test mrdgp params are loaded and saved."""
 
     # save the model params
@@ -131,7 +134,10 @@ def test_save_load_mrdgp_params(file_manager, mrdgp_model_params: MRDGPParams,) 
         assert value == getattr(loaded_mrdgp_params, key)
 
 
-def test_save_load_svgp_params(file_manager, svgp_model_params: SVGPParams,) -> None:
+def test_save_load_svgp_params(
+    file_manager,
+    svgp_model_params: SVGPParams,
+) -> None:
     """Test the model parameters are saved and loaded from json."""
 
     # save the model params
@@ -145,7 +151,10 @@ def test_save_load_svgp_params(file_manager, svgp_model_params: SVGPParams,) -> 
         assert value == getattr(loaded_svgp_params, key)
 
 
-def test_save_load_train_test(file_manager, dataset_dict: FeaturesDict,) -> None:
+def test_save_load_train_test(
+    file_manager,
+    dataset_dict: FeaturesDict,
+) -> None:
     """Test training data is saved and loaded correctly."""
 
     # save the train/test data to file

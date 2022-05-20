@@ -276,7 +276,10 @@ class FileManager:
         # use the load function to get the model from the filepath
         export_dir = self.input_dir / FileManager.MODEL
         model = load_fn(
-            export_dir, model_name, compile_model=compile_model, tf_session=tf_session,
+            export_dir,
+            model_name,
+            compile_model=compile_model,
+            tf_session=tf_session,
         )
         return model
 

@@ -133,7 +133,11 @@ class ScootQueryMixin:
                 output_type="subquery",
             )
             cols.extend(
-                [detector_query.c.lon, detector_query.c.lat, detector_query.c.location,]
+                [
+                    detector_query.c.lon,
+                    detector_query.c.lat,
+                    detector_query.c.location,
+                ]
             )
         with self.dbcnxn.open_session() as session:
             # query the selected columns and filter by start date(time)
