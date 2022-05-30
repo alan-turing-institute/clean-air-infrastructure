@@ -124,9 +124,11 @@ class StaticWriter(DBWriter):
         try:
             import geopandas as gpd
 
-            self.dbcnxn.engine
+            # read the file that was downloaded from blob storage
             gdf = gpd.read_file(self.target_file)
+            # rename the geometry column
             gdf = gdf.rename_geometry("geom")
+            # write to the database table
             gdf.to_postgis(name=self.table_name, con=self.dbcnxn.engine, schema=self.schema, index=False)
 
             # command = [
