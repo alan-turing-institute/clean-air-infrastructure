@@ -122,29 +122,35 @@ class StaticWriter(DBWriter):
             green(self.dbcnxn.connection_info["db_name"]),
         )
         try:
-            command = [
-                "ogr2ogr",
-                "-overwrite",
-                "-progress",
-                "-f",
-                "PostgreSQL",
-                "PG:{}".format(cnxn_string),
-                "{}".format(self.target_file),
-                "--config",
-                "PG_USE_COPY",
-                "YES",
-                "-t_srs",
-                "EPSG:4326",
-                "-lco",
-                "SCHEMA={}".format(self.schema),
-                "-nln",
-                self.table_name,
-            ] + extra_args
+            import geopandas as gpd
 
-            subprocess.run(
-                command,
-                check=True,
-            )
+            self.dbcnxn.engine
+            gdf = gpd.read_file(self.target_file)
+            gdf.to_postgis(name=self.table_name, con=self.dbcnxn.engine, schema=self.schema)
+
+            # command = [
+            #     "ogr2ogr",
+            #     "-overwrite",
+            #     "-progress",
+            #     "-f",
+            #     "PostgreSQL",
+            #     "PG:{}".format(cnxn_string),
+            #     "{}".format(self.target_file),
+            #     "--config",
+            #     "PG_USE_COPY",
+            #     "YES",
+            #     "-t_srs",
+            #     "EPSG:4326",
+            #     "-lco",
+            #     "SCHEMA={}".format(self.schema),
+            #     "-nln",
+            #     self.table_name,
+            # ] + extra_args
+            # print(" ".join(command))
+            # subprocess.run(
+            #     command,
+            #     check=True,
+            # )
         except subprocess.CalledProcessError:
             self.logger.error("Running ogr2ogr failed!")
             raise
