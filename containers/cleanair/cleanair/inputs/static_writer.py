@@ -126,7 +126,8 @@ class StaticWriter(DBWriter):
 
             self.dbcnxn.engine
             gdf = gpd.read_file(self.target_file)
-            gdf.to_postgis(name=self.table_name, con=self.dbcnxn.engine, schema=self.schema)
+            gdf = gdf.rename_geometry("geom")
+            gdf.to_postgis(name=self.table_name, con=self.dbcnxn.engine, schema=self.schema, index=False)
 
             # command = [
             #     "ogr2ogr",
