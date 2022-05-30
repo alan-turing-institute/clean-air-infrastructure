@@ -146,7 +146,7 @@ def generate(args):
 
 
 def insert(args):
-    """Insert statit data into a database"""
+    """Insert static data into a database"""
 
     # Check database exists
     configure_database(args.secretfile)
