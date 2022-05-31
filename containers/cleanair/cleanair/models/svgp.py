@@ -8,7 +8,7 @@ from copy import deepcopy
 import numpy as np
 from scipy.cluster.vq import kmeans2
 import tensorflow as tf
-from nptyping import Float64, NDArray
+import numpy.typing as npt
 from .model import ModelMixin
 from ..types import FeaturesDict, KernelType, Source, Species, TargetDict, SVGPParams
 
@@ -34,7 +34,7 @@ class SVGP(ModelMixin):
         self,
         x_array: FeaturesDict,
         y_array: TargetDict,
-        inducing_locations: NDArray[Float64],
+        inducing_locations: npt.NDArray[np.float64],
     ) -> None:
         """
         Create GPFlow sparse variational Gaussian Processes

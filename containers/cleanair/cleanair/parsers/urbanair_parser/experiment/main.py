@@ -5,12 +5,11 @@ from typing import Callable, List, Optional
 from pathlib import Path
 import typer
 from ....databases.queries import AirQualityInstanceQuery
-from ....experiment import (
-    ExperimentMixin,
+from ....experiment import ExperimentMixin, generate_air_quality_experiment
+from ....experiment.air_quality_experiment import (
     RunnableAirQualityExperiment,
     SetupAirQualityExperiment,
     UpdateAirQualityExperiment,
-    generate_air_quality_experiment,
 )
 from ....loggers import initialise_logging
 from ....types.enum_types import ClusterId

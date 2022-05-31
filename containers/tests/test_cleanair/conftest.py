@@ -8,8 +8,8 @@ import pytest
 from dateutil import rrule
 from dateutil.parser import isoparse
 import numpy as np
+import numpy.typing as npt
 import pandas as pd
-from nptyping import NDArray
 from cleanair.databases import DBWriter
 from cleanair.inputs.scoot_writer import ScootWriter
 from cleanair.databases.tables import (
@@ -344,7 +344,7 @@ def satellite_meta_point_and_box_records(satellite_box_records):
         half_grid: float,
         n_points_lat: int,
         n_points_lon: int,
-    ) -> NDArray:
+    ) -> npt.NDArray:
         "Return a grid of satellite points centred at a grid square"
         lat_space = np.linspace(
             point[0] - half_grid + (half_grid / n_points_lat),

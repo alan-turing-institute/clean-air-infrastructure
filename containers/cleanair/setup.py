@@ -35,7 +35,6 @@ setuptools.setup(
         "gitpython==3.1.0",
         "h5py==2.10.0",
         "holidays==0.9.8",
-        "nptyping==1.2.0",
         "numpy==1.22.4",
         "packaging>=20.5",
         "pathos==0.2.5",
@@ -57,7 +56,7 @@ setuptools.setup(
         "termcolor==1.1.0",
         "typer==0.4.1",
         "uuid==1.30",
-        "xarray==0.15.1",
+        "xarray==2022.3.0",
         "orjson==3.6.0",
     ],
     extras_require={

@@ -400,7 +400,6 @@ class ScootFeatureExtractor(DateRangeMixin, DBWriter, FeatureExtractorMixin):
             )
 
             n_detectors += 5
-        # pylint: disable=logging-fstring-interpolation
         self.logger.info(f"Done in {time.time() - update_start:.2f}s")
 
 
