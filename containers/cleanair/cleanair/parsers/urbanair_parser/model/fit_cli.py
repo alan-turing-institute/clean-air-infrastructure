@@ -6,7 +6,9 @@ from pathlib import Path
 import typer
 from ..shared_args import InputDir
 from ..shared_args.model_options import Refresh
-from ....models import SVGP, MRDGP, ModelDataExtractor
+from ....models.svgp import SVGP
+from ....models.mr_dgp_model import MRDGP
+from ....models import ModelDataExtractor
 from ....types import ModelName, Source
 from ....utils import FileManager, tf1
 

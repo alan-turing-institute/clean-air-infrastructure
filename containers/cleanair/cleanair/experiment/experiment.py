@@ -6,7 +6,6 @@ import json
 from logging import Logger
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
-import tensorflow as tf
 
 from ..databases import get_columns_of_table
 from ..databases.mixins import ResultTableMixin
@@ -222,16 +221,13 @@ class RunnableExperimentMixin(SetupExperimentMixin):
         # make sure to load the datasets first
         for instance_id, instance in self._instances.items():
             instance.fit_start_time = datetime.now()
-            with tf.compat.v1.Graph().as_default():
-                with tf.compat.v1.Session().as_default() as session:
-                    self.load_model(instance_id)
-                    self.train_model(instance_id)
-                    self.save_training_metrics(instance_id)
-                    # self.save_model_parameters(instance_id) # TODO there is a bug in here - fix and restart ASAP
-                    self.predict_on_training_set(instance_id)
-                    self.predict_on_test_set(instance_id)
-                    self.save_result(instance_id)
-                    session.close()
+            self.load_model(instance_id)
+            self.train_model(instance_id)
+            self.save_training_metrics(instance_id)
+            # self.save_model_parameters(instance_id) # TODO there is a bug in here - fix and restart ASAP
+            self.predict_on_training_set(instance_id)
+            self.predict_on_test_set(instance_id)
+            self.save_result(instance_id)
 
 
 class UpdateExperimentMixin(ExperimentMixin):

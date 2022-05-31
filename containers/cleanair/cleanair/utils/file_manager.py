@@ -27,13 +27,6 @@ from ..types import (
 )
 
 if TYPE_CHECKING:
-    # turn off tensorflow warnings for gpflow
-    import os
-    import tensorflow as tf
-
-    os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
-    tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
-    import gpflow  # pylint: disable=wrong-import-position,wrong-import-order
     from pydantic import BaseModel
 
 
@@ -254,11 +247,11 @@ class FileManager:
 
     def load_model(
         self,
-        load_fn: Callable[[Path, ModelName], gpflow.models.GPModel],
+        load_fn: Callable[[Path, ModelName], Any],
         model_name: ModelName,
         compile_model: bool = True,
-        tf_session: Optional[tf.compat.v1.Session] = None,
-    ) -> gpflow.models.GPModel:
+        tf_session: Optional[Any] = None,
+    ) -> Any:
         """Load a model from the cache.
 
         Args:
@@ -285,8 +278,8 @@ class FileManager:
 
     def save_model(
         self,
-        model: gpflow.models.GPModel,
-        save_fn: Callable[[gpflow.models.GPModel, Path, ModelName], None],
+        model: Any,
+        save_fn: Callable[[Any, Path, ModelName], None],
         model_name: ModelName,
     ) -> None:
         """Save a model to file.
