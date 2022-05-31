@@ -35,7 +35,7 @@ setuptools.setup(
         "pydantic==1.9.0",
         "pyeccodes==0.1.1",
         "python-dateutil==2.8.1",
-        "pytz==2019.3",
+        "pytz==2022.1",
         "pyyaml==5.3.1",
         "psycopg2-binary==2.8.4",
         "requests==2.24.0",
