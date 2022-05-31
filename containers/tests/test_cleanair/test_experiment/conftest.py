@@ -2,15 +2,15 @@
 
 from typing import Any, List
 from pathlib import Path
-from cleanair.experiment.air_quality_experiment import UpdateAirQualityExperiment
+# from cleanair.experiment.air_quality_experiment import UpdateAirQualityExperiment
 import numpy as np
 import pytest
 from pydantic import BaseModel
 from cleanair.experiment import (
     ExperimentMixin,
-    RunnableAirQualityExperiment,
+    # RunnableAirQualityExperiment,
     SetupExperimentMixin,
-    SetupAirQualityExperiment,
+    # SetupAirQualityExperiment,
 )
 from cleanair.mixins import InstanceMixin
 from cleanair.types import ExperimentName, ModelName
@@ -108,63 +108,63 @@ def simple_setup_experiment(experiment_name, experiment_dir) -> SimpleSetupExper
     return SimpleSetupExperiment(experiment_name, experiment_dir)
 
 
-@pytest.fixture(scope="function")
-def setup_aq_experiment(
-    secretfile,
-    connection_class,
-    experiment_name,
-    experiment_dir,
-    laqn_svgp_instance,
-    # sat_mrdgp_instance,
-) -> SetupAirQualityExperiment:
-    """Setup air quality experiment class"""
-    experiment = SetupAirQualityExperiment(
-        experiment_name,
-        experiment_dir,
-        secretfile=secretfile,
-        connection=connection_class,
-    )
-    experiment.add_instance(laqn_svgp_instance)
-    # experiment.add_instance(sat_mrdgp_instance)
-    return experiment
+# @pytest.fixture(scope="function")
+# def setup_aq_experiment(
+#     secretfile,
+#     connection_class,
+#     experiment_name,
+#     experiment_dir,
+#     laqn_svgp_instance,
+#     # sat_mrdgp_instance,
+# ) -> SetupAirQualityExperiment:
+#     """Setup air quality experiment class"""
+#     experiment = SetupAirQualityExperiment(
+#         experiment_name,
+#         experiment_dir,
+#         secretfile=secretfile,
+#         connection=connection_class,
+#     )
+#     experiment.add_instance(laqn_svgp_instance)
+#     # experiment.add_instance(sat_mrdgp_instance)
+#     return experiment
 
 
-@pytest.fixture(scope="function")
-def runnable_aq_experiment(
-    setup_aq_experiment,
-    experiment_name,
-    experiment_dir,
-    laqn_svgp_instance,
-    # sat_mrdgp_instance,
-) -> RunnableAirQualityExperiment:
-    """A runnable air quality experiment"""
-    # load the experiment and write it to file first
-    setup_aq_experiment.load_datasets()
-    for instance_id in setup_aq_experiment.get_instance_ids():
-        setup_aq_experiment.write_instance_to_file(instance_id)
+# @pytest.fixture(scope="function")
+# def runnable_aq_experiment(
+#     setup_aq_experiment,
+#     experiment_name,
+#     experiment_dir,
+#     laqn_svgp_instance,
+#     # sat_mrdgp_instance,
+# ) -> RunnableAirQualityExperiment:
+#     """A runnable air quality experiment"""
+#     # load the experiment and write it to file first
+#     setup_aq_experiment.load_datasets()
+#     for instance_id in setup_aq_experiment.get_instance_ids():
+#         setup_aq_experiment.write_instance_to_file(instance_id)
 
-    # add the instances to a runnable instance
-    experiment = RunnableAirQualityExperiment(experiment_name, experiment_dir)
-    experiment.add_instance(laqn_svgp_instance)
-    # experiment.add_instance(sat_mrdgp_instance)
-    return experiment
+#     # add the instances to a runnable instance
+#     experiment = RunnableAirQualityExperiment(experiment_name, experiment_dir)
+#     experiment.add_instance(laqn_svgp_instance)
+#     # experiment.add_instance(sat_mrdgp_instance)
+#     return experiment
 
 
-@pytest.fixture(scope="function")
-def update_aq_experiment(
-    runnable_aq_experiment,
-    experiment_dir,
-    secretfile,
-    connection_class,
-) -> UpdateAirQualityExperiment:
-    """Fixture for updating experiment"""
-    runnable_aq_experiment.load_datasets()
-    runnable_aq_experiment.run_experiment()
-    update_experiment = UpdateAirQualityExperiment(
-        runnable_aq_experiment.name,
-        experiment_dir,
-        secretfile=secretfile,
-        connection=connection_class,
-    )
-    update_experiment.add_instances_from_file(runnable_aq_experiment.get_instance_ids())
-    return update_experiment
+# @pytest.fixture(scope="function")
+# def update_aq_experiment(
+#     runnable_aq_experiment,
+#     experiment_dir,
+#     secretfile,
+#     connection_class,
+# ) -> UpdateAirQualityExperiment:
+#     """Fixture for updating experiment"""
+#     runnable_aq_experiment.load_datasets()
+#     runnable_aq_experiment.run_experiment()
+#     update_experiment = UpdateAirQualityExperiment(
+#         runnable_aq_experiment.name,
+#         experiment_dir,
+#         secretfile=secretfile,
+#         connection=connection_class,
+#     )
+#     update_experiment.add_instances_from_file(runnable_aq_experiment.get_instance_ids())
+#     return update_experiment

@@ -1,6 +1,6 @@
 language: python
 python:
-  - "3.7"
+  - "3.8"
 cache: pip
 
 addons:
@@ -22,51 +22,25 @@ jobs:
       install:
         - pip install -r containers/requirements.txt --use-deprecated=backtrack-on-build-failures
         - pip install -e 'containers/cleanair'
-        - pip install -e 'containers/cleanair[models]'
-        - pip install -e 'containers/cleanair[traffic]'
-        - pip install -e 'containers/urbanair'
 
       before_script:
         - sh .travis/before_script.sh
 
       script:
         # Run all pytest unit tests
-        - python -m pytest containers/tests/test_cleanair --secretfile $DB_SECRET_FILE
         - python -m pytest containers/tests/test_database_init --secretfile $DB_SECRET_FILE
+        
+        # see issue #786
+        - python -m pytest containers/tests/test_cleanair --secretfile $DB_SECRET_FILE --ignore containers/tests/test_cleanair/test_models --ignore containers/tests/test_cleanair/test_experiment
 
         # Run pylint for stricter error checking
-        # NB. We need to disable the hanging indentation check because of https://github.com/psf/black/issues/48
         - pylint --rcfile=.pylintrc */ --ignore=cleanair,urbanair,odysseus,tests
-        # run linting for cleanair package without the mrdgp module
-        - pylint --rcfile=.pylintrc --ignore=mr_dgp,cleanair.egg-info containers/cleanair/*
-        # run linting for the mrdgp module but only detect warnings and errors
-        - pylint --rcfile=.pylintrc --disable=R,C containers/cleanair/cleanair/models/mr_dgp/*
+        # run linting for cleanair package without the models module
+        - pylint --rcfile=.pylintrc --ignore=cleanair.experiment,cleanair.models,cleanair.egg-info,cleanair.utils.tf1 containers/cleanair/*
         # run linting for the tests but only detect warnings and errors
         - pylint --rcfile=.pylintrc --disable=R,C containers/tests/test_cleanair/* containers/tests/test_database_init/*
         # Run type checking
         - mypy --config-file .mypy.ini containers/cleanair
-  
-    # separate parallel job for odysseus
-    - name: "odysseus"
-      before_install:
-        - sh .travis/before_install.sh
-        - source .travis/env.sh
-
-      install:
-        - pip install -r containers/requirements.txt --use-deprecated=backtrack-on-build-failures
-        - pip install -e 'containers/cleanair'
-        - pip install -e 'containers/odysseus'
-
-      before_script:
-        - sh .travis/before_script.sh
-
-      script:
-        # Run all pytest unit tests
-        - python -m pytest containers/tests/test_odysseus --secretfile $DB_SECRET_FILE
-
-        # Run pylint for stricter error checking.
-        # NB. We need to disable the hanging indentation check because of https://github.com/psf/black/issues/48
-        - pylint --rcfile=.pylintrc containers/odysseus/* containers/tests/test_odysseus/*
 
     # separate parallel job for urbanair
     - name: "urbanair"
