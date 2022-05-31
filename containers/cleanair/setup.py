@@ -4,7 +4,7 @@ import setuptools
 setuptools.setup(
     name="cleanair",
     author="Oscar Giles, James Robinson, Patrick O'Hara, Ollie Hamelijnck",
-    author_email="ogiles@turing.ac.uk, jrobinson@turing.ac.uk, pohara@turing.ac.uk, ohamelijnck@turing.ac.uk",
+    author_email="ogiles@turing.ac.uk, jrobinson@turing.ac.uk, patrick.h.o-hara@warwick.ac.uk, ohamelijnck@turing.ac.uk",
     description="CleanAir",
     url="https://github.com/alan-turing-institute/clean-air-infrastructure",
     packages=setuptools.find_packages(),
@@ -15,6 +15,7 @@ setuptools.setup(
     ],
     install_requires=[
         "azure-cli==2.36.0",
+        "azure-identity==1.10.0",
         "azure-storage-blob==12.12.0",
         "azure-mgmt-storage==20.0.0",
         "azure-mgmt-subscription==3.0.0",
