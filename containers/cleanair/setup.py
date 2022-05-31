@@ -1,10 +1,18 @@
 """CleanAir module setup script"""
 import setuptools
 
+# sorted by surname
+AUTHORS = {
+    "Oscar Giles": "ogiles@turing.ac.uk",
+    "Ollie Hamelijnck": "ohamelijnck@turing.ac.uk",
+    "Patrick O'Hara": "patrick.h.o-hara@warwick.ac.uk",
+    "James Robinson": "jrobinson@turing.ac.uk",
+}
+
 setuptools.setup(
     name="cleanair",
-    author="Oscar Giles, James Robinson, Patrick O'Hara, Ollie Hamelijnck",
-    author_email="ogiles@turing.ac.uk, jrobinson@turing.ac.uk, patrick.h.o-hara@warwick.ac.uk, ohamelijnck@turing.ac.uk",
+    author=", ".join(AUTHORS.keys()),
+    author_email=", ".join(AUTHORS.values()),
     description="CleanAir",
     url="https://github.com/alan-turing-institute/clean-air-infrastructure",
     packages=setuptools.find_packages(),

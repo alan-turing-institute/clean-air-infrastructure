@@ -353,7 +353,7 @@ class SatelliteWriter(
                 "Merging %i satellite discrete sites into SatelliteGrid table",
                 satellite_grid_points_df.shape[0],
             )
-            satellite_discrete_sites = [
+            _ = [
                 session.merge(site)
                 for site in satellite_grid_points_df.apply(
                     lambda site: SatelliteGrid.build_entry(

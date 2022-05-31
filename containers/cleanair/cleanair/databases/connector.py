@@ -144,7 +144,9 @@ class Connector(DBConnectionMixin):
                 self.logger.debug("In nested session")
                 # then each time that SAVEPOINT ends, reopen it
                 @event.listens_for(session, "after_transaction_end")
-                def restart_savepoint(session, transaction):
+                def restart_savepoint(
+                    session, transaction
+                ):  # pylint: disable=unused-variable
                     # pylint: disable=W0212
                     if transaction.nested and not transaction._parent.nested:
                         # ensure that state is expired the way
@@ -185,6 +187,8 @@ class Connector(DBConnectionMixin):
                 requests.get(url, timeout=timeout)
                 self.logger.debug("Internet connection: %s", green("WORKING"))
                 self.last_successful_connection = time.time()
-            except requests.ConnectionError:
+            except requests.ConnectionError as connection_error:
                 self.logger.error("Internet connection: %s", red("NOT WORKING"))
-                raise IOError("Could not establish an internet connection")
+                raise IOError(
+                    "Could not establish an internet connection"
+                ) from connection_error

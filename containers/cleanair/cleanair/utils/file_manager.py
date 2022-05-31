@@ -92,8 +92,8 @@ class FileManager:
                     target_file=str(zipfile_path),
                     sas_token=sas_token,
                 )
-            except ResourceNotFoundError:
-                raise ExperimentInstanceNotFoundError(blob_id)
+            except ResourceNotFoundError as resource_error:
+                raise ExperimentInstanceNotFoundError(blob_id) from resource_error
 
             unpack_archive(zipfile_path, input_dir)
 
