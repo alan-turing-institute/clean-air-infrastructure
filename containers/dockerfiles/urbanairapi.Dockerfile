@@ -1,4 +1,4 @@
-FROM tiangolo/uvicorn-gunicorn-fastapi:python3.7
+FROM tiangolo/uvicorn-gunicorn-fastapi:python3.9
 
 RUN pip install mkdocs==1.1.2 mkdocs-material==5.5.12 mkdocstrings==0.13.2
 
