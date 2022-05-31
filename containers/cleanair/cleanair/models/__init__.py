@@ -2,6 +2,7 @@
 from .model import ModelMixin
 from .model_data import ModelData, ModelDataExtractor
 from .model_config import ModelConfig
+
 # from .svgp import SVGP
 # from .mr_dgp_model import MRDGP
 
