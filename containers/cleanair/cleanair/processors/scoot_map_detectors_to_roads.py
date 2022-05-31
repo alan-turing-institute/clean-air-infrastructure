@@ -186,7 +186,9 @@ class ScootPerRoadDetectors(DBWriter, DBQueryMixin):
 
                 # Commit and override any existing records
                 self.commit_records(
-                    road_match_records, on_conflict="overwrite", table=ScootRoadMatch,
+                    road_match_records,
+                    on_conflict="overwrite",
+                    table=ScootRoadMatch,
                 )
                 n_records += len(road_match_records)
 

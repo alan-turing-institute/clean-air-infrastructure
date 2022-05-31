@@ -26,16 +26,16 @@ class ScootGenerator(ScootQueryMixin, DBWriter):
         limit: Optional[int] = None,
         detectors: Optional[List[str]] = None,
         borough: Optional[Borough] = None,
-        **kwargs
+        **kwargs,
     ) -> None:
         """Initialise a synthetic scoot writer
-        
+
         Arguments:
             start: Start datetime for fake data
             upto: generate fake data up till this datetime
             offset: Start at a different detector
             limit: At most this many detectors
-            """
+        """
         self.start = start
         self.upto = upto
         self.offset = offset

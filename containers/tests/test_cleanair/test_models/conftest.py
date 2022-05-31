@@ -82,7 +82,11 @@ def x_train(x_features) -> FeaturesDict:
 @pytest.fixture(scope="function")
 def y_train(y_observations: NDArray[Float]) -> TargetDict:
     """Small number of observations in dictionary structure"""
-    return {Source.laqn: {Species.NO2: y_observations,}}
+    return {
+        Source.laqn: {
+            Species.NO2: y_observations,
+        }
+    }
 
 
 @pytest.fixture(scope="function")

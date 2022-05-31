@@ -25,7 +25,9 @@ class TestRaw:
             writer = DBWriter(secretfile=secretfile, connection=connection_class)
 
             writer.commit_records(
-                video_stat_records, on_conflict="overwrite", table=JamCamVideoStats,
+                video_stat_records,
+                on_conflict="overwrite",
+                table=JamCamVideoStats,
             )
         except IntegrityError:
             pytest.fail("Dummy data insert")
@@ -84,11 +86,15 @@ class TestRaw:
 
         # Check response
         response1 = client_class_odysseus.get(
-            "/api/v1/jamcams/raw/", params={"starttime": "2020-01-01T00:00:00",},
+            "/api/v1/jamcams/raw/",
+            params={
+                "starttime": "2020-01-01T00:00:00",
+            },
         ).json()
 
         response2 = client_class_odysseus.get(
-            "/api/v1/jamcams/raw/", params={"endtime": "2020-01-02T00:00:00"},
+            "/api/v1/jamcams/raw/",
+            params={"endtime": "2020-01-02T00:00:00"},
         ).json()
 
         assert response1 == response2

@@ -289,7 +289,9 @@ class ScootFeatureExtractor(DateRangeMixin, DBWriter, FeatureExtractorMixin):
                     MetaPoint.id.label("point_id"),
                     MetaPoint.source,
                     Values(
-                        [column("feature_name", String),],
+                        [
+                            column("feature_name", String),
+                        ],
                         *[(feature,) for feature in feature_names],
                         alias_name="t2",
                     ),

@@ -60,8 +60,7 @@ class AQEAvailabilityMixin:
         self, start_date: str, end_date: Optional[str] = None
     ):
 
-        """Count the number of AQE readings for each open aqe site between start_date and end_data
-        """
+        """Count the number of AQE readings for each open aqe site between start_date and end_data"""
 
         with self.dbcnxn.open_session() as session:
 
@@ -71,7 +70,9 @@ class AQEAvailabilityMixin:
                     AQEReading.measurement_start_utc,
                     func.count(AQEReading.value).label("n_records"),
                 )
-                .filter(AQEReading.measurement_start_utc >= start_date,)
+                .filter(
+                    AQEReading.measurement_start_utc >= start_date,
+                )
                 .group_by(AQEReading.measurement_start_utc, AQEReading.site_code)
             )
 
@@ -92,7 +93,9 @@ class AQEAvailabilityMixin:
 
                 expected_date_times = session.query(
                     func.generate_series(
-                        start_date, reference_end_date_minus_1h, ONE_HOUR_INTERVAL,
+                        start_date,
+                        reference_end_date_minus_1h,
+                        ONE_HOUR_INTERVAL,
                     ).label("measurement_start_utc")
                 )
             else:

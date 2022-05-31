@@ -92,6 +92,7 @@ class ScootPerDetectorForecaster(DateRangeMixin, DBWriter):
             green(len(df_scoot_readings["detector_id"].unique())),
             green(duration(start_time, time.time())),
         )
+
         return df_scoot_readings
 
     def forecasts(self, forecasted_on, pool_size=10):
@@ -99,6 +100,15 @@ class ScootPerDetectorForecaster(DateRangeMixin, DBWriter):
         # Get all SCOOT readings within the relevant time period from the database and
         # group them by detector ID
         df_scoot_readings = self.scoot_readings()
+
+        # Hard-coded malfunctioning sensors
+        malfunctioning_sensors = ["N18/137a1", "N18/135c1"]
+
+        # Keep sensors that are healthy
+        df_scoot_readings = df_scoot_readings[
+            ~df_scoot_readings["detector_id"].isin(malfunctioning_sensors)
+        ]
+
         df_per_detector = df_scoot_readings.groupby(["detector_id"])
 
         n_detectors = len(df_per_detector)
@@ -262,7 +272,9 @@ class ScootPerDetectorForecaster(DateRangeMixin, DBWriter):
 
                 # Commit and override any existing forecasts
                 self.commit_records(
-                    forecast_records, on_conflict="overwrite", table=ScootForecast,
+                    forecast_records,
+                    on_conflict="overwrite",
+                    table=ScootForecast,
                 )
                 n_records += len(forecast_records)
 

@@ -89,7 +89,8 @@ def query_instance_ids_on_date(
     """
     query = (
         db.query(
-            AirQualityInstanceTable.instance_id, AirQualityInstanceTable.fit_start_time,
+            AirQualityInstanceTable.instance_id,
+            AirQualityInstanceTable.fit_start_time,
         )
         .join(
             AirQualityDataTable,
@@ -115,7 +116,9 @@ def query_instance_ids_on_date(
     key=lambda _, *args, **kwargs: hashkey(*args, **kwargs),
 )
 def cached_instance_ids(
-    db: Session, start_datetime: datetime, end_datetime: datetime,
+    db: Session,
+    start_datetime: datetime,
+    end_datetime: datetime,
 ) -> Optional[List[Tuple]]:
     """Cache available model instances that cover the datetime range"""
     logger.info(
@@ -137,11 +140,13 @@ def cached_instance_ids(
     key=lambda _, *args, **kwargs: hashkey(*args, **kwargs),
 )
 def cached_instance_ids_on_run_date(
-    db: Session, run_date: date,
+    db: Session,
+    run_date: date,
 ) -> Optional[List[Tuple]]:
     """Cache available model instances run on this date"""
     logger.info(
-        "Querying available instance IDs on %s", run_date,
+        "Querying available instance IDs on %s",
+        run_date,
     )
     return query_instance_ids_on_date(
         db=db,
@@ -153,7 +158,8 @@ def cached_instance_ids_on_run_date(
 
 @db_query()
 def query_geometries_hexgrid(
-    db: Session, bounding_box: Optional[Tuple[float]] = None,
+    db: Session,
+    bounding_box: Optional[Tuple[float]] = None,
 ) -> Query:
     """
     Query geometries for combining with plain JSON forecasts
@@ -176,7 +182,8 @@ def query_geometries_hexgrid(
     cache=LRUCache(maxsize=256), key=lambda _, *args, **kwargs: hashkey(*args, **kwargs)
 )
 def cached_geometries_hexgrid(
-    db: Session, bounding_box: Optional[Tuple[float]] = None,
+    db: Session,
+    bounding_box: Optional[Tuple[float]] = None,
 ) -> GeometryGeoJson:
     """Cache geometries with optional bounding box"""
     logger.info("Querying hexgrid geometries")
@@ -345,7 +352,9 @@ def cached_forecast_hexgrid_pivot_csv(
 
     table = pd.DataFrame(
         data.pivot(
-            index="measurement_start_utc", columns="hex_id", values="NO2",
+            index="measurement_start_utc",
+            columns="hex_id",
+            values="NO2",
         ).to_records()
     )
     table[

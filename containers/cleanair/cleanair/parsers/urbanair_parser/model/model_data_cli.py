@@ -57,7 +57,9 @@ def delete_model_cache(overwrite: bool):
 @app.command()
 def generate_config(
     trainupto: str = typer.Option(
-        "today", callback=UpTo_callback, help="Up to what datetime to train the model",
+        "today",
+        callback=UpTo_callback,
+        help="Up to what datetime to train the model",
     ),
     traindays: int = typer.Option(
         2, callback=NDays_callback, help="Number of days to train on", show_default=True
@@ -90,7 +92,9 @@ def generate_config(
         show_default=True,
     ),
     static_features: List[StaticFeatureNames] = typer.Option(
-        [], help="Spatial features that do not change over time", show_default=True,
+        [],
+        help="Spatial features that do not change over time",
+        show_default=True,
     ),
     dynamic_features: List[DynamicFeatureNames] = typer.Option(
         [],
@@ -163,10 +167,14 @@ def generate_full_config() -> None:
 @app.command()
 def download(
     training_data: bool = typer.Option(
-        False, "--training-data", help="Download training data",
+        False,
+        "--training-data",
+        help="Download training data",
     ),
     prediction_data: bool = typer.Option(
-        False, "--prediction-data", help="Download prediction data",
+        False,
+        "--prediction-data",
+        help="Download prediction data",
     ),
     output_csv: bool = typer.Option(
         False, "--output-csv", help="Output dataframes as csv", show_default=True

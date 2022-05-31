@@ -176,7 +176,7 @@ class TestDataConfig:
 
     def test_get_box_ids_within_london(self, model_config, satellite_box_records):
         """Check we only get box ids which intersect with the London Boundary
-        
+
         We know two are outside the London boundary in the test set"""
 
         n_outside_london = 2
@@ -187,12 +187,14 @@ class TestDataConfig:
 
     def test_get_satellite_point_ids(self, model_config):
 
-        satellite_interest_points = model_config.get_satellite_interest_points_in_boundary(
-            output_type="list"
+        satellite_interest_points = (
+            model_config.get_satellite_interest_points_in_boundary(output_type="list")
         )
 
-        satellite_interest_points_available = model_config.get_available_interest_points(
-            Source.satellite, within_london_only=False, output_type="list"
+        satellite_interest_points_available = (
+            model_config.get_available_interest_points(
+                Source.satellite, within_london_only=False, output_type="list"
+            )
         )
 
         assert {str(i) for i in satellite_interest_points} == set(
@@ -200,8 +202,10 @@ class TestDataConfig:
         )
 
         # Check we filter correctly
-        satellite_interest_points_available_in_london = model_config.get_available_interest_points(
-            Source.satellite, within_london_only=True, output_type="list"
+        satellite_interest_points_available_in_london = (
+            model_config.get_available_interest_points(
+                Source.satellite, within_london_only=True, output_type="list"
+            )
         )
 
         # ToDo: Come up with a better test than this!
@@ -210,11 +214,11 @@ class TestDataConfig:
         )
 
         # Now use the function that calls the get_available_interest_points
-        satellite_interest_points_available_in_london2 = model_config.get_interest_point_ids(
-            {Source.satellite: "all"}
-        )[
-            Source.satellite
-        ]
+        satellite_interest_points_available_in_london2 = (
+            model_config.get_interest_point_ids({Source.satellite: "all"})[
+                Source.satellite
+            ]
+        )
 
         assert set(satellite_interest_points_available_in_london2) == set(
             satellite_interest_points_available

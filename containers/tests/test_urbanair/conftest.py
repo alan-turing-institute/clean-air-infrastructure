@@ -140,7 +140,7 @@ def mock_model_name() -> str:
 
 @pytest.fixture(scope="module")
 def mock_instance_id() -> str:
-    """"Mock instance id"""
+    """ "Mock instance id"""
     return "d2c0a1c0de9f49cb9fbf6073fb08a213e02800325bd04aae83c6ab6b76618ca4"
 
 
@@ -174,7 +174,11 @@ def mock_air_quality_data(mock_data_id):
 def mock_air_quality_model(mock_model_name):
     """Fake data for air quality routes test"""
     records = [
-        {"model_name": mock_model_name, "param_id": MODEL_PARAM_ID, "model_params": {},}
+        {
+            "model_name": mock_model_name,
+            "param_id": MODEL_PARAM_ID,
+            "model_params": {},
+        }
     ]
     return records
 
@@ -222,7 +226,9 @@ def sample_hexgrid_points(secretfile, connection_class):
 
 @pytest.fixture(scope="class")
 def mock_air_quality_result(
-    sample_hexgrid_points, mock_data_id, mock_instance_id,
+    sample_hexgrid_points,
+    mock_data_id,
+    mock_instance_id,
 ):  # pylint: disable=redefined-outer-name
     """Fake data for air quality routes test"""
     measurement_datetimes = rrule.rrule(
@@ -247,7 +253,9 @@ def mock_air_quality_result(
 
 @pytest.fixture(scope="class")
 def mock_air_quality_result_result(
-    sample_hexgrid_points, mock_data_id, mock_instance_id,
+    sample_hexgrid_points,
+    mock_data_id,
+    mock_instance_id,
 ):  # pylint: disable=redefined-outer-name
     """Fake data for air quality routes test"""
     measurement_datetimes = rrule.rrule(

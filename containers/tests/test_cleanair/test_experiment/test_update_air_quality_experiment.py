@@ -9,7 +9,7 @@ from cleanair.types import Source
 
 def num_hours_between_datetime(start: datetime, end: datetime) -> int:
     """Number of hours between two datetimes (rounded down if fractional)"""
-    seconds_in_hour = 60 ** 2
+    seconds_in_hour = 60**2
     return int((end - start).total_seconds() / seconds_in_hour)
 
 

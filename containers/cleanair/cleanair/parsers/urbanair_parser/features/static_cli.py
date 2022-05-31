@@ -35,11 +35,14 @@ for i in range(len(valid_features)):
     @sub_app.command()
     def check(
         feature_name: List[valid_feature_names[i]] = typer.Option(
-            None, help="Features to process. If non given will process all",
+            None,
+            help="Features to process. If non given will process all",
         ),
         source: List[ValidSources] = Sources,
         only_missing: bool = typer.Option(
-            False, "--only-missing", help="Only show missing data",
+            False,
+            "--only-missing",
+            help="Only show missing data",
         ),
         web: bool = Web,
         it: int = typer.Option(i, hidden=True),
@@ -96,7 +99,8 @@ for i in range(len(valid_features)):
     @sub_app.command()
     def fill(
         feature_name: List[valid_feature_names[i]] = typer.Option(
-            None, help="Features to process. If non given will process all",
+            None,
+            help="Features to process. If non given will process all",
         ),
         source: List[ValidSources] = Sources,
         insert_method: ValidInsertMethods = InsertMethod,
