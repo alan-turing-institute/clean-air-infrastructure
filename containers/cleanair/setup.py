@@ -32,7 +32,6 @@ setuptools.setup(
         "cfgrib==0.9.10.1",
         "colorlog==6.6.0",
         "geoalchemy2==0.11.1",
-        "gitpython==3.1.27",
         "holidays==0.13",
         "numpy==1.22.4",
         "packaging>=21.3",
