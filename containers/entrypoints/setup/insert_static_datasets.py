@@ -17,6 +17,7 @@ from azure.storage.blob import (
     ResourceTypes,
     AccountSasPermissions,
 )
+from sqlalchemy import create_engine, inspect
 from cleanair.databases import Connector, DBInteractor
 from cleanair.inputs import StaticWriter
 from cleanair.parsers import DatabaseSetupParser
@@ -154,24 +155,32 @@ def insert(args):
     blob_service_client = BlobServiceClient(
         account_url=args.account_url, credential=args.sas_token
     )
+    # engine for querying table names
+    engine = create_engine(
+        Connector(secretfile=args.secretfile).connection_string, pool_pre_ping=True
+    )
 
     # Download the static data and add to the database
     for dataset in args.datasets:
         with tempfile.TemporaryDirectory() as data_directory:
-
-            target_file = download_blobs(
-                blob_service_client, DATASETS[dataset]["blob_container"], data_directory
+            existing_table_names = inspect(engine).get_table_names(
+                schema=DATASETS[dataset]["schema"]
             )
-
-            # Initialise the writer first to check database connection
-            static_writer = StaticWriter(
-                target_file,
-                DATASETS[dataset]["schema"],
-                DATASETS[dataset]["table"],
-                secretfile=args.secretfile,
-            )
-            # print(os.listdir(data_directory))
-            static_writer.update_remote_tables()
+            # only read from blob storage if the table doesn't exist
+            if DATASETS[dataset]["table"] not in existing_table_names:
+                target_file = download_blobs(
+                    blob_service_client,
+                    DATASETS[dataset]["blob_container"],
+                    data_directory,
+                )
+                # Initialise the writer first to check database connection
+                static_writer = StaticWriter(
+                    target_file,
+                    DATASETS[dataset]["schema"],
+                    DATASETS[dataset]["table"],
+                    secretfile=args.secretfile,
+                )
+                static_writer.update_remote_tables()
 
     # Triggers view creation
     DBInteractor(args.secretfile, initialise_tables=True)

@@ -50,13 +50,13 @@ class RectGrid(Base):
         )
 
 
-class RectGrid100(DeferredReflection, Base):
-    """Table of 100m grid points"""
+# class RectGrid100(DeferredReflection, Base):
+#     """Table of 100m grid points"""
 
-    __tablename__ = "rectgrid_100"
-    __table_args__ = {"schema": "interest_points"}
+#     __tablename__ = "rectgrid_100"
+#     __table_args__ = {"schema": "interest_points"}
 
-    def __repr__(self):
-        cols = [c.name for c in self.__table__.columns]
-        vals = ["{}='{}'".format(column, getattr(self, column)) for column in cols]
-        return "<RectGrid100(" + ", ".join(vals) + ")>"
+#     def __repr__(self):
+#         cols = [c.name for c in self.__table__.columns]
+#         vals = ["{}='{}'".format(column, getattr(self, column)) for column in cols]
+#         return "<RectGrid100(" + ", ".join(vals) + ")>"

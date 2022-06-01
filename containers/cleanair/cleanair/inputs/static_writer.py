@@ -113,8 +113,6 @@ class StaticWriter(DBWriter):
         elif self.table_name == "scoot_detector":
             extra_args += ["-nlt", "POINT"]
 
-        elif self.table_name == "rectgrid_100":
-            extra_args += ["-s_srs", "EPSG:27700"]
         # Run ogr2ogr
         self.logger.info(
             "Uploading static data to table %s in %s",
@@ -123,20 +121,26 @@ class StaticWriter(DBWriter):
         )
         try:
             import geopandas as gpd
+            import pyproj
+
+            crs_4326 = pyproj.CRS(4326)
+            crs_27700 = pyproj.CRS(27700)
 
             # read the file that was downloaded from blob storage
             print(self.target_file)
-            extra_args_dict = {
-                # "-s_srs": "EPSG:27700",
-                # "-nlt": "PROMOTE_TO_MULTI", 
-                # "-lco": "precision=NO",
-            }
+            extra_args_dict = {}
+
             gdf = gpd.read_file(self.target_file, **extra_args_dict)
             # rename the geometry column
             gdf = gdf.rename_geometry("geom")
 
+            # NOTE if inserting rectgrid_100 you will need to assign a primary key to the table
+            if gdf.crs != crs_4326 or gdf.crs != crs_27700:
+                error_message = f"GeoDataFrame loaded from shape file has the wrong CRS: {gdf.crs.to_epsg()}."
+                pyproj.exceptions.CRSError(error_message)
+
             # convert the geometry to 4326
-            gdf = gdf.to_crs(epsg=4326)
+            gdf = gdf.to_crs(crs=crs_4326)
 
             # convert column names to lower case
             gdf.columns = map(str.lower, gdf.columns)
@@ -152,7 +156,12 @@ class StaticWriter(DBWriter):
             print(gdf)
 
             with self.dbcnxn.engine.connect() as connection:
-                gdf.to_postgis(name=self.table_name, con=connection, schema=self.schema, index=False)
+                gdf.to_postgis(
+                    name=self.table_name,
+                    con=connection,
+                    schema=self.schema,
+                    index=False,
+                )
 
             # command = [
             #     "ogr2ogr",
