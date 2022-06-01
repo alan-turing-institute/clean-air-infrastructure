@@ -125,11 +125,34 @@ class StaticWriter(DBWriter):
             import geopandas as gpd
 
             # read the file that was downloaded from blob storage
-            gdf = gpd.read_file(self.target_file)
+            print(self.target_file)
+            extra_args_dict = {
+                # "-s_srs": "EPSG:27700",
+                # "-nlt": "PROMOTE_TO_MULTI", 
+                # "-lco": "precision=NO",
+            }
+            gdf = gpd.read_file(self.target_file, **extra_args_dict)
             # rename the geometry column
             gdf = gdf.rename_geometry("geom")
+
+            # convert the geometry to 4326
+            gdf = gdf.to_crs(epsg=4326)
+
+            # convert column names to lower case
+            gdf.columns = map(str.lower, gdf.columns)
+
+            # convert types
+            if "ons_inner" in gdf.columns:
+                gdf["ons_inner"] = gdf["ons_inner"].apply(lambda x: x == "T")
+
+            if self.table_name == "scoot_detector":
+                gdf = gdf.drop_duplicates(subset="detector_n")
+
             # write to the database table
-            gdf.to_postgis(name=self.table_name, con=self.dbcnxn.engine, schema=self.schema, index=False)
+            print(gdf)
+
+            with self.dbcnxn.engine.connect() as connection:
+                gdf.to_postgis(name=self.table_name, con=connection, schema=self.schema, index=False)
 
             # command = [
             #     "ogr2ogr",
@@ -180,7 +203,7 @@ class StaticWriter(DBWriter):
                 """ALTER TABLE {}
                        DROP COLUMN centroid_x,
                        DROP COLUMN centroid_y,
-                       DROP COLUMN ogc_fid;""".format(
+                       DROP COLUMN IF EXISTS ogc_fid;""".format(
                     self.schema_table
                 ),
                 """ALTER TABLE {} ADD COLUMN centroid geometry(POINT, 4326);""".format(
@@ -266,16 +289,16 @@ class StaticWriter(DBWriter):
                     self.schema_table
                 ),
                 """ALTER TABLE {}
-                       DROP COLUMN ogc_fid,
-                       DROP COLUMN sub_2006,
-                       DROP COLUMN sub_2009;""".format(
+                       DROP COLUMN IF EXISTS ogc_fid,
+                       DROP COLUMN IF EXISTS sub_2006,
+                       DROP COLUMN IF EXISTS sub_2009;""".format(
                     self.schema_table
                 ),
-                """ALTER TABLE {}
-                       ALTER ons_inner TYPE bool
-                       USING CASE WHEN ons_inner='F' THEN FALSE ELSE TRUE END;""".format(
-                    self.schema_table
-                ),
+                # """ALTER TABLE {}
+                #        ALTER ons_inner TYPE bool
+                #        USING CASE WHEN ons_inner ='F' THEN FALSE ELSE TRUE END;""".format(
+                #     self.schema_table
+                # ),
                 """ALTER TABLE {} RENAME COLUMN nonld_area TO non_ld_area;""".format(
                     self.schema_table
                 ),
@@ -304,7 +327,7 @@ class StaticWriter(DBWriter):
                        DROP COLUMN elevationg,
                        DROP COLUMN identifi_1,
                        DROP COLUMN identifier,
-                       DROP COLUMN ogc_fid,
+                       DROP COLUMN IF EXISTS ogc_fid,
                        DROP COLUMN provenance,
                        DROP COLUMN roadclas_1,
                        DROP COLUMN roadname1_,
@@ -364,10 +387,10 @@ class StaticWriter(DBWriter):
         elif self.table_name == "scoot_detector":
             sql_commands = [
                 # Tidy up scoot_detector table
-                """DELETE FROM {0} WHERE ogc_fid NOT IN
-                       (SELECT DISTINCT ON (detector_n) ogc_fid FROM {0});""".format(
-                    self.schema_table
-                ),
+                # """DELETE FROM {0} WHERE ogc_fid NOT IN
+                #        (SELECT DISTINCT ON (detector_n) ogc_fid FROM {0});""".format(
+                #     self.schema_table
+                # ),
                 """ALTER TABLE {}
                        DROP COLUMN cell,
                        DROP COLUMN dataset,
@@ -378,7 +401,7 @@ class StaticWriter(DBWriter):
                        DROP COLUMN loop_type,
                        DROP COLUMN northing,
                        DROP COLUMN objectid,
-                       DROP COLUMN ogc_fid,
+                       DROP COLUMN IF EXISTS ogc_fid,
                        DROP COLUMN unique_id;""".format(
                     self.schema_table
                 ),
@@ -438,7 +461,7 @@ class StaticWriter(DBWriter):
                        DROP COLUMN objectid_1,
                        DROP COLUMN objectid_2,
                        DROP COLUMN objectid,
-                       DROP COLUMN ogc_fid,
+                       DROP COLUMN IF EXISTS ogc_fid,
                        DROP COLUMN provenance,
                        DROP COLUMN shape_le_1,
                        DROP COLUMN sum_length,
