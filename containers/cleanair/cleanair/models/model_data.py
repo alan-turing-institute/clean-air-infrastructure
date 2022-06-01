@@ -7,8 +7,8 @@ from itertools import groupby
 from typing import Dict, List, Tuple, overload, Callable
 
 import numpy as np
+import numpy.typing as npt
 import pandas as pd
-from nptyping import NDArray, Float64
 from pydantic import ValidationError
 from sqlalchemy import func, text, column, String, cast, and_
 from sqlalchemy.dialects.postgresql import UUID
@@ -147,13 +147,15 @@ class ModelDataExtractor:
     @overload
     def get_array(
         self, data_df: pd.DataFrame, x_names, species: None
-    ) -> Tuple[pd.Index, NDArray[Float64]]:
+    ) -> Tuple[pd.Index, npt.NDArray[np.float64]]:
         ...
 
     @overload
     def get_array(
         self, data_df: pd.DataFrame, x_names, species: List[Species]
-    ) -> Tuple[pd.Index, NDArray[Float64], Dict[Species, NDArray[Float64]]]:
+    ) -> Tuple[
+        pd.Index, npt.NDArray[np.float64], Dict[Species, npt.NDArray[np.float64]]
+    ]:
         ...
 
     def get_array(self, data_df, x_names, species=None):
@@ -162,7 +164,7 @@ class ModelDataExtractor:
         X = data_df[x_names].to_numpy()
 
         if species:
-            Y: Dict[Species, NDArray[Float64]] = {
+            Y: Dict[Species, npt.NDArray[np.float64]] = {
                 spec: np.expand_dims(data_df[spec.value].to_numpy(), axis=1)
                 for spec in species
             }
@@ -173,7 +175,9 @@ class ModelDataExtractor:
 
     def get_array_satellite(
         self, data_df: pd.DataFrame, x_names, species: List[Species]
-    ) -> Tuple[pd.Index, NDArray[Float64], Dict[Species, NDArray[Float64]]]:
+    ) -> Tuple[
+        pd.Index, npt.NDArray[np.float64], Dict[Species, npt.NDArray[np.float64]]
+    ]:
         """Always returns an index, X and Y"""
 
         data_df_sorted = data_df.sort_values(
@@ -201,7 +205,7 @@ class ModelDataExtractor:
         # Get X_array
         sat_df = data_df_sorted[x_names]
         X = sat_df.to_numpy().reshape((n_boxes * n_hours, n_interest_points, n_x_names))
-        Y: Dict[Species, NDArray[Float64]] = {}
+        Y: Dict[Species, npt.NDArray[np.float64]] = {}
 
         # Get Y_array
         for spec in species:

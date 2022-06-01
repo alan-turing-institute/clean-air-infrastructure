@@ -1,10 +1,18 @@
 """CleanAir module setup script"""
 import setuptools
 
+# sorted by surname
+AUTHORS = {
+    "Oscar Giles": "ogiles@turing.ac.uk",
+    "Ollie Hamelijnck": "ohamelijnck@turing.ac.uk",
+    "Patrick O'Hara": "patrick.h.o-hara@warwick.ac.uk",
+    "James Robinson": "jrobinson@turing.ac.uk",
+}
+
 setuptools.setup(
     name="cleanair",
-    author="Oscar Giles, James Robinson, Patrick O'Hara, Ollie Hamelijnck",
-    author_email="ogiles@turing.ac.uk, jrobinson@turing.ac.uk, pohara@turing.ac.uk, ohamelijnck@turing.ac.uk",
+    author=", ".join(AUTHORS.keys()),
+    author_email=", ".join(AUTHORS.values()),
     description="CleanAir",
     url="https://github.com/alan-turing-institute/clean-air-infrastructure",
     packages=setuptools.find_packages(),
@@ -25,9 +33,7 @@ setuptools.setup(
         "colorlog==4.0.2",
         "geoalchemy2==0.6.3",
         "gitpython==3.1.0",
-        "h5py==2.10.0",
         "holidays==0.9.8",
-        "nptyping==1.2.0",
         "numpy==1.22.4",
         "packaging>=20.5",
         "pathos==0.2.5",
@@ -38,18 +44,18 @@ setuptools.setup(
         "python-dateutil==2.8.1",
         "pytz==2022.1",
         "pyyaml==5.3.1",
-        "psycopg2-binary==2.8.4",
+        "psycopg2-binary==2.9.3",
         "requests==2.27.1",
         "scipy==1.8.1",
         "sqlalchemy==1.4.36",
         "sqlalchemy-utils==0.38.2",
         "scikit-learn==1.1.1",
         "shapely==1.8.2",
-        "tabulate==0.8.7",
+        "tabulate==0.8.9",
         "termcolor==1.1.0",
         "typer==0.4.1",
         "uuid==1.30",
-        "xarray==0.15.1",
+        "xarray==2022.3.0",
         "orjson==3.6.0",
     ],
     extras_require={
@@ -65,6 +71,6 @@ setuptools.setup(
         "relative_to": __file__,
         "fallback_version": "0.2.7",
     },
-    python_requires=">=3.6",
+    python_requires=">=3.8",
     scripts=["cli/urbanair"],
 )

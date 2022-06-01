@@ -36,6 +36,7 @@ class DBQueryMixin:
         """Query LondonBoundary to obtain the bounding geometry for London.
         Only get the first row as should only be one entry"""
         with self.dbcnxn.open_session() as session:
+            # pylint: disable=no-member
             return session.query(LondonBoundaryView.geom).limit(1)
 
     @db_query()

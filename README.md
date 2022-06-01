@@ -554,7 +554,7 @@ Before being accepted into master all code should have well writen documentation
 
 **Please use [Google Style Python Docstrings](https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html)**
 
-We would like to move towards adding [type hints](https://docs.python.org/3.7/library/typing.html) so you may optionally add types to your code. In which case you do not need to include types in your google style docstrings.
+We would like to move towards adding [type hints](https://docs.python.org/3.8/library/typing.html) so you may optionally add types to your code. In which case you do not need to include types in your google style docstrings.
 
 Adding and updating existing documentation is highly encouraged.
 

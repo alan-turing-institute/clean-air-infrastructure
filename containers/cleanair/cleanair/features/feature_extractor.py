@@ -384,7 +384,7 @@ class ScootFeatureExtractor(DateRangeMixin, DBWriter, FeatureExtractorMixin):
                 break
 
             self.logger.info(
-                f"Generating features for {len(missing_point_ids)} points.."
+                "Generating features for %s points..", len(missing_point_ids)
             )
 
             sq_select_and_insert = self.generate_scoot_features(
@@ -400,7 +400,6 @@ class ScootFeatureExtractor(DateRangeMixin, DBWriter, FeatureExtractorMixin):
             )
 
             n_detectors += 5
-
         self.logger.info(f"Done in {time.time() - update_start:.2f}s")
 
 
