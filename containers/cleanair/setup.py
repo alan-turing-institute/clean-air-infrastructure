@@ -63,6 +63,7 @@ setuptools.setup(
             "fbprophet==0.6",
         ],
         "models": ["gpflow==1.5.1", "tensorflow==1.15.0"],
+        "geo": ["geopandas>=0.10.0"],
     },
     setup_requires=["setuptools_scm"],
     use_scm_version={

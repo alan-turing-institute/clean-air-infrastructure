@@ -21,7 +21,7 @@ jobs:
 
       install:
         - pip install -r containers/requirements.txt --use-deprecated=backtrack-on-build-failures
-        - pip install -e 'containers/cleanair'
+        - pip install -e 'containers/cleanair[geo]'
 
       before_script:
         - sh .travis/before_script.sh
