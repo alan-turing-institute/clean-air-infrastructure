@@ -47,7 +47,7 @@ class StaticWriter(DBWriter):
         return "{}.{}".format(self.schema, self.table_name)
 
     def upload_static_files(self):
-        """Upload static data to the inputs database"""
+        """Read static data from shape file then upload to the inputs database using geopandas"""
 
         self.logger.info(
             "Uploading static data to table %s in %s",
@@ -65,20 +65,18 @@ class StaticWriter(DBWriter):
         import geopandas as gpd
         import pyproj
 
-        crs_4326 = pyproj.CRS(4326)
-        crs_27700 = pyproj.CRS(27700)
+        # the co-ordinate reference systems
+        crs_4326 = pyproj.CRS(4326)  # lon lat
+        crs_27700 = pyproj.CRS(27700)  # British National Grid
 
         # read the file that was downloaded from blob storage
-        print(self.target_file)
-        extra_args_dict = {}
-
-        gdf = gpd.read_file(self.target_file, **extra_args_dict)
+        gdf = gpd.read_file(self.target_file)
         # rename the geometry column
         gdf = gdf.rename_geometry("geom")
 
         # NOTE if inserting rectgrid_100 you will need to assign a primary key to the table
-        if gdf.crs != crs_4326 or gdf.crs != crs_27700:
-            error_message = f"GeoDataFrame loaded from shape file has the wrong CRS: {gdf.crs.to_epsg()}."
+        if not (gdf.crs == crs_4326 or gdf.crs == crs_27700):
+            error_message = f"GeoDataFrame loaded from shape file for table {self.table_name} has the wrong CRS: {gdf.crs.to_epsg()}."
             raise pyproj.exceptions.CRSError(error_message)
 
         # convert the geometry to 4326
@@ -550,5 +548,5 @@ class StaticWriter(DBWriter):
 
     def update_remote_tables(self):
         """Attempt to upload static files and configure the tables if successful"""
-        if self.upload_static_files():
-            self.configure_tables()
+        self.upload_static_files()
+        self.configure_tables()

@@ -86,18 +86,6 @@ Now download and insert all static data into the database:
 python containers/entrypoints/setup/insert_static_datasets.py insert -t $SAS_TOKEN -s $DB_SECRET_FILE -d street_canyon hexgrid london_boundary oshighway_roadlink scoot_detector
 ```
 
-
-### (Not recommended) UKMAP
-
-`UKMAP` is extremly large and will take ~1h to download and insert.
-We therefore do not run tests against `UKMAP`.
-
-If you would also like to add `UKMAP` to the database run:
-
-```bash
-python containers/entrypoints/setup/insert_static_datasets.py insert -t $SAS_TOKEN -s $DB_SECRET_FILE -d ukmap
-```
-
 ***
 
 ## Testing
