@@ -5,7 +5,6 @@ from geoalchemy2 import Geometry
 from sqlalchemy import Column, Integer, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.ext.declarative import DeferredReflection
 from ..base import Base
 
 

@@ -3,7 +3,6 @@
 from __future__ import annotations
 from datetime import datetime, timedelta
 from typing import List, TYPE_CHECKING
-import numpy as np
 import pandas as pd
 from cleanair.metrics import TrainingMetrics
 from cleanair.types import ModelName, Source

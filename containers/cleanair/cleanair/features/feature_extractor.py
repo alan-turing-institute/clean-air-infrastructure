@@ -24,7 +24,6 @@ from sqlalchemy.sql.selectable import Alias as SUBQUERY_TYPE
 
 from .feature_conf import FEATURE_CONFIG_DYNAMIC
 from ..databases import DBWriter
-from ..databases.base import Values
 from ..databases.tables import (
     StaticFeature,
     DynamicFeature,
@@ -484,10 +483,10 @@ class FeatureExtractor(
             ):  # filter out unreasonably tall buildings from UKMap
                 filter_list.append(UKMap.calculated_height_of_building < 999.9)
                 filter_list.append(UKMap.feature_type == "Building")
-            for column_, values in self.features[feature_name]["feature_dict"].items():
-                if (len(values) >= 1) and (values[0] != "*"):
+            for column_, vals in self.features[feature_name]["feature_dict"].items():
+                if (len(vals) >= 1) and (vals[0] != "*"):
                     filter_list.append(
-                        or_(*[getattr(table, column_) == value for value in values])
+                        or_(*[getattr(table, column_) == value for value in vals])
                     )
             q_source = q_source.filter(*filter_list)
         return q_source

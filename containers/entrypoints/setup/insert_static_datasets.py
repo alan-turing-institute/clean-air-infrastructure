@@ -20,6 +20,7 @@ from azure.storage.blob import (
 from sqlalchemy import create_engine, inspect
 from cleanair.databases import Connector, DBInteractor
 from cleanair.inputs import StaticWriter
+from cleanair.loggers import get_logger
 from cleanair.parsers import DatabaseSetupParser
 from cleanair.utils.azure import get_urbanair_az_subscription_id
 
@@ -148,6 +149,7 @@ def generate(args):
 
 def insert(args):
     """Insert static data into a database"""
+    logger = get_logger("Insert static datasets")
 
     # Check database exists
     configure_database(args.secretfile)
@@ -181,6 +183,11 @@ def insert(args):
                     secretfile=args.secretfile,
                 )
                 static_writer.update_remote_tables()
+            else:
+                logger.info(
+                    "Skipping upload for %s as the remote table already exists",
+                    DATASETS[dataset]["table"],
+                )
 
     # Triggers view creation
     DBInteractor(args.secretfile, initialise_tables=True)
