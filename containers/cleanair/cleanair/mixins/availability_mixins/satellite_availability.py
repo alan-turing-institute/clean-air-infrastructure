@@ -168,9 +168,13 @@ class SatelliteAvailabilityMixin:
                 ).subquery()
 
             # Generate expected species
-            species_sub_q = values(column("species", String), name="species_values").data([(pollutant,) for pollutant in species])
+            species_sub_q = values(
+                column("species", String), name="species_values"
+            ).data([(pollutant,) for pollutant in species])
 
-            dates = aliased(session.query(expected_date_times, species_sub_q).subquery())
+            dates = aliased(
+                session.query(expected_date_times, species_sub_q).subquery()
+            )
             for col in dates.c:
                 print(col)
 

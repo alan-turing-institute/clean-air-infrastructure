@@ -8,7 +8,18 @@ from typing import List
 
 import numpy as np
 from dateutil.parser import isoparse
-from sqlalchemy import func, literal, or_, and_, case, column, String, text, Float
+from sqlalchemy import (
+    func,
+    literal,
+    or_,
+    and_,
+    case,
+    column,
+    String,
+    text,
+    Float,
+    values,
+)
 from sqlalchemy.sql.selectable import Alias as SUBQUERY_TYPE
 
 from .feature_conf import FEATURE_CONFIG_DYNAMIC
@@ -288,12 +299,8 @@ class ScootFeatureExtractor(DateRangeMixin, DBWriter, FeatureExtractorMixin):
                 session.query(
                     MetaPoint.id.label("point_id"),
                     MetaPoint.source,
-                    Values(
-                        [
-                            column("feature_name", String),
-                        ],
-                        *[(feature,) for feature in feature_names],
-                        alias_name="t2",
+                    values(column("feature_name", String), name="t2").data(
+                        [(feature,) for feature in feature_names]
                     ),
                 )
                 .filter(MetaPoint.source.in_(sources))

@@ -167,8 +167,8 @@ class Connector(DBConnectionMixin):
             session.rollback()
             raise error
         # finally:
-            # Close the session when finished
-            # session.close()
+        # Close the session when finished
+        # session.close()
 
     def check_internet_connection(
         self, url="http://www.google.com/", timeout=5, interval=10
