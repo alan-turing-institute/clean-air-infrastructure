@@ -48,13 +48,7 @@ class StaticWriter(DBWriter):
 
     def upload_static_files(self):
         """Read static data from shape file then upload to the inputs database using geopandas"""
-
-        self.logger.info(
-            "Uploading static data to table %s in %s",
-            green(self.table_name),
-            green(self.dbcnxn.connection_info["db_name"]),
-        )
-
+        self.logger.info("Reading (shape) file for table %s", green(self.table_name))
         # Preprocess the UKMap data, keeping only useful columns
         if self.table_name == "ukmap":
             self.upload_ukmap()
@@ -71,20 +65,31 @@ class StaticWriter(DBWriter):
 
         # read the file that was downloaded from blob storage
         gdf = gpd.read_file(self.target_file)
+
         # rename the geometry column
         gdf = gdf.rename_geometry("geom")
-
         # NOTE if inserting rectgrid_100 you will need to assign a primary key to the table
-        if not (gdf.crs == crs_4326 or gdf.crs == crs_27700):
-            error_message = f"GeoDataFrame loaded from shape file for table {self.table_name} has the wrong CRS: {gdf.crs.to_epsg()}."
+        if self.table_name == "rectgrid_100":
+            raise NotImplementedError("We no longer support the rectgrid_100 dataset")
+        if self.table_name == "london_boundary":
+            self.logger.info(
+                "GeoDataFrame loaded from shape file %s does not have a CRS. Setting to 27700.",
+                green(self.table_name),
+            )
+            gdf = gdf.set_crs(crs=crs_27700, allow_override=True)
+        elif not (gdf.crs == crs_4326 or gdf.crs == crs_27700):
+            error_message = (
+                f"GeoDataFrame loaded from shape file for table {self.table_name} "
+            )
+            error_message += (
+                f"has the wrong CRS EPSG: {gdf.crs.to_epsg()}. Should be 4326 or 27700."
+            )
             raise pyproj.exceptions.CRSError(error_message)
 
         # convert the geometry to 4326
         gdf = gdf.to_crs(crs=crs_4326)
-
         # convert column names to lower case
         gdf.columns = map(str.lower, gdf.columns)
-
         # convert "T" to True and "F" to False (convert to boolean)
         if "ons_inner" in gdf.columns:
             gdf["ons_inner"] = gdf["ons_inner"].apply(lambda x: x == "T")
@@ -92,7 +97,11 @@ class StaticWriter(DBWriter):
         # drop any duplicates in the scoot detector dataset
         if self.table_name == "scoot_detector":
             gdf = gdf.drop_duplicates(subset="detector_n")
-
+        self.logger.info(
+            "Uploading static data to table %s in %s",
+            green(self.table_name),
+            green(self.dbcnxn.connection_info["db_name"]),
+        )
         # write to the database table
         with self.dbcnxn.engine.connect() as connection:
             gdf.to_postgis(
