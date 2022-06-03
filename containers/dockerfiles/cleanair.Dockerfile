@@ -21,7 +21,6 @@ COPY scripts/ /app/scripts
 
 # set the version of cleanair
 ARG urbanair_version
-ENV SETUPTOOLS_SCM_PRETEND_VERSION ${urbanair_version}
 
 # Install packages
-RUN pip install "/app/cleanair" pyopenssl
+RUN SETUPTOOLS_SCM_PRETEND_VERSION_FOR_CLEANAIR=${urbanair_version} pip install "/app/cleanair" pyopenssl
