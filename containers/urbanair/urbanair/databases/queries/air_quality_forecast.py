@@ -387,9 +387,12 @@ def cached_forecast_hexgrid_geojson(
         bounding_box=bounding_box,
     )
     # Return the query results as a GeoJSON FeatureCollection
+    print("About to build features!")
     features = ForecastResultGeoJson.build_features(
         [r._asdict() for r in query_results]
     )
+    print("build features :)")
+    print(features)
     return ForecastResultGeoJson(
         run_datetime=f"ran_{run_datetime.replace(tzinfo=timezone.utc).strftime('%Y-%m-%d_%H:%M:%S')}",
         features=features,

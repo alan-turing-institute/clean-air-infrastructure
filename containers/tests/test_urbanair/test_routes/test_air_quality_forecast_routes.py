@@ -31,16 +31,18 @@ class TestBasic:
         assert response.status_code == 200
 
 
-class TestData:
-    """Tests involving data retrieval"""
+def test_hexgrid_data_setup(sample_hexgrid_points):
+    """Ensure that there are 5 hexgrid points"""
+    assert len(sample_hexgrid_points) == 5
+
+
+# NOTE reusing the same class for all end point queries causes 404 errors
+# instead we extend this base class to setup the data
+class BaseForecastEndPoint:
+    """Defines a class which can be extended for testing forecast API end points"""
 
     @staticmethod
-    def test_hexgrid_data_setup(sample_hexgrid_points):
-        """Ensure that there are 5 hexgrid points"""
-        assert len(sample_hexgrid_points) == 5
-
-    @staticmethod
-    def test_aq_data_setup(
+    def setup_air_quality_data(
         secretfile,
         connection_class,
         mock_air_quality_data,
@@ -76,6 +78,28 @@ class TestData:
         except IntegrityError:
             pytest.fail("Dummy data insert")
 
+class TestForecastJsonEndpoint(BaseForecastEndPoint):
+    """Tests involving data retrieval"""
+
+    @staticmethod
+    def test_aq_data_setup(
+        secretfile,
+        connection_class,
+        mock_air_quality_data,
+        mock_air_quality_model,
+        mock_air_quality_instance,
+        mock_air_quality_result,
+    ):
+        """Insert test data"""
+        TestForecastJsonEndpoint.setup_air_quality_data(
+            secretfile,
+            connection_class,
+            mock_air_quality_data,
+            mock_air_quality_model,
+            mock_air_quality_instance,
+            mock_air_quality_result,
+        )
+
     @staticmethod
     def test_json_endpoint(client_class_urbanair, mock_air_quality_result):
         """Test JSON endpoint"""
@@ -98,6 +122,29 @@ class TestData:
         )
 
         assert all([d["measurement_start_utc"] == request_hour for d in data])
+
+
+class TestForecastGeoJsonEndpoint(BaseForecastEndPoint):
+    """Tests involving data retrieval"""
+
+    @staticmethod
+    def test_aq_data_setup(
+        secretfile,
+        connection_class,
+        mock_air_quality_data,
+        mock_air_quality_model,
+        mock_air_quality_instance,
+        mock_air_quality_result,
+    ):
+        """Insert test data"""
+        TestForecastJsonEndpoint.setup_air_quality_data(
+            secretfile,
+            connection_class,
+            mock_air_quality_data,
+            mock_air_quality_model,
+            mock_air_quality_instance,
+            mock_air_quality_result,
+        )
 
     @staticmethod
     def test_geojson_endpoint(
@@ -146,9 +193,32 @@ class TestData:
                 ]
             )
 
+
+class TestForecastGeometriesEndpoint(BaseForecastEndPoint):
+    """Tests involving data retrieval"""
+
+    @staticmethod
+    def test_aq_data_setup(
+        secretfile,
+        connection_class,
+        mock_air_quality_data,
+        mock_air_quality_model,
+        mock_air_quality_instance,
+        mock_air_quality_result,
+    ):
+        """Insert test data"""
+        TestForecastJsonEndpoint.setup_air_quality_data(
+            secretfile,
+            connection_class,
+            mock_air_quality_data,
+            mock_air_quality_model,
+            mock_air_quality_instance,
+            mock_air_quality_result,
+        )
+
     @staticmethod
     def test_geometries_endpoint(
-        client_class_urbanair, mock_air_quality_result_result, sample_hexgrid_points
+        client_class_urbanair, mock_result_with_hex_id, sample_hexgrid_points
     ):
         """Test geometries endpoint"""
         # Check response
@@ -159,7 +229,7 @@ class TestData:
         data = response.json()
 
         # Check that we have the correct number of results
-        mock_points = list({r["hex_id"] for r in mock_air_quality_result_result})
+        mock_points = list({r["hex_id"] for r in mock_result_with_hex_id})
         features = [d for d in data["features"] if d["hex_id"] in mock_points]
         assert len(features) == len(mock_points)
 

@@ -94,12 +94,14 @@ def create_table_from_selectable(
         sa.Column(
             c.name, c.type, key=aliases.get(c.name, c.name), primary_key=c.primary_key
         )
-        for c in selectable.c
+        for c in selectable.subquery().columns
     ] + indexes
     table = sa.Table(name, metadata, *args, schema=schema)
 
-    if not any([c.primary_key for c in selectable.c]):
-        table.append_constraint(PrimaryKeyConstraint(*[c.name for c in selectable.c]))
+    if not any([c.primary_key for c in selectable.subquery().columns]):
+        table.append_constraint(
+            PrimaryKeyConstraint(*[c.name for c in selectable.subquery().columns])
+        )
     return table
 
 
