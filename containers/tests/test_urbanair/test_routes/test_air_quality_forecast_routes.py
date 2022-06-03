@@ -78,6 +78,7 @@ class BaseForecastEndPoint:
         except IntegrityError:
             pytest.fail("Dummy data insert")
 
+
 class TestForecastJsonEndpoint(BaseForecastEndPoint):
     """Tests involving data retrieval"""
 

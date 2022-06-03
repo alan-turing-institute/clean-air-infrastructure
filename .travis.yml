@@ -61,7 +61,6 @@ jobs:
         - python -m pytest containers/tests/test_urbanair --secretfile $DB_SECRET_FILE
 
         # Run pylint for stricter error checking.
-        # NB. We need to disable the hanging indentation check because of https://github.com/psf/black/issues/48
         - pylint --rcfile=.pylintrc containers/urbanair/* containers/tests/test_urbanair/*
         - mypy containers/urbanair
 
