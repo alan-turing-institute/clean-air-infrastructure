@@ -55,7 +55,6 @@ setuptools.setup(
         "typer==0.4.1",
         "uuid==1.30",
         "xarray==2022.3.0",
-        "orjson==3.6.0",
     ],
     extras_require={
         "traffic": [
