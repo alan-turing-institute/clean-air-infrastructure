@@ -42,7 +42,6 @@ setuptools.setup(
         "python-dateutil==2.8.2",
         "pytz==2022.1",
         "pyyaml==6",
-        "pycopg-binary==3.0.14 ",
         "requests==2.27.1",
         "scipy==1.8.1",
         "sqlalchemy==1.4.37",
@@ -54,7 +53,6 @@ setuptools.setup(
         "typer==0.4.1",
         "uuid==1.30",
         "xarray==2022.3.0",
-        "orjson==3.6.8",
     ],
     extras_require={
         "traffic": [
