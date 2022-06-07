@@ -25,7 +25,7 @@ from ..params.svgp_params import (
 )
 from ..types.dataset_types import DataConfig
 from ..types.enum_types import ClusterId
-from ..utils import total_num_features
+from ..utils.dimension_calculator import total_num_features
 from ..mixins import InstanceMixin
 from ..models import ModelConfig
 from ..params import (

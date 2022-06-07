@@ -5,6 +5,10 @@ class UrbanairException(Exception):
     """Urbanair specific exception"""
 
 
+class UrbanairAzureException(UrbanairException):
+    """Azure specific exception for the urbanair project"""
+
+
 class MissingFeatureError(UrbanairException):
     """Raised when a feature is missing in the database"""
 

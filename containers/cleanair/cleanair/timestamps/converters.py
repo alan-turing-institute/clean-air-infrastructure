@@ -31,8 +31,10 @@ def as_datetime(maybe_dt: Union[datetime, date, str]) -> datetime:
     # Otherwise attempt to parse as an ISO string
     try:
         return parser.isoparse(maybe_dt)
-    except ValueError:
-        raise ValueError(f"Could not convert {maybe_dt} into a datetime.")
+    except ValueError as value_error:
+        raise ValueError(
+            f"Could not convert {maybe_dt} into a datetime."
+        ) from value_error
 
 
 def safe_strptime(naive_string: str, format_str: str) -> datetime:

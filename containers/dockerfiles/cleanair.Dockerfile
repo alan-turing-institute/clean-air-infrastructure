@@ -1,13 +1,16 @@
 # Use an official Python runtime as a parent image
-FROM python:3.7
+FROM python:3.10
 
 # Update certificates
-RUN apt-get update \
-    && apt-get install openssl \
-    && apt-get install ca-certificates  cmake build-essential gfortran -y
+RUN apt update \
+    && apt install -y \
+        build-essential \
+        ca-certificates \
+        cmake \
+        gfortran \
+        libeccodes0 \
+        libgeos-dev
 
-# Dependencies for satellite processing
-RUN apt-get install libeccodes0 -y
 
 # Set the working directory to /app
 WORKDIR /app
@@ -20,5 +23,5 @@ COPY scripts/ /app/scripts
 ARG urbanair_version
 ENV SETUPTOOLS_SCM_PRETEND_VERSION ${urbanair_version}
 
-# Install any needed packages specified in requirements.txt
-RUN pip install '/app/cleanair[models,traffic]' pyopenssl
+# Install packages
+RUN pip install "/app/cleanair" pyopenssl

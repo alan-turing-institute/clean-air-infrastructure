@@ -8,7 +8,7 @@ import pytest
 import numpy as np
 import pandas as pd
 from cleanair.types import ModelName, Source, Species
-from cleanair.utils import FileManager
+from cleanair.utils.file_manager import FileManager
 
 if TYPE_CHECKING:
     from cleanair.types import FeaturesDict, TargetDict

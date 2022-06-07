@@ -23,7 +23,8 @@ from ....types.model_types import (
     MRDGPParams,
     KernelType,
 )
-from ....utils import FileManager, total_num_features
+from ....utils.dimension_calculator import total_num_features
+from ....utils.file_manager import FileManager
 
 app = typer.Typer(help="Setup model parameters.")
 

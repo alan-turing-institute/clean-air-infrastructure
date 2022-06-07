@@ -8,12 +8,22 @@ from typing import List
 
 import numpy as np
 from dateutil.parser import isoparse
-from sqlalchemy import func, literal, or_, and_, case, column, String, text, Float
+from sqlalchemy import (
+    func,
+    literal,
+    or_,
+    and_,
+    case,
+    column,
+    String,
+    text,
+    Float,
+    values,
+)
 from sqlalchemy.sql.selectable import Alias as SUBQUERY_TYPE
 
 from .feature_conf import FEATURE_CONFIG_DYNAMIC
 from ..databases import DBWriter
-from ..databases.base import Values
 from ..databases.tables import (
     StaticFeature,
     DynamicFeature,
@@ -288,12 +298,8 @@ class ScootFeatureExtractor(DateRangeMixin, DBWriter, FeatureExtractorMixin):
                 session.query(
                     MetaPoint.id.label("point_id"),
                     MetaPoint.source,
-                    Values(
-                        [
-                            column("feature_name", String),
-                        ],
-                        *[(feature,) for feature in feature_names],
-                        alias_name="t2",
+                    values(column("feature_name", String), name="t2").data(
+                        [(feature,) for feature in feature_names]
                     ),
                 )
                 .filter(MetaPoint.source.in_(sources))
@@ -384,7 +390,7 @@ class ScootFeatureExtractor(DateRangeMixin, DBWriter, FeatureExtractorMixin):
                 break
 
             self.logger.info(
-                f"Generating features for {len(missing_point_ids)} points.."
+                "Generating features for %s points..", len(missing_point_ids)
             )
 
             sq_select_and_insert = self.generate_scoot_features(
@@ -400,7 +406,6 @@ class ScootFeatureExtractor(DateRangeMixin, DBWriter, FeatureExtractorMixin):
             )
 
             n_detectors += 5
-
         self.logger.info(f"Done in {time.time() - update_start:.2f}s")
 
 
@@ -478,10 +483,10 @@ class FeatureExtractor(
             ):  # filter out unreasonably tall buildings from UKMap
                 filter_list.append(UKMap.calculated_height_of_building < 999.9)
                 filter_list.append(UKMap.feature_type == "Building")
-            for column_, values in self.features[feature_name]["feature_dict"].items():
-                if (len(values) >= 1) and (values[0] != "*"):
+            for column_, vals in self.features[feature_name]["feature_dict"].items():
+                if (len(vals) >= 1) and (vals[0] != "*"):
                     filter_list.append(
-                        or_(*[getattr(table, column_) == value for value in values])
+                        or_(*[getattr(table, column_) == value for value in vals])
                     )
             q_source = q_source.filter(*filter_list)
         return q_source
