@@ -37,7 +37,7 @@ Before starting this guide:
 
 ## Running
 
-### Mounting a secrets file
+
 
 ***
 
@@ -57,37 +57,49 @@ Other examples include testing the containerized urbanair API by querying the co
 First, make sure the PostgreSQL `database` container is shut down. Now create a network called `urbanair`:
 
 ```bash
-docker network create urbanair
+export NETWORK=urbanair
+docker network create $NETWORK
 ```
 
-Next, run the database [as before](developer.md#insert-static-datasets), but this time add the `--network urbanair` argument:
+Next, run the docker database [as before](developer.md#insert-static-datasets), but this time add the `--network $NETWORK` argument:
 
 ```bash
-docker run --network urbanair --name database -e POSTGRES_HOST_AUTH_METHOD=trust -p 5432:5432 database
+docker run --network $NETWORK --name database -e POSTGRES_HOST_AUTH_METHOD=trust -p 5432:5432 database
 ```
 
 Check that the database is running using the command: `docker ps`.
-You can check the status of the `urbanair` network and **find the `IPv4Address` of the database**:
+You can check the status of the network and **find the `IPv4Address` of the database**:
 
 ```bash
-docker network inspect urbanair
+docker network inspect $NETWORK
 ```
 
-Update your secrets file by changing the value of `"host"` to be the IP address above. Also *check that the port number is correct*.
+Update your secrets file by changing the value of `"host"` to be the IP address above. 
+You may like to create a new secret file, in which case you should update the `DB_SECRET_FILE` variable.
+Also *check that the port number is correct* and the `SECRET_DIR` variable is set to the `.secrets` directory.
 
 We download the static data and insert into the database using a container called `process_static_datasets`.
 Remember you will need to:
 1. [Build](#building) or [pull](#pulling) the `process_static_datasets` container 
-2. [Mount your secrets file](#mounting-a-secrets-file)
+2. [Mount your secrets file](secretfile.md#mounting-a-secrets-file)
 3. [Store a SAS token](sas_token.md) inside a `SAS_TOKEN` variable
 
-Finally, combining it all together, lets insert the static datasets:
+Combining it all together, lets insert the static datasets:
 
 ```bash
-docker run --network urbanair -v "$(pwd)/.secrets":/app/.secrets cleanairdocker.azurecr.io/process_static_datasets:latest insert \
+docker run --network $NETWORK -v "${SECRETS_DIR}":/secrets cleanairdocker.azurecr.io/process_static_datasets:latest insert \
     -t $SAS_TOKEN \
-    -s /app/.secrets/.db_secrets_docker.json \
-    -d rectgrid_100 street_canyon hexgrid london_boundary oshighway_roadlink scoot_detector urban_village
+    -s /secrets/.db_secrets_docker.json \
+    -d street_canyon hexgrid london_boundary oshighway_roadlink scoot_detector
 ```
 
 > You may also need to add `-e GIT_PYTHON_REFRESH=quiet` if there is an error related to git python!
+
+You can also run a development version of the urbanair API using docker.
+It will run on the same docker network and connect to docker database.
+
+```bash
+docker run --network $NETWORK -i -p 80:80 -e DB_SECRET_FILE=".db_secrets_docker.json" -e APP_MODULE="urbanair.urbanair:app" -v "${SECRET_DIR}":/secrets urbanairapi:py39
+```
+
+You can then query the developer urbanair API, which in turn queries the test docker database!

@@ -13,8 +13,11 @@ Previously repurposed to assess `busyness` in London during the COVID-19 pandemi
 
 - [Installation](docs/installation.md)
 - [Developer guide](docs/developer.md)
+- [Docker guide](docs/docker.md)
 - [Azure infrastructure](docs/azure.md)
 - [Datasets](docs/datasets.md)
+- [Secret files](docs/secretfile.md)
+- [SAS token](docs/sas_token.md)
 - [Cheat sheet](docs/cheat.md)
 - [Contributors](docs/contributors.md)
 

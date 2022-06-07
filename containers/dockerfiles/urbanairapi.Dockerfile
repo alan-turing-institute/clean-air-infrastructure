@@ -1,6 +1,6 @@
 FROM tiangolo/uvicorn-gunicorn-fastapi:python3.9
 
-RUN pip install mkdocs==1.1.2 mkdocs-material==5.5.12 mkdocstrings==0.13.2
+RUN pip install mkdocs==1.3.0 mkdocs-material==8.3.0 mkdocstrings==0.19.0
 
 # set the version of cleanair
 ARG urbanair_version

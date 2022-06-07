@@ -29,6 +29,8 @@ pip install -r containers/requirements.txt
 Instead, follow these instructions to setup a PostgreSQL database that runs on a docker image.
 You will need docker installed.
 
+> You may also like to **optionally** read about how to [setup the database in a docker network](docker.md#multi-container-networks).
+
 First build the docker image:
 
 ```bash
@@ -43,31 +45,8 @@ docker run --name database -e POSTGRES_HOST_AUTH_METHOD=trust -p 5432:5432 datab
 
 ### Create a secrets file
 
-We are going to store the settings for the docker database in a JSON file.
-First create a hidden directory to store our secrets inside:
-
-```bash
-mkdir "$(pwd)/.secrets"
-```
-
-Now create a variable `DB_SECRET_FILE` to store the `.db_secrets_docker.json` filepath:
-
-```bash
-export DB_SECRET_FILE="$(pwd)/.secrets/.db_secrets_docker.json"
-```
-
-Next create `.db_secrets_docker.json`:
-
-```bash
-echo '{
-    "username": "postgres",
-    "password": "",
-    "host": "localhost",
-    "port": 5432,
-    "db_name": "cleanair_test_db",
-    "ssl_mode": "prefer"
-}' >> $DB_SECRET_FILE
-```
+Create a JSON secret file that will connect to your newly created docker database.
+[Follow this guide to creating a secret file for a docker database](secretfile.md#docker-database).
 
 ### Create schema and roles
 
@@ -83,19 +62,7 @@ First [create a SAS token](sas_token.md) and store in the `SAS_TOKEN` variable.
 Now download and insert all static data into the database:
 
 ```bash
-python containers/entrypoints/setup/insert_static_datasets.py insert -t $SAS_TOKEN -s $DB_SECRET_FILE -d rectgrid_100 street_canyon hexgrid london_boundary oshighway_roadlink scoot_detector urban_village
-```
-
-
-### (Not recommended) UKMAP
-
-`UKMAP` is extremly large and will take ~1h to download and insert.
-We therefore do not run tests against `UKMAP`.
-
-If you would also like to add `UKMAP` to the database run:
-
-```bash
-python containers/entrypoints/setup/insert_static_datasets.py insert -t $SAS_TOKEN -s $DB_SECRET_FILE -d ukmap
+python containers/entrypoints/setup/insert_static_datasets.py insert -t $SAS_TOKEN -s $DB_SECRET_FILE -d street_canyon hexgrid london_boundary oshighway_roadlink scoot_detector
 ```
 
 ***
@@ -118,7 +85,7 @@ pytest containers/tests/test_database_init --secretfile $DB_SECRET_FILE
 To run the tests in the `cleanair` package:
 
 ```bash
-pytest containers/tests/test_cleanair --secretfile $DB_SECRET_FILE
+python -m pytest containers/tests/test_cleanair --secretfile $DB_SECRET_FILE --ignore containers/tests/test_cleanair/test_models --ignore containers/tests/test_cleanair/test_experiment
 ```
 
 To run the tests in the `urbanair` API package:

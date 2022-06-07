@@ -16,7 +16,7 @@ from .laqn_tables import LAQNSite, LAQNReading
 from .londonboundary_table import LondonBoundary
 from .meta_point_table import MetaPoint
 from .oshighway_table import OSHighway
-from .rectgrid_table import RectGrid, RectGrid100
+from .rectgrid_table import RectGrid
 from .satellite_tables import (
     SatelliteBox,
     SatelliteGrid,
@@ -38,7 +38,8 @@ from .traffic_modelling_tables import (
     TrafficModelTable,
 )
 from .ukmap_tables import UKMap
-from .urban_village_tables import UrbanVillage
+
+# from .urban_village_tables import UrbanVillage
 from .gla_scoot_tables import ScootPercentChange
 from .jamcam_tables import (
     JamCamFrameStats,
@@ -74,7 +75,7 @@ __all__ = [
     "MetaPoint",
     "OSHighway",
     "RectGrid",
-    "RectGrid100",
+    # "RectGrid100",
     "SatelliteGrid",
     "SatelliteForecast",
     "SatelliteBox",
@@ -91,6 +92,6 @@ __all__ = [
     "TrafficInstanceTable",
     "TrafficMetricTable",
     "TrafficModelTable",
-    "UrbanVillage",
+    # "UrbanVillage",
     "UKMap",
 ]

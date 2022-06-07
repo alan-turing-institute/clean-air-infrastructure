@@ -43,6 +43,7 @@ setuptools.setup(
         "python-dateutil==2.8.2",
         "pytz==2022.1",
         "pyyaml==6",
+        "psycopg2-binary==2.9.3",
         "requests==2.27.1",
         "scipy==1.8.1",
         "sqlalchemy==1.4.37",
@@ -61,6 +62,7 @@ setuptools.setup(
             "fbprophet==0.7.1",
         ],
         "models": ["gpflow==1.5.1", "tensorflow==1.15.0"],
+        "geo": ["geopandas>=0.10.0"],
     },
     setup_requires=["setuptools_scm"],
     use_scm_version={

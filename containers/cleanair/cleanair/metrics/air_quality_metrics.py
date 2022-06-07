@@ -3,7 +3,7 @@
 from datetime import timedelta
 from typing import Dict, List, Optional
 import pandas as pd
-from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score as r2s
 from ..databases import DBReader, DBWriter, get_columns_of_table
 from ..databases.tables import (
     AirQualityDataTable,
@@ -145,7 +145,7 @@ class AirQualityMetrics(DBWriter, InstanceQueryMixin, ResultQueryMixin):
                 group_df[pollutant.value], group_df[pollutant.value + "_mean"]
             )
         if self.r2_score:
-            group_metrics["r2_score"] = r2_score(
+            group_metrics["r2_score"] = r2s(
                 group_df[pollutant.value], group_df[pollutant.value + "_mean"]
             )
         return group_metrics
