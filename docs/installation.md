@@ -1,7 +1,7 @@
 # Installation
 
 First, we recommend creating a conda environment called `urbanair`.
-Our packages work with *python 3.8 or later*.
+Our packages work with *python 3.8 or later*, but we recommend python 3.10.
 
 > Please take care to install all packages from the *conda-forge* channel!
 ```bash
@@ -12,7 +12,7 @@ conda activate urbanair
 conda config --env --add channels conda-forge
 conda config --env --set channel_priority strict
 # now install python, geopandas, plus any other libraries
-conda install python=3.10 geopandas==0.10.2
+conda install python=3.10 geopandas=0.10.2
 ```
 
 We strongly recommend [installing geopandas](https://geopandas.org/en/stable/getting_started/install.html)

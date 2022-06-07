@@ -12,7 +12,7 @@ from cleanair.parsers.urbanair_parser import (
     features,
     metrics,
     # model,
-    production,
+    # production,
 )
 
 # TODO re-add the experiment & model apps
@@ -30,7 +30,7 @@ app.add_typer(logs.app, name="logs")
 app.add_typer(features.app, name="features")
 app.add_typer(metrics.app, name="metrics")
 # app.add_typer(model.app, name="model")
-app.add_typer(production.app, name="production")
+# app.add_typer(production.app, name="production")
 
 if has_prophet and has_pystan:
     from cleanair.parsers.urbanair_parser import processors

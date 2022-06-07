@@ -165,10 +165,10 @@ class Connector(DBConnectionMixin):
             )
             self.logger.error(str(error))
             session.rollback()
-            raise
-        finally:
-            # Close the session when finished
-            session.close()
+            raise error
+        # finally:
+        # Close the session when finished
+        # session.close()
 
     def check_internet_connection(
         self, url="http://www.google.com/", timeout=5, interval=10

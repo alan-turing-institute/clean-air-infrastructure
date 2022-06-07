@@ -21,7 +21,7 @@ jobs:
 
       install:
         - pip install -r containers/requirements.txt --use-deprecated=backtrack-on-build-failures
-        - pip install -e 'containers/cleanair'
+        - pip install -e 'containers/cleanair[geo]'
 
       before_script:
         - sh .travis/before_script.sh
@@ -34,11 +34,11 @@ jobs:
         - python -m pytest containers/tests/test_cleanair --secretfile $DB_SECRET_FILE --ignore containers/tests/test_cleanair/test_models --ignore containers/tests/test_cleanair/test_experiment
 
         # Run pylint for stricter error checking
-        - pylint --rcfile=.pylintrc */ --ignore=cleanair,urbanair,odysseus,tests
+        - pylint --rcfile=.pylintrc */ --ignore=cleanair,urbanair,odysseus,tests,jamcam_processing
         # run linting for cleanair package without the models module
-        - pylint --rcfile=.pylintrc --ignore=cleanair.experiment,cleanair.models,cleanair.egg-info,cleanair.utils.tf1 containers/cleanair/*
+        - pylint --rcfile=.pylintrc --ignore=experiment,models,cleanair.egg-info,tf1 containers/cleanair/*
         # run linting for the tests but only detect warnings and errors
-        - pylint --rcfile=.pylintrc --disable=R,C containers/tests/test_cleanair/* containers/tests/test_database_init/*
+        - pylint --rcfile=.pylintrc --ignore test_models --disable=R,C containers/tests/test_cleanair/* containers/tests/test_database_init/*
         # Run type checking
         - mypy --config-file .mypy.ini containers/cleanair
 
@@ -50,7 +50,7 @@ jobs:
 
       install:
         - pip install -r containers/requirements.txt  --use-deprecated=backtrack-on-build-failures
-        - pip install -e 'containers/cleanair'
+        - pip install -e 'containers/cleanair[geo]'
         - pip install -e 'containers/urbanair'
 
       before_script:
@@ -61,7 +61,6 @@ jobs:
         - python -m pytest containers/tests/test_urbanair --secretfile $DB_SECRET_FILE
 
         # Run pylint for stricter error checking.
-        # NB. We need to disable the hanging indentation check because of https://github.com/psf/black/issues/48
         - pylint --rcfile=.pylintrc containers/urbanair/* containers/tests/test_urbanair/*
         - mypy containers/urbanair
 
