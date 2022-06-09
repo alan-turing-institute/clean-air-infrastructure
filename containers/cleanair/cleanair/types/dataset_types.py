@@ -50,9 +50,9 @@ class FullDataConfig(DataConfig):
     x_names: List[str]
     feature_names: List[str]
 
-
+    # pylint: disable=E0213,R0201
     @validator("feature_names", each_item=True)
-    def name_must_contain_space(self, v):
+    def name_must_contain_space(cls, v):
         "Check value in name"
         parts = v.split("_")
         if parts[0] != "value":
