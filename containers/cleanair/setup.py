@@ -22,7 +22,6 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ],
     install_requires=[
-        # "gitpython==3.1.27",
         "azure-cli==2.37.0",
         "azure-identity==1.10.0",
         "azure-storage-blob==12.12.0",
