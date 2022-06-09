@@ -12,7 +12,7 @@ import numpy as np
 from ....types import Source, StaticFeatureNames
 from ....databases.tables import SatelliteBox
 
-# pylint: disable=E0213,R0201
+
 
 # Point regular expression
 RE_POINT = re.compile(r"^SRID=4326;POINT\((\d*\.?\d*) (\d*\.?\d*)\)$")
@@ -55,7 +55,7 @@ class MetaPointSchema(BaseModel):
     _gen_point_id = validator("id", allow_reuse=True, always=True)(gen_point_id)
 
     @validator("location", always=True)
-    def gen_location(cls, v):
+    def gen_location(self, v):
         "Random location. These will always be within the border of HexGrid"
         if v:
             return v
@@ -92,7 +92,7 @@ class LAQNReadingSchema(BaseModel):
     _gen_value = validator("value", always=True, allow_reuse=True)(gen_norm_value)
 
     @validator("measurement_end_utc", always=True)
-    def gen_measurement_end_time(cls, v, values):
+    def gen_measurement_end_time(self, v, values):
         "Generate end time one hour after start time"
         if v:
             return v
@@ -122,12 +122,11 @@ class SatelliteBoxSchema(BaseModel):
     _gen_point_id = validator("id", allow_reuse=True, always=True)(gen_point_id)
 
     @validator("centroid", always=True)
-    def validate_point(cls, v):
+    def validate_point(self, v):
         """Generate end time one hour after start time
         Example:
             'SRID=4326;POINT(4.2234 2232342.2342)'
         """
-
         if isinstance(v, str):
             if RE_POINT.match(v):
                 return v
@@ -141,7 +140,7 @@ class SatelliteBoxSchema(BaseModel):
         raise ValueError("Must be a tuple or point string")
 
     @validator("geom", always=True)
-    def gen_geom(cls, v, values):
+    def gen_geom(self, v, values):
         "Generate end time one hour after start time"
         if v:
             raise ValueError("Do not provide a value. Calculated automatically")
@@ -156,7 +155,7 @@ class SatelliteBoxSchema(BaseModel):
     @property
     def centroid_tuple(self):
         "Return a tuple of lat and lon"
-        return tuple([float(i) for i in self.centroid[16:].strip(")").split(" ")])
+        return tuple(float(i) for i in self.centroid[16:].strip(")").split(" "))
 
 
 class SatelliteGridSchema(BaseModel):
@@ -178,7 +177,7 @@ class SatelliteForecastSchema(BaseModel):
     _gen_value = validator("value", always=True, allow_reuse=True)(gen_norm_value)
 
     @validator("measurement_end_utc", always=True)
-    def gen_measurement_end_time(cls, v, values):
+    def gen_measurement_end_time(self, v, values):
         "Generate end time one hour after start time"
         if v:
             return v

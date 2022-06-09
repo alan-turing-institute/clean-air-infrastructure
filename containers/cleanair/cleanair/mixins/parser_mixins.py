@@ -17,8 +17,8 @@ class LoadCopernicusKey(Action):
             try:
                 with open(
                     os.path.abspath(
-                        os.path.join(os.sep, "secrets", "copernicus_secrets.json")
-                    )
+                        os.path.join(os.sep, "secrets", "copernicus_secrets.json"),
+                    ), encoding="utf-8"
                 ) as f_secret:
                     data = json.load(f_secret)
                     values = data["copernicus_key"]

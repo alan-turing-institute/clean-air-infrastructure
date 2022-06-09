@@ -61,7 +61,7 @@ def CopernicusKey_callback(value: str) -> str:
             with open(
                 os.path.abspath(
                     os.path.join(os.sep, "secrets", "copernicus_secrets.json")
-                )
+                ), encoding="utf-8"
             ) as f_secret:
                 data = json.load(f_secret)
                 value = data["copernicus_key"]
@@ -78,7 +78,7 @@ def AWSID_callback(value: str) -> str:
     if value == "":
         try:
             with open(
-                os.path.abspath(os.path.join(os.sep, "secrets", "aws_secrets.json"))
+                os.path.abspath(os.path.join(os.sep, "secrets", "aws_secrets.json")), encoding="utf-8"
             ) as f_secret:
                 data = json.load(f_secret)
                 return data["aws_key_id"]
@@ -95,7 +95,7 @@ def AWSKey_callback(value: str) -> str:
     if value == "":
         try:
             with open(
-                os.path.abspath(os.path.join(os.sep, "secrets", "aws_secrets.json"))
+                os.path.abspath(os.path.join(os.sep, "secrets", "aws_secrets.json")), encoding="utf-8"
             ) as f_secret:
                 data = json.load(f_secret)
                 return data["aws_key"]
