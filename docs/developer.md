@@ -43,6 +43,12 @@ Now run the database using docker. Note that the port is `5432` and the docker i
 docker run --name database -e POSTGRES_HOST_AUTH_METHOD=trust -p 5432:5432 database
 ```
 
+After running the database first time run this to start the database
+
+```
+docker start CONTAINER_NAME
+```
+
 ### Create a secrets file
 
 Create a JSON secret file that will connect to your newly created docker database.
