@@ -42,7 +42,7 @@ setuptools.setup(
         "pyeccodes==0.1.1",
         "python-dateutil==2.8.2",
         "pytz==2022.1",
-        "pyyaml==6",
+        "pyyaml==6.0.0",
         "psycopg2-binary==2.9.3",
         "requests==2.27.1",
         "scipy==1.8.1",
