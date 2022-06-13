@@ -6,7 +6,7 @@ Our packages work with *python 3.8 or later*, but we recommend python 3.10.
 > Please take care to install all packages from the *conda-forge* channel!
 ```bash
 # create the environment and activate
-conda create -n urbanair python=3.10
+conda create -n urbanair
 conda activate urbanair
 # set the conda-forge channel as the top priority
 conda config --env --add channels conda-forge

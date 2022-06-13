@@ -46,7 +46,7 @@ docker run --name database -e POSTGRES_HOST_AUTH_METHOD=trust -p 5432:5432 datab
 After running the database first time run this to start the database
 
 ```
-docker start CONTAINER_NAME
+docker start database
 ```
 
 ### Create a secrets file
