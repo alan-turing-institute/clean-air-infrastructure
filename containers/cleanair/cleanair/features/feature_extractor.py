@@ -366,7 +366,7 @@ class ScootFeatureExtractor(DateRangeMixin, DBWriter, FeatureExtractorMixin):
             self.end_datetime.isoformat(),
             exclude_has_data=self.exclude_has_data,
         )
-
+    # pylint: disable=W1203
     def update_remote_tables(self):
         "Run scoot feature processing and write to database"
 

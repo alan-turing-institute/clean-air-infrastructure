@@ -2,7 +2,7 @@
 
 from enum import Enum
 
-
+# pylint: disable=C0201
 class Species(Enum):
     """Valid species for API"""
 
@@ -11,6 +11,7 @@ class Species(Enum):
     PM25 = "PM25"
     PM10 = "PM10"
     O3 = "O3"  # species to get data for
+
 
     @classmethod
     def has_key(cls, key: str) -> bool:
