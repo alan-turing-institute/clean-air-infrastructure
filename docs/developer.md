@@ -85,7 +85,7 @@ pytest containers/tests/test_database_init --secretfile $DB_SECRET_FILE
 To run the tests in the `cleanair` package:
 
 ```bash
-pytest containers/tests/test_cleanair --secretfile $DB_SECRET_FILE
+python -m pytest containers/tests/test_cleanair --secretfile $DB_SECRET_FILE --ignore containers/tests/test_cleanair/test_models --ignore containers/tests/test_cleanair/test_experiment
 ```
 
 To run the tests in the `urbanair` API package:
