@@ -4,7 +4,6 @@ Tables for SCOOT data source
 from sqlalchemy import Column, ForeignKey, Integer, String
 from sqlalchemy.dialects.postgresql import DATE, DOUBLE_PRECISION, TIMESTAMP
 from sqlalchemy.ext.declarative import DeferredReflection
-from sqlalchemy.orm import relationship
 from ..base import Base
 
 
@@ -36,9 +35,6 @@ class ScootReading(Base):
     congestion_raw_count = Column(Integer)  # CONG_COUNT
     saturation_raw_count = Column(Integer)  # SATU_COUNT
     region = Column(String(5))  # REGION
-
-    # Create ScootReading.detector with no reverse relationship
-    detector = relationship("ScootDetector")
 
     def __repr__(self):
         return "<ScootReading(" + ", ".join(
@@ -78,9 +74,6 @@ class ScootForecast(Base):
     occupancy_percentage = Column(DOUBLE_PRECISION)
     congestion_percentage = Column(DOUBLE_PRECISION)
     saturation_percentage = Column(DOUBLE_PRECISION)
-
-    # Create ScootForecast.detector with no reverse relationship
-    detector = relationship("ScootDetector")
 
     def __repr__(self):
         return "<ScootForecast(" + ", ".join(
@@ -129,9 +122,6 @@ class ScootRoadMatch(Base):
     )
     distance_m = Column(DOUBLE_PRECISION, nullable=False)
     weight = Column(DOUBLE_PRECISION, nullable=False)
-
-    # Create ScootRoadMatch.detector with no reverse relationship
-    detector = relationship("ScootDetector")
 
     def __repr__(self):
         cols = [c.name for c in self.__table__.columns]

@@ -3,8 +3,8 @@ Multi-resolution DGP (LAQN + Satellite)
 """
 from typing import Dict, Optional, List
 import os
-from nptyping import NDArray
 import numpy as np
+import numpy.typing as npt
 import tensorflow as tf
 from scipy.cluster.vq import kmeans2
 
@@ -88,7 +88,10 @@ class MRDGP(ModelMixin):
         )
 
     def make_mixture(
-        self, dataset: List[List[NDArray]], parent_mixtures=None, name_prefix: str = ""
+        self,
+        dataset: List[List[npt.NDArray]],
+        parent_mixtures=None,
+        name_prefix: str = "",
     ) -> MR_Mixture:
         """
         Construct the DGP multi-res mixture
@@ -303,7 +306,7 @@ class MRDGP(ModelMixin):
         #         ),
         #     )
 
-    def _predict(self, x_test: NDArray) -> NDArrayTuple:
+    def _predict(self, x_test: npt.NDArray) -> NDArrayTuple:
         ys_mean, ys_var = self.model.predict_y_experts(
             x_test, self.model_params.num_prediction_samples
         )

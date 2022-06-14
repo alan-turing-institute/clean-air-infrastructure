@@ -331,6 +331,7 @@ def forecast_hexgrid_1hr_geojson(
     if index < len(instance_ids):
         instance_id, instance_run_date = instance_ids[index]
     else:
+        print("No forecasts cover this period!")
         raise HTTPException(status_code=404, detail="No forecasts cover this period")
 
     # Get forecasts in this range as a GeoJSON FeatureCollection (using a bounding box if specified)

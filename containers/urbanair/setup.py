@@ -26,5 +26,5 @@ setuptools.setup(
         "geojson==2.5.0",
         "sentry_sdk==1.0.0",
     ],
-    python_requires=">=3.7",
+    python_requires=">=3.8",
 )

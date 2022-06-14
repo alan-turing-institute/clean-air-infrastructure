@@ -85,7 +85,7 @@ class DBConnectionMixin:
                 )
                 return data
 
-        except FileNotFoundError:
+        except FileNotFoundError as file_not_found_error:
 
             # Construct available secrets files
             secrets_directories = ["/secrets"]
@@ -101,7 +101,7 @@ class DBConnectionMixin:
                     "{} could not be found. Have you mounted the directory?".format(
                         secret_file
                     )
-                )
+                ) from file_not_found_error
 
             # Attempt to load secrets from each available file in turn
             for secret_fname in secrets_files:
@@ -121,7 +121,7 @@ class DBConnectionMixin:
 
             raise FileNotFoundError(
                 "Database secrets could not be loaded from {}".format(secret_file)
-            )
+            ) from file_not_found_error
 
     @staticmethod
     def read_environment_password():
