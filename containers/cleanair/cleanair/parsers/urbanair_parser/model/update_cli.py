@@ -12,7 +12,7 @@ from ....loggers import get_logger
 from ....metrics import AirQualityMetrics
 from ....models import ModelData, ModelDataExtractor
 from ....types import ClusterId, ModelName, Tag, Source
-from ....utils import FileManager
+from ....utils.file_manager import FileManager
 
 app = typer.Typer(help="Update database with model fit.")
 

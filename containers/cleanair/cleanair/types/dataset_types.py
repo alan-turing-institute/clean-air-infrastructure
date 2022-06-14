@@ -2,7 +2,8 @@
 
 from typing import Dict, List, Tuple, Union, Optional
 from datetime import datetime
-from nptyping import NDArray, Float64, Int
+import numpy as np
+import numpy.typing as npt
 from pydantic import BaseModel, validator
 from .enum_types import (
     Species,
@@ -13,14 +14,14 @@ from .enum_types import (
 )
 
 # pylint: disable=invalid-name
-FeaturesDict = Dict[Source, NDArray[Float64]]
-IndexDict = Dict[Source, NDArray[Int]]
-TargetDict = Dict[Source, Dict[Species, NDArray[Float64]]]
-NDArrayTuple = Tuple[NDArray[Float64], NDArray[Float64]]
+FeaturesDict = Dict[Source, npt.NDArray[np.float64]]
+IndexDict = Dict[Source, npt.NDArray[np.int_]]
+TargetDict = Dict[Source, Dict[Species, npt.NDArray[np.float64]]]
+NDArrayTuple = Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]
 DatasetDict = Dict[str, Union[FeaturesDict, TargetDict]]
 IndexedDatasetDict = Tuple[FeaturesDict, TargetDict, IndexDict]
 InterestPointDict = Dict[Source, Union[str, List[str]]]
-PredictionDict = Dict[Source, Dict[Species, Dict[str, NDArray[Float64]]]]
+PredictionDict = Dict[Source, Dict[Species, Dict[str, npt.NDArray[np.float64]]]]
 
 
 class DataConfig(BaseModel):

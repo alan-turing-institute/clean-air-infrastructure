@@ -2,7 +2,7 @@
 from pathlib import Path
 
 import typer
-from cleanair.utils import FileManager
+from cleanair.utils.file_manager import FileManager
 
 from ..shared_args import ExperimentDir
 

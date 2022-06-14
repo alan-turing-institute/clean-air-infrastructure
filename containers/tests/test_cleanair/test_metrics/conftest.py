@@ -10,7 +10,7 @@ import pytest
 from cleanair.experiment import AirQualityResult
 from cleanair.metrics import AirQualityMetrics
 from cleanair.types import Source, Species
-from nptyping import NDArray, Float64
+import numpy.typing as npt
 
 
 # pylint: disable=redefined-outer-name
@@ -43,19 +43,19 @@ def num_forecast_data_points(point_ids, num_forecast_days) -> int:
 
 
 @pytest.fixture(scope="function")
-def y_test() -> NDArray[Float64]:
+def y_test() -> npt.NDArray[np.float64]:
     """Actual observations."""
     return np.array([0, 1, 5, 10, 100])
 
 
 @pytest.fixture(scope="function")
-def y_pred() -> NDArray[Float64]:
+def y_pred() -> npt.NDArray[np.float64]:
     """Predictions."""
     return np.array([0, 2, 10, 20, 0])
 
 
 @pytest.fixture(scope="function")
-def y_var() -> NDArray[Float64]:
+def y_var() -> npt.NDArray[np.float64]:
     """Predicted variance."""
     return np.ones(5)
 

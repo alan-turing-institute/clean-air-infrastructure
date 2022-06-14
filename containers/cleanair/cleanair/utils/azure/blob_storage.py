@@ -2,7 +2,7 @@
 from datetime import datetime, timedelta, timezone
 from typing import Optional, List
 
-from azure.common.client_factory import get_client_from_cli_profile
+from azure.identity import AzureCliCredential
 from azure.mgmt.storage import StorageManagementClient
 from azure.storage.blob import (
     BlobServiceClient,
@@ -11,6 +11,7 @@ from azure.storage.blob import (
     AccountSasPermissions,
     BlobProperties,
 )
+from .subscription import get_urbanair_az_subscription_id
 
 
 def generate_sas_token(
@@ -31,7 +32,10 @@ def generate_sas_token(
         hours: Number of hours until SAS token expires. Shorter is better
     """
     if not storage_account_key:
-        storage_mgmt_client = get_client_from_cli_profile(StorageManagementClient)
+        subscription_id = get_urbanair_az_subscription_id
+        storage_mgmt_client = StorageManagementClient(
+            AzureCliCredential(), subscription_id
+        )
         storage_key_list = storage_mgmt_client.storage_accounts.list_keys(
             resource_group,
             storage_account_name,

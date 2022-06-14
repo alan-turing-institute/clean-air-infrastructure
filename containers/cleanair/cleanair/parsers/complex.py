@@ -101,10 +101,10 @@ class ScootReadingArgumentParser(
                     data = json.load(f_secret)
                     args.aws_key_id = data["aws_key_id"]
                     args.aws_key = data["aws_key"]
-            except json.decoder.JSONDecodeError:
+            except json.decoder.JSONDecodeError as decode_error:
                 raise ArgumentTypeError(
                     "Could not determine SCOOT aws_key_id or aws_key"
-                )
+                ) from decode_error
         return args
 
 
