@@ -73,7 +73,7 @@ class SetViewOwner(DDLElement):
 
 @compiler.compiles(SetViewOwner)
 def compile_set_view_owner(element, compiler, **kw):
-    return "ALTER {} VIEW {} OWNER TO {}".format( # noqa
+    return "ALTER {} VIEW {} OWNER TO {}".format(  # noqa
         "MATERIALIZED " if element.materialized else "",
         element.name,
         element.owner,
@@ -195,7 +195,9 @@ def create_view(name, selectable, metadata, cascade_on_drop=True):
         for idx in table.indexes:
             idx.create(connection)
 
-    sa.event.listen(metadata, "before_drop", DropView(name, cascade=cascade_on_drop)) # noqa
+    sa.event.listen(
+        metadata, "before_drop", DropView(name, cascade=cascade_on_drop)
+    )  # noqa
     return table
 
 

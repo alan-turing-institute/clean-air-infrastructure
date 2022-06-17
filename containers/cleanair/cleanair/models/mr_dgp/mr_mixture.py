@@ -369,7 +369,9 @@ class MR_Mixture(Model):
                 )  # trained onto the first dataset
                 ell = scale * _ell
 
-                ell = tf.Print(ell, [tf.reduce_sum(ell)], "dgp ell: ".format(i=i)) # noqa
+                ell = tf.Print(
+                    ell, [tf.reduce_sum(ell)], "dgp ell: ".format(i=i)
+                )  # noqa
 
                 dgp_ell_arr.append(ell)
 
