@@ -21,7 +21,7 @@ setuptools.setup(
     ],
     install_requires=[
         "cleanair",
-        "fastapi[all]=0.78.0 ",
+        "fastapi[all]==0.78.0 ",
         "cachetools==5.2.0",
         "geojson==2.5.0",
         "sentry_sdk==1.5.12",
