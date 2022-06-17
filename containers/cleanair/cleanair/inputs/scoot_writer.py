@@ -171,7 +171,7 @@ class ScootReader(DateRangeMixin, ScootQueryMixin, DBReader):
                 reading_status_sq.c.expected_measurement_start_utc.label("day"),
                 (
                     cast(
-                        func.sum(cast(missing_row == False, Integer)),
+                        func.sum(cast(missing_row is False, Integer)),
                         Float,
                     )
                     / cast(func.count(missing_row), Float)

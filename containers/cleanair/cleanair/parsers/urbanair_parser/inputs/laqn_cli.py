@@ -9,6 +9,7 @@ from ..state import state
 
 app = typer.Typer()
 
+
 # pylint: disable=W0613
 @app.command()
 def check(
