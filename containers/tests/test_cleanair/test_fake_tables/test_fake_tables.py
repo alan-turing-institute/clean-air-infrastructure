@@ -43,7 +43,9 @@ class TestDataFaker:
 
         with pytest.raises(IntegrityError):
             writer.commit_records(
-                [record], on_conflict="overwrite", table=LAQNSite,
+                [record],
+                on_conflict="overwrite",
+                table=LAQNSite,
             )
 
     def test_read_laqn_site_records(

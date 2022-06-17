@@ -36,6 +36,7 @@ class DBQueryMixin:
         """Query LondonBoundary to obtain the bounding geometry for London.
         Only get the first row as should only be one entry"""
         with self.dbcnxn.open_session() as session:
+            # pylint: disable=no-member
             return session.query(LondonBoundaryView.geom).limit(1)
 
     @db_query()
@@ -95,11 +96,11 @@ class DBQueryMixin:
         self, start_date: datetime, end_date: datetime, species: List[Species]
     ):
         """Get Satellite data
-           As we get 72 hours of Satellite forecast on each day,
-           here we only get Satellite data where the reference date
-           is the same as the forecast time.
-           i.e. Get data between start_datetime and end_datetime which
-           consists of the first 24 hours of forecasts on each of those days
+        As we get 72 hours of Satellite forecast on each day,
+        here we only get Satellite data where the reference date
+        is the same as the forecast time.
+        i.e. Get data between start_datetime and end_datetime which
+        consists of the first 24 hours of forecasts on each of those days
         """
 
         all_species = [spc.value for spc in species]

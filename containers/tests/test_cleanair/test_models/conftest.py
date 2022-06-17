@@ -1,6 +1,6 @@
 """Fixtures for modelling."""
 import numpy as np
-from nptyping import NDArray, Float
+import numpy.typing as npt
 import pytest
 from cleanair.types import (
     FeaturesDict,
@@ -50,7 +50,7 @@ def number_of_samples() -> int:
 
 
 @pytest.fixture(scope="function")
-def x_features(number_of_samples: int) -> NDArray[Float]:
+def x_features(number_of_samples: int) -> npt.NDArray[np.float64]:
     """Features"""
     # return np.arange((number_of_samples, 1)).reshape((number_of_samples, 3)).astype(np.float)
     return (
@@ -62,8 +62,8 @@ def x_features(number_of_samples: int) -> NDArray[Float]:
 
 @pytest.fixture(scope="function")
 def y_observations(
-    x_features: NDArray[Float], number_of_samples: int
-) -> NDArray[Float]:
+    x_features: npt.NDArray[np.float64], number_of_samples: int
+) -> npt.NDArray[np.float64]:
     """Observations"""
     # only use first dimension to calculate feature
     return np.sin(2 * np.pi * x_features[:, 0] / float(number_of_samples)).reshape(
@@ -80,9 +80,13 @@ def x_train(x_features) -> FeaturesDict:
 
 
 @pytest.fixture(scope="function")
-def y_train(y_observations: NDArray[Float]) -> TargetDict:
+def y_train(y_observations: npt.NDArray[np.float64]) -> TargetDict:
     """Small number of observations in dictionary structure"""
-    return {Source.laqn: {Species.NO2: y_observations,}}
+    return {
+        Source.laqn: {
+            Species.NO2: y_observations,
+        }
+    }
 
 
 @pytest.fixture(scope="function")

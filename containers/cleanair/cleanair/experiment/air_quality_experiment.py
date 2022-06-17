@@ -21,9 +21,11 @@ from .experiment import (
 )
 from ..loggers import get_logger
 from ..metrics import TrainingMetrics
-from ..models import ModelData, ModelDataExtractor, MRDGP, SVGP
+from ..models import ModelData, ModelDataExtractor
+from ..models.svgp import SVGP
+from ..models.mr_dgp_model import MRDGP
 from ..types import ExperimentName, IndexedDatasetDict, ModelName, Source, TargetDict
-from ..utils import FileManager
+from ..utils.file_manager import FileManager
 
 if TYPE_CHECKING:
     import os
@@ -227,7 +229,11 @@ class RunnableAirQualityExperiment(RunnableExperimentMixin):
         #  load the data from this instance
         training_data = file_manager.load_training_data()
         full_config = file_manager.load_data_config(full=True)
-        return model_data.get_data_arrays(full_config, training_data, prediction=False,)
+        return model_data.get_data_arrays(
+            full_config,
+            training_data,
+            prediction=False,
+        )
 
     def load_test_dataset(self, data_id: str) -> IndexedDatasetDict:
         """Load a test dataset from file"""
@@ -238,7 +244,11 @@ class RunnableAirQualityExperiment(RunnableExperimentMixin):
         #  load the data from this instance
         test_data = file_manager.load_test_data()
         full_config = file_manager.load_data_config(full=True)
-        return model_data.get_data_arrays(full_config, test_data, prediction=True,)
+        return model_data.get_data_arrays(
+            full_config,
+            test_data,
+            prediction=True,
+        )
 
     def load_model(self, instance_id: str) -> Model:
         """Load the model using the instance id"""

@@ -1,9 +1,10 @@
 """Return schemas for air quality forecast routes"""
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Union
 import json
 from pydantic import BaseModel
 from geojson import Feature
 import shapely.wkt
+from shapely.geometry import Polygon, MultiPolygon
 from urbanair.types import JSONType
 from .jamcam import UTCTime
 
@@ -72,7 +73,7 @@ class ForecastResultGeoJson(BaseGeoJson):
         """Construct GeoJSON Features from a list of dictionaries"""
         return [
             Feature(
-                geometry=list(shapely.wkt.loads(row["geom"]))[0],  # convert to polygon
+                geometry=try_get_polygon(row["geom"]),  # convert to polygon
                 hex_id=row["hex_id"],
                 properties={
                     "NO2_mean": row["NO2_mean"],
@@ -125,6 +126,22 @@ class ForecastDatasetJson(BaseModel):
         orm_mode = True
 
 
+def try_get_polygon(polygon: Union[Polygon, MultiPolygon]) -> Polygon:
+    """Return the first polygon from a multi-polygon
+
+    Args:
+        polygon: Can be a polygon or a multi-polygon
+
+    Returns:
+        The first polygon in the multi-polygon, or returns the argument
+    """
+    shape = shapely.wkt.loads(polygon)
+    try:
+        return list(shape)[0]
+    except TypeError:
+        return shape
+
+
 class GeometryGeoJson(BaseGeoJson):
     """Tile geometries as GeoJSON feature collection"""
 
@@ -133,7 +150,7 @@ class GeometryGeoJson(BaseGeoJson):
         """Construct GeoJSON Features from a list of dictionaries"""
         return [
             Feature(
-                geometry=list(shapely.wkt.loads(row["geom"]))[0],  # convert to polygon
+                geometry=try_get_polygon(row["geom"]),  # convert to polygon
                 hex_id=row["hex_id"],
             )
             for row in rows

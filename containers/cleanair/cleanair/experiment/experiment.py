@@ -6,7 +6,6 @@ import json
 from logging import Logger
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
-import tensorflow as tf
 
 from ..databases import get_columns_of_table
 from ..databases.mixins import ResultTableMixin
@@ -18,7 +17,7 @@ from ..databases.mixins import (
 from ..loggers import get_logger
 from ..mixins import InstanceMixin
 from ..types import ExperimentConfig, ExperimentName
-from ..utils import FileManager
+from ..utils.file_manager import FileManager
 
 
 class ExperimentMixin:
@@ -73,7 +72,8 @@ class ExperimentMixin:
     def get_experiment_config(self) -> ExperimentConfig:
         """Get the experiment settings"""
         return ExperimentConfig(
-            name=self.name, instance_id_list=self.get_instance_ids(),
+            name=self.name,
+            instance_id_list=self.get_instance_ids(),
         )
 
     def get_instance(self, instance_id: str) -> InstanceMixin:
@@ -221,16 +221,13 @@ class RunnableExperimentMixin(SetupExperimentMixin):
         # make sure to load the datasets first
         for instance_id, instance in self._instances.items():
             instance.fit_start_time = datetime.now()
-            with tf.compat.v1.Graph().as_default():
-                with tf.compat.v1.Session().as_default() as session:
-                    self.load_model(instance_id)
-                    self.train_model(instance_id)
-                    self.save_training_metrics(instance_id)
-                    # self.save_model_parameters(instance_id) # TODO there is a bug in here - fix and restart ASAP
-                    self.predict_on_training_set(instance_id)
-                    self.predict_on_test_set(instance_id)
-                    self.save_result(instance_id)
-                    session.close()
+            self.load_model(instance_id)
+            self.train_model(instance_id)
+            self.save_training_metrics(instance_id)
+            # self.save_model_parameters(instance_id) # TODO there is a bug in here - fix and restart ASAP
+            self.predict_on_training_set(instance_id)
+            self.predict_on_test_set(instance_id)
+            self.save_result(instance_id)
 
 
 class UpdateExperimentMixin(ExperimentMixin):
@@ -295,13 +292,19 @@ class UpdateExperimentMixin(ExperimentMixin):
 
         # write records to the database
         self.commit_records(
-            data_config_records, on_conflict="overwrite", table=self.data_table,
+            data_config_records,
+            on_conflict="overwrite",
+            table=self.data_table,
         )
         self.commit_records(
-            model_records, on_conflict="overwrite", table=self.model_table,
+            model_records,
+            on_conflict="overwrite",
+            table=self.model_table,
         )
         self.commit_records(
-            instance_records, on_conflict="overwrite", table=self.instance_table,
+            instance_records,
+            on_conflict="overwrite",
+            table=self.instance_table,
         )
 
     @abstractmethod

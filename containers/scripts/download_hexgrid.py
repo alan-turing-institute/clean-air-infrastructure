@@ -15,7 +15,6 @@ def main(secretfile: Path, hexgrid_csv: Path):
     """Download hexgrid"""
     query = HexGridQuery(secretfile=secretfile)
     df: pd.DataFrame = query.query_hexgrid(output_type="df")
-    print(df.sample(5)) 
     df.to_csv(hexgrid_csv)
 
 if __name__ == "__main__":

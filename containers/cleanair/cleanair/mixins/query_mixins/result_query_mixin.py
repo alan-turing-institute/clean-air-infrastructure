@@ -5,7 +5,7 @@ from typing import Optional, Any, List
 from sqlalchemy import func, Column
 
 from ...databases.mixins import ResultTableMixin
-from ...databases.tables import HexGrid, MetaPoint, RectGrid100
+from ...databases.tables import HexGrid, MetaPoint
 from ...decorators import db_query
 from ...types import Source
 
@@ -16,7 +16,10 @@ class ResultQueryMixin:
     dbcnxn: Any
 
     # tables with polygon geom columns
-    POLYGON_GEOMS = dict(hexgrid=HexGrid, grid_100=RectGrid100,)
+    POLYGON_GEOMS = dict(
+        hexgrid=HexGrid,
+        # grid_100=RectGrid100,
+    )
 
     @property
     @abstractmethod

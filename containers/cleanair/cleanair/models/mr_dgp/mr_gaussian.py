@@ -35,9 +35,9 @@ class MR_Gaussian(Likelihood):
     @params_as_tensors
     def variational_expectations(self, Fmu, Fvar, Y):
         """
-            Fmu: N x S x 1
-            Fvar: N x S x S
-            Y: N x 1
+        Fmu: N x S x 1
+        Fvar: N x S x S
+        Y: N x 1
         """
         S = tf.shape(Fmu)[1]
         ell = (

@@ -72,8 +72,7 @@ class DBConfig(Connector):
             return None
 
     def configure_all_roles(self):
-        """Configure roles as defined in the configuration file
-        """
+        """Configure roles as defined in the configuration file"""
 
         # Create Schema
         self.create_schema()

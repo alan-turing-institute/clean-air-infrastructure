@@ -31,10 +31,10 @@ def UpTo_callback(value: str) -> str:
     "process UpTo arg"
     try:
         return as_datetime(value).isoformat()
-    except ValueError:
+    except ValueError as value_error:
         raise typer.BadParameter(
             f"Value must be a iso datetime of the form %Y-%m-%d, %Y-%m-%dT%H:%M:%S. Or in {TIMESTRINGS}"
-        )
+        ) from value_error
 
 
 def NDays_callback(value: int) -> int:
@@ -65,10 +65,10 @@ def CopernicusKey_callback(value: str) -> str:
             ) as f_secret:
                 data = json.load(f_secret)
                 value = data["copernicus_key"]
-        except (json.decoder.JSONDecodeError, FileNotFoundError):
+        except (json.decoder.JSONDecodeError, FileNotFoundError) as param_error:
             raise typer.BadParameter(
                 "Copernicus key not provided and could not find in 'secrets/copernicus_secrets.json'"
-            )
+            ) from param_error
 
     return value
 
@@ -82,10 +82,10 @@ def AWSID_callback(value: str) -> str:
             ) as f_secret:
                 data = json.load(f_secret)
                 return data["aws_key_id"]
-        except (json.decoder.JSONDecodeError, FileNotFoundError):
+        except (json.decoder.JSONDecodeError, FileNotFoundError) as param_error:
             raise typer.BadParameter(
                 "aws-key-id not provided and could not be found in 'secrets/aws_secrets.json'"
-            )
+            ) from param_error
 
     return value
 
@@ -99,10 +99,10 @@ def AWSKey_callback(value: str) -> str:
             ) as f_secret:
                 data = json.load(f_secret)
                 return data["aws_key"]
-        except (json.decoder.JSONDecodeError, FileNotFoundError):
+        except (json.decoder.JSONDecodeError, FileNotFoundError) as param_error:
             raise typer.BadParameter(
                 "aws-key not provided and could not be found in 'secrets/aws_secrets.json'"
-            )
+            ) from param_error
     return value
 
 
@@ -135,7 +135,11 @@ CopernicusKey = typer.Option(
     callback=CopernicusKey_callback,
 )
 
-Web = typer.Option(False, help="Show outputs in browser", show_default=True,)
+Web = typer.Option(
+    False,
+    help="Show outputs in browser",
+    show_default=True,
+)
 
 InputDir = typer.Argument(
     DATA_CACHE,

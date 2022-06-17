@@ -16,7 +16,7 @@ SOURCE = 1
 
 DB_SECRETS_FILE = get_settings().db_secret_file
 DB_CONNECTION_STRING = DBConnectionMixin(DB_SECRETS_FILE)
-DB_ENGINE = create_engine(DB_CONNECTION_STRING.connection_string, convert_unicode=True)
+DB_ENGINE = create_engine(DB_CONNECTION_STRING.connection_string)
 DeferredReflection.prepare(DB_ENGINE)
 SESSION_LOCAL = sessionmaker(autocommit=False, autoflush=False, bind=DB_ENGINE)
 
@@ -48,7 +48,10 @@ data = {}
 for detection_class in DETECTION_CLASSES:
     detection_class_string = DETECTION_CLASS_MAP[detection_class]
     query = get_jamcam_hourly(
-        session, camera_id=None, detection_class=detection_class, starttime=DATE,
+        session,
+        camera_id=None,
+        detection_class=detection_class,
+        starttime=DATE,
     )
     result = query.all()
 

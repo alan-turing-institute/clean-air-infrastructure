@@ -27,13 +27,6 @@ from ..types import (
 )
 
 if TYPE_CHECKING:
-    # turn off tensorflow warnings for gpflow
-    import os
-    import tensorflow as tf
-
-    os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
-    tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
-    import gpflow  # pylint: disable=wrong-import-position,wrong-import-order
     from pydantic import BaseModel
 
 
@@ -92,8 +85,8 @@ class FileManager:
                     target_file=str(zipfile_path),
                     sas_token=sas_token,
                 )
-            except ResourceNotFoundError:
-                raise ExperimentInstanceNotFoundError(blob_id)
+            except ResourceNotFoundError as resource_error:
+                raise ExperimentInstanceNotFoundError(blob_id) from resource_error
 
             unpack_archive(zipfile_path, input_dir)
 
@@ -254,11 +247,11 @@ class FileManager:
 
     def load_model(
         self,
-        load_fn: Callable[[Path, ModelName], gpflow.models.GPModel],
+        load_fn: Callable[[Path, ModelName], Any],
         model_name: ModelName,
         compile_model: bool = True,
-        tf_session: Optional[tf.compat.v1.Session] = None,
-    ) -> gpflow.models.GPModel:
+        tf_session: Optional[Any] = None,
+    ) -> Any:
         """Load a model from the cache.
 
         Args:
@@ -276,14 +269,17 @@ class FileManager:
         # use the load function to get the model from the filepath
         export_dir = self.input_dir / FileManager.MODEL
         model = load_fn(
-            export_dir, model_name, compile_model=compile_model, tf_session=tf_session,
+            export_dir,
+            model_name,
+            compile_model=compile_model,
+            tf_session=tf_session,
         )
         return model
 
     def save_model(
         self,
-        model: gpflow.models.GPModel,
-        save_fn: Callable[[gpflow.models.GPModel, Path, ModelName], None],
+        model: Any,
+        save_fn: Callable[[Any, Path, ModelName], None],
         model_name: ModelName,
     ) -> None:
         """Save a model to file.

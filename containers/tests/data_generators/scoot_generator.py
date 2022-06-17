@@ -5,13 +5,13 @@ from typing import TYPE_CHECKING, Optional, List
 import string
 import random
 import numpy as np
+import numpy.typing as npt
 import pandas as pd
 from cleanair.databases import DBWriter
 from cleanair.databases.tables import ScootReading
 from cleanair.mixins import ScootQueryMixin
 
 if TYPE_CHECKING:
-    from nptyping import NDArray, Int
     from cleanair.types import Borough
 
 
@@ -26,16 +26,16 @@ class ScootGenerator(ScootQueryMixin, DBWriter):
         limit: Optional[int] = None,
         detectors: Optional[List[str]] = None,
         borough: Optional[Borough] = None,
-        **kwargs
+        **kwargs,
     ) -> None:
         """Initialise a synthetic scoot writer
-        
+
         Arguments:
             start: Start datetime for fake data
             upto: generate fake data up till this datetime
             offset: Start at a different detector
             limit: At most this many detectors
-            """
+        """
         self.start = start
         self.upto = upto
         self.offset = offset
@@ -102,7 +102,7 @@ def generate_discrete_timeseries(
     amplitude_modifier: float = 10.0,
     shift_modifier: float = 3.0,
     gradiant: float = 0.0,
-) -> NDArray[Int]:
+) -> npt.NDArray[Int]:
     """Create a timeseries with discrete values."""
     # set seed
 
@@ -192,7 +192,7 @@ def generate_scoot_df(
     return scoot_df
 
 
-def create_daily_readings_df(readings: NDArray[Int]) -> pd.DataFrame:
+def create_daily_readings_df(readings: npt.NDArray[Int]) -> pd.DataFrame:
     """Create a simple dataframe over one day for one detector."""
     random.seed(0)
     start_date = "2020-01-01"

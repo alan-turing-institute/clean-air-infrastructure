@@ -10,7 +10,7 @@ from cleanair.databases.tables import (
     StreetCanyon,
     ScootDetector,
     UKMap,
-    UrbanVillage,
+    # UrbanVillage,
 )
 
 # pylint: disable=C0103
@@ -29,7 +29,7 @@ def static_data_sizes():
         "london_boundary": {"table": LondonBoundary, "rows": 33},
         "oshighway_roadlink": {"table": OSHighway, "rows": 339214},
         "street_canyon": {"table": StreetCanyon, "rows": 242547},
-        "urban_village": {"table": UrbanVillage, "rows": 747},
+        # "urban_village": {"table": UrbanVillage, "rows": 747},
         "ukmap": {"table": UKMap, "rows": 11598662},
     }
 

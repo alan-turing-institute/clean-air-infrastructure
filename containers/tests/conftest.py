@@ -30,7 +30,7 @@ def secret_dict():
 
 @pytest.fixture(scope="module")
 def secretfile(request, tmpdir_factory):
-    """"Create a local secret file in a tempory directory for the database admin"""
+    """ "Create a local secret file in a tempory directory for the database admin"""
     tmp_file = tmpdir_factory.mktemp("secrets").join(".db_secrets.json")
 
     copyfile(request.config.getoption("--secretfile"), tmp_file)
@@ -108,7 +108,6 @@ def schema():
         "dynamic_features",
         "interest_points",
         "model_features",
-        "model_results",
         "processed_data",
         "static_data",
         "static_features",

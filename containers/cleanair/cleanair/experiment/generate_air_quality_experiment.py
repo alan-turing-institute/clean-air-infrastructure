@@ -25,7 +25,7 @@ from ..params.svgp_params import (
 )
 from ..types.dataset_types import DataConfig
 from ..types.enum_types import ClusterId
-from ..utils import total_num_features
+from ..utils.dimension_calculator import total_num_features
 from ..mixins import InstanceMixin
 from ..models import ModelConfig
 from ..params import (
@@ -131,7 +131,8 @@ def production_svgp_static(
 
     # create model params and change
     model_params = default_svgp_model_params(
-        active_dims=active_dims, input_dim=input_dim,
+        active_dims=active_dims,
+        input_dim=input_dim,
     )
 
     # create instance and add to list
@@ -178,7 +179,8 @@ def production_svgp_dynamic(
 
     # create model params and change
     model_params = default_svgp_model_params(
-        active_dims=active_dims, input_dim=input_dim,
+        active_dims=active_dims,
+        input_dim=input_dim,
     )
 
     # create instance and add to list
@@ -293,7 +295,9 @@ def svgp_vary_standard(
     model_config = ModelConfig(secretfile=secretfile)
 
     for static_features, lengthscale, sig_y in itertools.product(
-        TUNING_STATIC_FEATURES, VARY_LENGTHSCALES, VARY_LIKELIHOOD_VARIANCE,
+        TUNING_STATIC_FEATURES,
+        VARY_LENGTHSCALES,
+        VARY_LIKELIHOOD_VARIANCE,
     ):
         # create data config
         data_config = default_laqn_data_config()
@@ -343,7 +347,9 @@ def dgp_vary_standard(
     model_config = ModelConfig(secretfile=secretfile)
 
     for static_features, lengthscale, sig_y in itertools.product(
-        TUNING_STATIC_FEATURES, VARY_LENGTHSCALES, VARY_LIKELIHOOD_VARIANCE,
+        TUNING_STATIC_FEATURES,
+        VARY_LENGTHSCALES,
+        VARY_LIKELIHOOD_VARIANCE,
     ):
         # create a data config from static_features
         data_config = default_sat_data_config()
@@ -655,6 +661,7 @@ def dryrun_svgp(
     input_dim = total_num_features(data_config)
     active_dims = list(range(input_dim))  # explicitly calculate active dims
     data_config = __static_features_fix(data_config)
+    model_config.validate_config(data_config)
     full_data_config = model_config.generate_full_config(data_config)
     model_params = default_svgp_model_params(
         num_inducing_points=100,

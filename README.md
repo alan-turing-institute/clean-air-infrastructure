@@ -7,8 +7,22 @@ Azure Infrastructure for the [Clean Air project](https://www.turing.ac.uk/resear
 
 Provides 48h high-resolution air pollution forecasts over London via the [UrbanAir-API](https://urbanair.turing.ac.uk/apidocs/).
 
-Currently repurposed to assess `busyness` in London during the COVID-19 pandemic - providing busyness data via the [ip-whitelisted API](https://urbanair.turing.ac.uk/apidocs/).
+Previously repurposed to assess `busyness` in London during the COVID-19 pandemic - providing busyness data via the [ip-whitelisted API](https://urbanair.turing.ac.uk/apidocs/).
 
+## Contents
+
+- [Installation](docs/installation.md)
+- [Developer guide](docs/developer.md)
+- [Docker guide](docs/docker.md)
+- [Azure infrastructure](docs/azure.md)
+- [Datasets](docs/datasets.md)
+- [Secret files](docs/secretfile.md)
+- [SAS token](docs/sas_token.md)
+- [Cheat sheet](docs/cheat.md)
+- [Contributors](docs/contributors.md)
+
+<details>
+  <summary>See the old README file!</summary>
 
 # Contributors :dancers:
 
@@ -543,7 +557,7 @@ Before being accepted into master all code should have well writen documentation
 
 **Please use [Google Style Python Docstrings](https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html)**
 
-We would like to move towards adding [type hints](https://docs.python.org/3.7/library/typing.html) so you may optionally add types to your code. In which case you do not need to include types in your google style docstrings.
+We would like to move towards adding [type hints](https://docs.python.org/3.8/library/typing.html) so you may optionally add types to your code. In which case you do not need to include types in your google style docstrings.
 
 Adding and updating existing documentation is highly encouraged.
 
@@ -916,3 +930,5 @@ terraform destroy
 
 You can check everything was removed on the Azure portal.
 Then login to TravisCI and delete the Azure Container repo environment variables.
+
+</details>

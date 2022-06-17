@@ -3,7 +3,8 @@ Mixin for checking what satellite data is in database and what is missing
 """
 # pylint: disable=C0103
 from datetime import timedelta
-from sqlalchemy import func, text, column, String
+from sqlalchemy import func, text, column, String, values
+from sqlalchemy.orm import aliased
 from dateutil.parser import isoparse
 
 from ...decorators import db_query
@@ -13,7 +14,6 @@ from ...databases.tables import (
     SatelliteGrid,
 )
 from ...loggers import get_logger
-from ...databases.base import Values
 
 
 ONE_HOUR_INTERVAL = text("interval '1 hour'")
@@ -168,25 +168,24 @@ class SatelliteAvailabilityMixin:
                 ).subquery()
 
             # Generate expected species
-            species_sub_q = session.query(
-                Values(
-                    [column("species", String),],
-                    *[(polutant,) for polutant in species],
-                    alias_name="t2",
-                )
-            ).subquery()
+            species_sub_q = values(
+                column("species", String), name="species_values"
+            ).data([(pollutant,) for pollutant in species])
 
-            dates = session.query(expected_date_times, species_sub_q).subquery()
+            dates = aliased(
+                session.query(expected_date_times, species_sub_q).subquery()
+            )
+            for col in dates.c:
+                print(col)
 
             available_data_q = (
                 session.query(
-                    dates.c.reference_start_utc,
-                    dates.c.species,
+                    dates,
                     in_data_cte.c.reference_start_utc.isnot(None).label("has_data"),
                     in_data_cte.c.n_records,
                     (in_data_cte.c.n_records == 72 * 32).label("expected_n_records"),
                 )
-                .select_entity_from(dates)
+                .select_from(dates)
                 .join(
                     in_data_cte,
                     (in_data_cte.c.reference_start_utc == dates.c.reference_start_utc)

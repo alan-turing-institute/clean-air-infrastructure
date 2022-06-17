@@ -5,13 +5,13 @@ from typing import Callable, List, Optional
 from pathlib import Path
 import typer
 from ....databases.queries import AirQualityInstanceQuery
-from ....experiment import (
-    ExperimentMixin,
+from ....experiment import ExperimentMixin, generate_air_quality_experiment
+from ....experiment.air_quality_experiment import (
     RunnableAirQualityExperiment,
     SetupAirQualityExperiment,
     UpdateAirQualityExperiment,
-    generate_air_quality_experiment,
 )
+from ....loggers import initialise_logging
 from ....types.enum_types import ClusterId
 from ....metrics import AirQualityMetrics
 from ....mixins import InstanceMixin
@@ -19,7 +19,7 @@ from ....models import ModelData
 from ..shared_args import ExperimentDir
 from ..state import state
 from ....types import ExperimentName
-from ....utils import FileManager
+from ....utils.file_manager import FileManager
 
 app = typer.Typer(help="Experiment CLI")
 
@@ -39,11 +39,13 @@ def setup(
     experiment_name: ExperimentName,
     cluster_id: ClusterId = ClusterId.nc6,
     experiment_root: Path = ExperimentDir,
-    use_cache: Optional[bool] = False,
     instance_root: Optional[Path] = None,
+    use_cache: bool = False,
+    verbose: bool = False,
 ) -> None:
     """Setup an experiment: load data + setup model parameters"""
     secretfile: str = state["secretfile"]
+    initialise_logging(verbose)  # set logging level
 
     # get the function that will generate instances
     experiment_generator_function: Callable[
@@ -200,6 +202,7 @@ def download(
     experiment_root.mkdir(exist_ok=True, parents=False)
     download_root.mkdir(exist_ok=True, parents=False)
     FileManager(
-        download_root / instance_id, blob_id=instance_id,
+        download_root / instance_id,
+        blob_id=instance_id,
     )
     logging.info("Saving instance to %s", download_root / instance_id)

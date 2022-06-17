@@ -3,7 +3,7 @@
 from datetime import timedelta
 from typing import Dict, List, Optional
 import pandas as pd
-import sklearn
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score as r2s
 from ..databases import DBReader, DBWriter, get_columns_of_table
 from ..databases.tables import (
     AirQualityDataTable,
@@ -118,7 +118,10 @@ class AirQualityMetrics(DBWriter, InstanceQueryMixin, ResultQueryMixin):
         """Load the results for the instance."""
         self.logger.info("Reading results for LAQN for instance %s.", self.instance_id)
         result_df = self.query_results(
-            self.instance_id, Source.laqn, output_type="df", with_location=False,
+            self.instance_id,
+            Source.laqn,
+            output_type="df",
+            with_location=False,
         )
         result_df = preprocess_dataframe_types(result_df)
         return result_df
@@ -134,15 +137,15 @@ class AirQualityMetrics(DBWriter, InstanceQueryMixin, ResultQueryMixin):
             pollutant=pollutant.value,
         )
         if self.mae:
-            group_metrics["mae"] = sklearn.metrics.mean_absolute_error(
+            group_metrics["mae"] = mean_absolute_error(
                 group_df[pollutant.value], group_df[pollutant.value + "_mean"]
             )
         if self.mse:
-            group_metrics["mse"] = sklearn.metrics.mean_squared_error(
+            group_metrics["mse"] = mean_squared_error(
                 group_df[pollutant.value], group_df[pollutant.value + "_mean"]
             )
         if self.r2_score:
-            group_metrics["r2_score"] = sklearn.metrics.r2_score(
+            group_metrics["r2_score"] = r2s(
                 group_df[pollutant.value], group_df[pollutant.value + "_mean"]
             )
         return group_metrics
@@ -179,7 +182,9 @@ class AirQualityMetrics(DBWriter, InstanceQueryMixin, ResultQueryMixin):
     ) -> None:
         """Evaluate metrics by grouping by point id."""
         joined_df = observation_df.merge(
-            result_df, on=["point_id", "measurement_start_utc"], how="inner",
+            result_df,
+            on=["point_id", "measurement_start_utc"],
+            how="inner",
         )
         joined_df = remove_rows_with_nans(joined_df, self.data_config.species)
         self.logger.info(

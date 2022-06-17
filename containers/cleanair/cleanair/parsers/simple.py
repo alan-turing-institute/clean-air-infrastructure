@@ -51,7 +51,9 @@ class InsertMethodParser(InsertMethodMixin, ArgumentParser):
 
 
 class StaticFeatureArgumentParser(
-    SecretFileParserMixin, VerbosityMixin, ArgumentParser,
+    SecretFileParserMixin,
+    VerbosityMixin,
+    ArgumentParser,
 ):
     """Static feature Parser"""
 

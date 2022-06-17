@@ -135,7 +135,9 @@ class UpdateInstanceMixin(InstanceMixin):
             self.model_table.__tablename__,
         )
         self.commit_records(
-            model_records, on_conflict="overwrite", table=self.model_table,
+            model_records,
+            on_conflict="overwrite",
+            table=self.model_table,
         )
         # update the data config table
         data_inst = inspect(self.data_table)
@@ -147,7 +149,9 @@ class UpdateInstanceMixin(InstanceMixin):
             self.data_table.__tablename__,
         )
         self.commit_records(
-            data_records, on_conflict="overwrite", table=self.data_table,
+            data_records,
+            on_conflict="overwrite",
+            table=self.data_table,
         )
         # update the instance table
         instance_inst = inspect(self.instance_table)
@@ -159,5 +163,7 @@ class UpdateInstanceMixin(InstanceMixin):
             self.instance_table.__tablename__,
         )
         self.commit_records(
-            instance_records, on_conflict="overwrite", table=self.instance_table,
+            instance_records,
+            on_conflict="overwrite",
+            table=self.instance_table,
         )
