@@ -317,7 +317,7 @@ class FileManager:
         """Save the model params to a json file"""
         self.logger.debug("Saving model params to a json file")
         params_fp = self.input_dir / file
-        with open(params_fp, "w",  encoding="utf-8") as params_file:
+        with open(params_fp, "w", encoding="utf-8") as params_file:
             json.dump(model_params.dict(), params_file, indent=4)
 
     def save_forecast_to_pickle(self, y_pred: TargetDict) -> None:
@@ -408,12 +408,16 @@ class FileManager:
 
     def write_instance_to_json(self, instance: InstanceMixin) -> None:
         """Writes an instance to a json file"""
-        with open(self.input_dir / self.INSTANCE_JSON, "w", encoding="utf-8") as json_file:
+        with open(
+            self.input_dir / self.INSTANCE_JSON, "w", encoding="utf-8"
+        ) as json_file:
             json.dump(instance.dict(), json_file)
 
     def read_instance_from_json(self) -> InstanceMixin:
         """Reads a dictionary containing the instance from a json file"""
-        with open(self.input_dir / self.INSTANCE_JSON, "r",encoding="utf-8") as json_file:
+        with open(
+            self.input_dir / self.INSTANCE_JSON, "r", encoding="utf-8"
+        ) as json_file:
             instance_dict: Dict = json.load(json_file)
             model_name = instance_dict.get("model_name")
             model_params = model_params_from_dict(
@@ -436,10 +440,14 @@ class FileManager:
 
     def write_training_metrics_to_json(self, training_metrics: TrainingMetrics) -> None:
         """Write the metrics to a json file"""
-        with (self.input_dir / self.MODEL_TRAINING_METRICS_JSON).open("w", encoding="utf-8") as json_file:
+        with (self.input_dir / self.MODEL_TRAINING_METRICS_JSON).open(
+            "w", encoding="utf-8"
+        ) as json_file:
             json_file.write(training_metrics.json(indent=4))
 
     def read_training_metrics_from_json(self) -> TrainingMetrics:
         """Read metrics from json"""
-        with open(self.input_dir / self.MODEL_TRAINING_METRICS_JSON, "r", encoding="utf-8") as json_file:
+        with open(
+            self.input_dir / self.MODEL_TRAINING_METRICS_JSON, "r", encoding="utf-8"
+        ) as json_file:
             return TrainingMetrics(**json.load(json_file))

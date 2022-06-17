@@ -1,6 +1,7 @@
 """Source type for a metapoint."""
 
 from enum import Enum, unique
+
 # pylint: disable=C0103
 
 

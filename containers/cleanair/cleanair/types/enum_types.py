@@ -1,6 +1,8 @@
 """Cleanair enum types"""
 from enum import Enum, unique
+
 # pylint: disable=C0103
+
 
 @unique
 class ScootProcessType(str, Enum):

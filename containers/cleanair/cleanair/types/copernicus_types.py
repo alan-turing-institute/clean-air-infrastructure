@@ -12,7 +12,6 @@ class Species(Enum):
     PM10 = "PM10"
     O3 = "O3"  # species to get data for
 
-
     @classmethod
     def has_key(cls, key: str) -> bool:
         """Returns true if the key is the same as one of the species.
