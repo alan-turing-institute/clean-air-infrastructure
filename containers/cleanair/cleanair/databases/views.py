@@ -196,8 +196,8 @@ def create_view(name, selectable, metadata, cascade_on_drop=True):
             idx.create(connection)
 
     sa.event.listen(
-        metadata, "before_drop", DropView(name, cascade=cascade_on_drop)
-    )  # noqa
+        metadata, "before_drop", DropView(name, cascade=cascade_on_drop)  # noqa
+    )
     return table
 
 

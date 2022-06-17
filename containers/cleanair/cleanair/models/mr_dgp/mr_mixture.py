@@ -370,8 +370,8 @@ class MR_Mixture(Model):
                 ell = scale * _ell
 
                 ell = tf.Print(
-                    ell, [tf.reduce_sum(ell)], "dgp ell: ".format(i=i)
-                )  # noqa
+                    ell, [tf.reduce_sum(ell)], "dgp ell: ".format(i=i)  # noqa
+                )
 
                 dgp_ell_arr.append(ell)
 
