@@ -32,7 +32,7 @@ setuptools.setup(
         "cdsapi==0.5.1",
         "cfgrib==0.9.10.1",
         "colorlog==6.6.0",
-        "geoalchemy2==0.11.1",
+        "geoalchemy2==0.10.2",
         "holidays==0.13",
         "numpy==1.22.4",
         "packaging>=21.3",
