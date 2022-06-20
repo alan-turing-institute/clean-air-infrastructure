@@ -388,9 +388,12 @@ def forecast_hexgrid__48hr_json(
     else:
         raise HTTPException(status_code=404, detail="No forecasts cover this period")
 
-    logger.info(f"Instance found: {instance_id}")
+    logger.info("Instance found: %s", instance_id)
     logger.info(
-        f"Getting data from {instance_id} between {start_datetime} and {start_datetime}"
+        "Getting data from %s between %s and %s",
+        instance_id,
+        start_datetime,
+        start_datetime,
     )
 
     # Get forecasts in this range (using a bounding box if specified)
@@ -464,9 +467,12 @@ def forecast_hexgrid__48hr_geojson(
     else:
         raise HTTPException(status_code=404, detail="No forecasts cover this period")
 
-    logger.info(f"Instance found: {instance_id}")
+    logger.info("Instance found: %s", instance_id)
     logger.info(
-        f"Getting data from {instance_id} between {start_datetime} and {start_datetime}"
+        "Getting data from %s between %s and %s",
+        instance_id,
+        start_datetime,
+        start_datetime,
     )
 
     # Get forecasts in this range as a GeoJSON FeatureCollection (using a bounding box if specified)
@@ -523,9 +529,12 @@ def forecast_hexgrid_48hr_csv(
     else:
         raise HTTPException(status_code=404, detail="No forecasts cover this period")
 
-    logger.info(f"Instance found: {instance_id}")
+    logger.info("Instance found: %s", instance_id)
     logger.info(
-        f"Getting data from {instance_id} between {start_datetime} and {start_datetime}"
+        "Getting data from %s between %s and %s",
+        instance_id,
+        start_datetime,
+        start_datetime,
     )
 
     # Get forecasts in this range (using a bounding box if specified)
@@ -583,9 +592,12 @@ def forecast_hexgrid_48hr_csv_pivot(
     else:
         raise HTTPException(status_code=404, detail="No forecasts cover this period")
 
-    logger.info(f"Instance found: {instance_id}")
+    logger.info("Instance found: %s", instance_id)
     logger.info(
-        f"Getting data from {instance_id} between {start_datetime} and {start_datetime}"
+        "Getting data from %s between %s and %s",
+        instance_id,
+        start_datetime,
+        start_datetime,
     )
 
     # Get forecasts in this range (using a bounding box if specified)
