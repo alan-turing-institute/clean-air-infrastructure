@@ -111,7 +111,7 @@ def query_instance_ids_on_date(
     return query.order_by(AirQualityInstanceTable.fit_start_time.desc())
 
 
-@cached(
+@cached(  # type: ignore[misc]
     cache=TTLCache(maxsize=256, ttl=2 * 60 * 60 * 24, timer=time),
     key=lambda _, *args, **kwargs: hashkey(*args, **kwargs),
 )
@@ -135,7 +135,7 @@ def cached_instance_ids(
     ).all()
 
 
-@cached(
+@cached(  # type: ignore[misc]
     cache=TTLCache(maxsize=256, ttl=2 * 60 * 60 * 24, timer=time),
     key=lambda _, *args, **kwargs: hashkey(*args, **kwargs),
 )
@@ -178,7 +178,7 @@ def query_geometries_hexgrid(
     return query.distinct().order_by(HexGrid.hex_id)
 
 
-@cached(
+@cached(  # type: ignore[misc]
     cache=LRUCache(maxsize=256), key=lambda _, *args, **kwargs: hashkey(*args, **kwargs)
 )
 def cached_geometries_hexgrid(
@@ -241,7 +241,7 @@ def query_forecasts_hexgrid(
     return query
 
 
-@cached(
+@cached(  # type: ignore[misc]
     cache=TTLCache(maxsize=256, ttl=2 * 60 * 60 * 24, timer=time),
     key=lambda _, *args, **kwargs: hashkey(*args, **kwargs),
 )
@@ -273,7 +273,7 @@ def cached_forecast_hexgrid_json(
     return all_or_404(query)
 
 
-@cached(
+@cached(  # type: ignore[misc]
     cache=TTLCache(maxsize=256, ttl=2 * 60 * 60 * 24, timer=time),
     key=lambda _, *args, **kwargs: hashkey(*args, **kwargs),
 )
@@ -312,7 +312,7 @@ def cached_forecast_hexgrid_csv(
 
 
 # pylint: disable=C0103
-@cached(
+@cached(  # type: ignore[misc]
     cache=TTLCache(maxsize=256, ttl=2 * 60 * 60 * 24, timer=time),
     key=lambda _, *args, **kwargs: hashkey(*args, **kwargs),
 )
@@ -363,7 +363,7 @@ def cached_forecast_hexgrid_pivot_csv(
     return table.to_csv(quoting=csv.QUOTE_NONE, index=False)
 
 
-@cached(
+@cached(  # type: ignore[misc]
     cache=TTLCache(maxsize=256, ttl=2 * 60 * 60 * 24, timer=time),
     key=lambda _, instance_id, start_datetime, end_datetime, run_datetime, bounding_box: hashkey(
         instance_id, start_datetime, end_datetime, run_datetime, bounding_box
@@ -389,7 +389,7 @@ def cached_forecast_hexgrid_geojson(
     # Return the query results as a GeoJSON FeatureCollection
     print("About to build features!")
     features = ForecastResultGeoJson.build_features(
-        [r._asdict() for r in query_results]
+        [(r._asdict()) for r in query_results]  # type: ignore[union-attr]
     )
     print("build features :)")
     print(features)
