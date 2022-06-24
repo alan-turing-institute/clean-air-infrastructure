@@ -73,4 +73,4 @@ jobs:
         - black --check */
         # Flake8 performs pyflakes, pycodestyle and McCabe complexity checks
         # Adding # noqa to a line ignores any warnings that code may have generated.
-        - flake8 --extend-ignore=F4,E4,W50,E203,E741,F401,F84,E731,F811
+        - flake8 --extend-ignore=F4,E4,W50,E203,E741,F401,F84,E731

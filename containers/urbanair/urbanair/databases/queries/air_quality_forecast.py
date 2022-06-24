@@ -119,7 +119,7 @@ def cached_instance_ids(
     db: Session,
     start_datetime: datetime,
     end_datetime: datetime,
-) -> Optional[List[Tuple]]:
+) -> List[Tuple]:
     """Cache available model instances that cover the datetime range"""
     logger.info(
         "Querying available instance IDs between %s and %s",
@@ -142,7 +142,7 @@ def cached_instance_ids(
 def cached_instance_ids_on_run_date(
     db: Session,
     run_date: date,
-) -> Optional[List[Tuple]]:
+) -> List[Tuple]:
     """Cache available model instances run on this date"""
     logger.info(
         "Querying available instance IDs on %s",
@@ -252,7 +252,7 @@ def cached_forecast_hexgrid_json(
     end_datetime: datetime,
     with_geometry: bool,
     bounding_box: Optional[Tuple[float]] = None,
-) -> Optional[List[Tuple]]:
+) -> List[Tuple]:
     """Cache forecasts with geometry with optional bounding box"""
     logger.info(
         "Querying forecast geometries for %s between %s and %s",
@@ -389,7 +389,7 @@ def cached_forecast_hexgrid_geojson(
     # Return the query results as a GeoJSON FeatureCollection
     print("About to build features!")
     features = ForecastResultGeoJson.build_features(
-        [(r._asdict()) for r in query_results]  # type: ignore[union-attr]
+        [(r._asdict()) for r in query_results]
     )
     print("build features :)")
     print(features)
