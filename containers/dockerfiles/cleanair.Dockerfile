@@ -1,16 +1,6 @@
-# Use an official Python runtime as a parent image
-FROM python:3.10
-
-# Update certificates
-RUN apt update \
-    && apt install -y \
-        build-essential \
-        ca-certificates \
-        cmake \
-        gfortran \
-        libeccodes0 \
-        libgeos-dev
-
+# key dependencies are already installed in the base image
+# FROM cleanairdocker.azurecr.io/cleanair_base:latest
+FROM cleanair_base:latest
 
 # Set the working directory to /app
 WORKDIR /app
