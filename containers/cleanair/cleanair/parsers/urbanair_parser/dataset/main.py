@@ -18,11 +18,11 @@ app = typer.Typer(help="Experiment CLI")
 
 
 def download(
-    cluster_id: ClusterId = ClusterId.nc6,
-    download_root: Path = DataConfig,
-    instance_root: Optional[Path] = None,
+    download_root: Path,
     verbose: bool = False,
 ) -> None:
     """Setup an experiment: load data"""
     secretfile: str = state["secretfile"]
     initialise_logging(verbose)  # set logging level
+    # mkdir look
+    download_root.mkdir(parents=True, exist_ok=False)
