@@ -67,6 +67,8 @@ disable=duplicate-code,
         too-many-locals,
         too-many-branches,
         bad-continuation,
+        bad-option-value,
+        consider-using-f-string,
         fixme,
 [REPORTS]
 

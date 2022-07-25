@@ -25,11 +25,10 @@ def get_db() -> Session:
         db.close()
 
 
-def all_or_404(query: Query) -> Optional[List[Tuple]]:
+def all_or_404(query: Query) -> List[Tuple]:
     """Return all rows from a query and raise a 404 if empty."""
     data = query.all()
 
-    if len(data) > 0:
-        return data
-
-    raise HTTPException(404, detail="No data was found")
+    if len(data) == 0:
+        raise HTTPException(404, detail="No data was found")
+    return data

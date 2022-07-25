@@ -102,7 +102,7 @@ def generate_discrete_timeseries(
     amplitude_modifier: float = 10.0,
     shift_modifier: float = 3.0,
     gradiant: float = 0.0,
-) -> npt.NDArray[Int]:
+) -> npt.NDArray[Int]:  # noqa: F821
     """Create a timeseries with discrete values."""
     # set seed
 
@@ -192,7 +192,7 @@ def generate_scoot_df(
     return scoot_df
 
 
-def create_daily_readings_df(readings: npt.NDArray[Int]) -> pd.DataFrame:
+def create_daily_readings_df(readings: npt.NDArray[Int]) -> pd.DataFrame:  # noqa: F821
     """Create a simple dataframe over one day for one detector."""
     random.seed(0)
     start_date = "2020-01-01"

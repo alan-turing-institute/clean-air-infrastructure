@@ -13,6 +13,7 @@ from cleanair.databases.tables import (
     # UrbanVillage,
 )
 
+
 # pylint: disable=C0103
 @pytest.fixture()
 def N_ROWS_SCOOT():

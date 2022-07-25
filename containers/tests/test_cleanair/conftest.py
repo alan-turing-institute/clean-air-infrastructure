@@ -51,6 +51,7 @@ from cleanair.types import (
 )
 from ..data_generators.scoot_generator import ScootGenerator
 
+
 # pylint: disable=W0613
 @pytest.fixture(scope="class")
 def valid_config(dataset_start_date, dataset_end_date, num_forecast_days):

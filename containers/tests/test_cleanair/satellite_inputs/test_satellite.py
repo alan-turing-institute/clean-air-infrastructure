@@ -76,7 +76,7 @@ def test_readgrib_missing_file(copernicus_key, secretfile, connection):
 
     # pylint: disable=singleton-comparison
     grib_file = "afilethatdoesntexist_sdfaetq342rasdfasdfa.grib2"
-    assert os.path.exists(grib_file) == False
+    assert os.path.exists(grib_file) is False
 
     satellite_writer = SatelliteWriter(
         copernicus_key=copernicus_key, secretfile=secretfile, connection=connection
