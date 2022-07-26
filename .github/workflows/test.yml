@@ -17,7 +17,7 @@ jobs:
     container:
       image: cleanairdocker.azurecr.io/cleanair_base:latest
       credentials:
-        registry: ${{ secrets.ACR_LOGIN_SERVER }}
+        login-server: ${{ secrets.ACR_LOGIN_SERVER }}
         username: ${{ secrets.ACR_USERNAME }}
         password: ${{ secrets.ACR_PASSWORD }}
     steps:
