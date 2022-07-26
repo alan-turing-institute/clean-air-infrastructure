@@ -11,6 +11,7 @@ from cleanair.parsers.urbanair_parser import (
     logs,
     features,
     metrics,
+    dataset,
     # model,
     # production,
 )
@@ -22,6 +23,7 @@ has_pystan = importlib.util.find_spec("pystan")
 
 app = typer.Typer(callback=init.init_callback)
 app.add_typer(config.app, name="config")
+app.add_typer(dataset.app, name="dataset")
 app.add_typer(echo.app, name="echo")
 # app.add_typer(experiment.app, name="experiment")
 app.add_typer(init.app, name="init")
