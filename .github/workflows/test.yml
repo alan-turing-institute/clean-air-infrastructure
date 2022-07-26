@@ -12,23 +12,23 @@ jobs:
           registry: ${{ secrets.ACR_LOGIN_SERVER }}
           username: ${{ secrets.ACR_USERNAME }}
           password: ${{ secrets.ACR_PASSWORD }}
-  # test:
-  #   runs-on: ubuntu-latest
-  #   container:
-  #     image: cleanairdocker.azurecr.io/cleanair_base:latest
+  test:
+    runs-on: ubuntu-latest
+    container:
+      image: cleanairdocker.azurecr.io/cleanair_base:latest
 
-  #   steps:
-  #   - uses: azure/docker-login@v1
-  #     with:
-  #       login-server: contoso.azurecr.io
+    steps:
+    - uses: azure/docker-login@v1
+      with:
+        login-server: contoso.azurecr.io
 
-  #   - name: Checkout
-  #     uses: actions/checkout@v2
-  #   - name: Dependencies
-  #     run: |
-  #       pip install --upgrade pip
-  #       pip install -r containers/requirements.txt
-  #   - name: Test cleanair
-  #     run: pytest containers/tests/test_cleanair/test_utils/test_dimension_calculator.py
-  #   - name: Type hinting
-  #     run: mypy --config-file .mypy.ini containers/cleanair
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Dependencies
+      run: |
+        pip install --upgrade pip
+        pip install -r containers/requirements.txt
+    - name: Test cleanair
+      run: pytest containers/tests/test_cleanair/test_utils/test_dimension_calculator.py
+    - name: Type hinting
+      run: mypy --config-file .mypy.ini containers/cleanair
