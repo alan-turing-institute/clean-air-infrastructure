@@ -5,7 +5,6 @@ import pandas as pd
 from pathlib import Path
 from datetime import datetime
 
-from ....models import ModelData
 from cleanair.dataset.model_config import ModelConfig
 from cleanair.dataset.model_data import ModelData
 from ..state import state
@@ -59,7 +58,7 @@ def download(
     model_data = ModelData(secretfile=secretfile)
     full_config = model_config.generate_full_config(data_config)
 
-    training_data: Dict[Source, pd.DateFrame] = model_data.download_config_data(
+    training_data: Dict[Source, pd.DateFrame] = model_data.download_config_data(  # noqa
         full_config, training_data=True
     )
 
