@@ -15,7 +15,8 @@ jobs:
   test:
     runs-on: ubuntu-latest
     container:
-      image: cleanairdocker.azurecr.io/cleanair_base:latest
+      # run the tests on a pre-built container
+      image: ${{ secrets.ACR_LOGIN_SERVER }}/cleanair_base:latest
       credentials:
         username: ${{ secrets.ACR_USERNAME }}
         password: ${{ secrets.ACR_PASSWORD }}
@@ -26,6 +27,8 @@ jobs:
       run: |
         pip install --upgrade pip
         pip install -r containers/requirements.txt
+    - name: Install
+      run: pip install containers/cleanair
     - name: Test cleanair
       run: pytest containers/tests/test_cleanair/test_utils/test_dimension_calculator.py
     - name: Type hinting
