@@ -24,9 +24,11 @@ jobs:
       postgres:
         image: postgres
         env:
+          POSTGRES_DB: cleanair_test_db
+          POSTGRES_USER: cleanair_test_user
           POSTGRES_HOST: postgres
           POSTGRES_PORT: 5432
-          POSTGRES_PASSWORD: postgres
+          POSTGRES_PASSWORD: cleanair_test_password
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -41,7 +43,15 @@ jobs:
         pip install -r containers/requirements.txt
     - name: Install
       run: pip install containers/cleanair
+    - name: Secretfile
+      env:
+        DB_SECRET_FILE: .secrets/db_secrets_offline.json
+      run: |
+        mkdir -p .secrets
+        echo '{"username": "$POSTGRES_USER", "password": "$POSTGRES_PASSWORD", "host": "$POSTGRES_HOST", "port": $POSTGRES_PORT, "db_name": "$POSTGRES_DB", "ssl_mode": "prefer"}' >> $DB_SECRET_FILE
+    - name: Test DB connection
+      run: pytest containers/tests/test_database_init --secretfile $DB_SECRET_FILE
     - name: Test cleanair
-      run: pytest containers/tests/test_cleanair/test_utils/test_dimension_calculator.py
+      run: pytest containers/tests/test_cleanair/test_utils/test_dimension_calculator.py --secretfile $DB_SECRET_FILE
     - name: Type hinting
       run: mypy --config-file .mypy.ini containers/cleanair
