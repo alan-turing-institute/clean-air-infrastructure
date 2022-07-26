@@ -4,6 +4,7 @@ on: [push]
 
 env:
   DB_SECRET_FILE: .secrets/db_secrets_offline.json
+  PYTHON_VERSION: '3.10'
 
 jobs:
   login:
@@ -49,11 +50,52 @@ jobs:
     - name: Secretfile
       run: |
         mkdir -p .secrets
-        echo '{"username": "cleanair_test_user", "password": "cleanair_test_password", "host": "cleanair_test_user", "port": 5432, "db_name": "cleanair_test_db", "ssl_mode": "prefer"}' >> $DB_SECRET_FILE
+        echo '{"username": "cleanair_test_user", "password": "cleanair_test_password", "host": "postgres", "port": 5432, "db_name": "cleanair_test_db", "ssl_mode": "prefer"}' >> $DB_SECRET_FILE
         cat $DB_SECRET_FILE
     - name: Test DB connection
       run: pytest containers/tests/test_database_init --secretfile $DB_SECRET_FILE
     - name: Test cleanair
       run: pytest containers/tests/test_cleanair/test_utils/test_dimension_calculator.py --secretfile $DB_SECRET_FILE
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - uses: actions/setup-python@v4
+      with:
+        python-version: ${{ PYTHON_VERSION }}
+    - name: Dependencies
+      run: pip install -r containers/requirements.txt
+    - name: Install
+      run: pip install containers/cleanair
+    - name: Lint
+      run: pylint --ignore=experiment,models,cleanair.egg-info,tf1 containers/cleanair/*
+
+  types:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - uses: actions/setup-python@v4
+      with:
+        python-version: ${{ PYTHON_VERSION }}
+    - name: Dependencies
+      run: pip install -r containers/requirements.txt
+    - name: Install
+      run: pip install containers/cleanair
     - name: Type hinting
-      run: mypy --config-file .mypy.ini containers/cleanair
+      run: mypy containers/cleanair
+
+  format:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - uses: actions/setup-python@v4
+      with:
+        python-version: ${{ PYTHON_VERSION }}
+    - name: Dependencies
+      run: pip install -r containers/requirements.txt
+    - name: Format
+      run: black --check */
