@@ -42,16 +42,17 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v2
     - name: Dependencies
-      run: |
-        pip install --upgrade pip
-        pip install -r containers/requirements.txt
+      run: pip install -r containers/requirements.txt
     - name: Install
       run: pip install containers/cleanair
     - name: Secretfile
       run: |
         mkdir -p .secrets
         echo '{"username": "cleanair_test_user", "password": "cleanair_test_password", "host": "postgres", "port": 5432, "db_name": "cleanair_test_db", "ssl_mode": "prefer"}' >> $DB_SECRET_FILE
-        cat $DB_SECRET_FILE
+    - name: Fill DB
+      run: |
+        python containers/entrypoints/setup/configure_db_roles.py -s $DB_SECRET_FILE -c configuration/database_role_config/local_database_config.yaml
+        python containers/entrypoints/setup/insert_static_datasets.py insert -t ${{ secrets.SAS_TOKEN }} -s $DB_SECRET_FILE -d street_canyon hexgrid london_boundary oshighway_roadlink scoot_detector
     - name: Test DB connection
       run: pytest containers/tests/test_database_init --secretfile $DB_SECRET_FILE
     - name: Test cleanair
@@ -68,7 +69,7 @@ jobs:
     - name: Dependencies
       run: pip install -r containers/requirements.txt
     - name: Install
-      run: pip install containers/cleanair
+      run: pip install -e containers/cleanair
     - name: Lint
       run: pylint --ignore=experiment,models,cleanair.egg-info,tf1 containers/cleanair/*
 
@@ -83,7 +84,7 @@ jobs:
     - name: Dependencies
       run: pip install -r containers/requirements.txt
     - name: Install
-      run: pip install containers/cleanair
+      run: pip install -e containers/cleanair
     - name: Type hinting
       run: mypy containers/cleanair
 
