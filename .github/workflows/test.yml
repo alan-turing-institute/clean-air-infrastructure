@@ -15,7 +15,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     container:
-      image: "${{ secrets.ACR_LOGIN_SERVER }}/cleanair_base:latest"
+      image: cleanairdocker.azurecr.io/cleanair_base:latest
       credentials:
         username: ${{ secrets.ACR_USERNAME }}
         password: ${{ secrets.ACR_PASSWORD }}
