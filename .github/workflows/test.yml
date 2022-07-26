@@ -49,7 +49,7 @@ jobs:
     - name: Secretfile
       run: |
         mkdir -p .secrets
-        echo '{"username": "cleanair_test_user", "password": "cleanair_test_password", "host": "cleanair_test_user", "port": $POSTGRES_PORT, "db_name": "cleanair_test_db", "ssl_mode": "prefer"}' >> $DB_SECRET_FILE
+        echo '{"username": "cleanair_test_user", "password": "cleanair_test_password", "host": "cleanair_test_user", "port": 5432, "db_name": "cleanair_test_db", "ssl_mode": "prefer"}' >> $DB_SECRET_FILE
         cat $DB_SECRET_FILE
     - name: Test DB connection
       run: pytest containers/tests/test_database_init --secretfile $DB_SECRET_FILE
