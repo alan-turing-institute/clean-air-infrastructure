@@ -11,11 +11,18 @@ cd ..
 export ECCODES_MAJOR_VERSION=2
 export ECCODES_MINOR_VERSION=26
 export ECCODES_PATCH_VERSION=0
+export ECCODES_SRC_DIR="eccodes-${ECCODES_VERSION}-Source"
 export ECCODES_VERSION="${ECCODES_MAJOR_VERSION}.${ECCODES_MINOR_VERSION}.${ECCODES_PATCH_VERSION}"
-tar -xzf eccodes-${ECCODES_VERSION}-Source.tar.gz
-
+wget -c "https://confluence.ecmwf.int/download/attachments/45757960/${ECCODES_SRC_DIR}.tar.gz"
+tar -xzf "${ECCODES_SRC_DIR}.tar.gz"
+mkdir ${ECCODES_SRC_DIR}/build
+cd ${ECCODES_SRC_DIR}/build
+cmake -DENABLE_AEC=OFF ..
+cmake --build .
+cmake --install .
 
 # create secretfile for db
+cd ../..
 mkdir -p .secrets
 echo '{
     "username": "postgres",
