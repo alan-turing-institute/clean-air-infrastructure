@@ -52,7 +52,7 @@ jobs:
     - name: Fill DB
       run: |
         python containers/entrypoints/setup/configure_db_roles.py -s $DB_SECRET_FILE -c configuration/database_role_config/local_database_config.yaml
-        python containers/entrypoints/setup/insert_static_datasets.py insert -t ${{ secrets.SAS_TOKEN }} -s $DB_SECRET_FILE -d street_canyon hexgrid london_boundary oshighway_roadlink scoot_detector
+        python containers/entrypoints/setup/insert_static_datasets.py insert -s $DB_SECRET_FILE -t ${{ secrets.SAS_TOKEN }} -d street_canyon hexgrid london_boundary oshighway_roadlink scoot_detector
     - name: Test DB connection
       run: pytest containers/tests/test_database_init --secretfile $DB_SECRET_FILE
     - name: Test cleanair
