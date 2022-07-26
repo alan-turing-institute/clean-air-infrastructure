@@ -14,11 +14,26 @@ jobs:
           password: ${{ secrets.ACR_PASSWORD }}
   test:
     runs-on: ubuntu-latest
+    env: 
+      ACR_LOGIN_SERVER: ${{ secrets.ACR_LOGIN_SERVER }}
     container:
-      image: cleanairdocker.azurecr.io/cleanair_base:latest
+      image: $ACR_LOGIN_SERVER/cleanair_base:latest
       credentials:
         username: ${{ secrets.ACR_USERNAME }}
         password: ${{ secrets.ACR_PASSWORD }}
+
+    services:
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_HOST: postgres
+          POSTGRES_PORT: 5432
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
     - name: Checkout
       uses: actions/checkout@v2
