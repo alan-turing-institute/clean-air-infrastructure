@@ -41,15 +41,14 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v2
-    - uses: actions/setup-python@v4
-      with:
-        python-version:  ${{ env.PYTHON_VERSION }}
     - name: Dependencies
       run: |
         apt install -y gdal-bin
         pip install -r containers/requirements.txt
     - name: Install
-      run: pip install containers/cleanair[geo]
+      run: |
+        pip install -e containers/cleanair[geo]
+        pip install -e containers/urbanair
     - name: Secretfile
       run: |
         mkdir -p .secrets
@@ -60,10 +59,11 @@ jobs:
         python containers/entrypoints/setup/insert_static_datasets.py insert -s $DB_SECRET_FILE -t $SAS_TOKEN -d street_canyon hexgrid london_boundary oshighway_roadlink scoot_detector
       env:
         SAS_TOKEN: ${{ secrets.SAS_TOKEN }}
-    - name: Test DB connection
-      run: pytest containers/tests/test_database_init --secretfile $DB_SECRET_FILE
-    - name: Test cleanair
-      run: pytest containers/tests/test_cleanair/test_utils/test_dimension_calculator.py --secretfile $DB_SECRET_FILE
+    - name: Test
+      run: |
+        pytest containers/tests/test_database_init --secretfile $DB_SECRET_FILE
+        pytest containers/tests/test_cleanair/test_utils/test_dimension_calculator.py --secretfile $DB_SECRET_FILE
+        pytest containers/tests/test_urbanair --secretfile $DB_SECRET_FILE
 
   lint:
     runs-on: ubuntu-latest
@@ -76,9 +76,15 @@ jobs:
     - name: Dependencies
       run: pip install -r containers/requirements.txt
     - name: Install
-      run: pip install -e containers/cleanair
+      run: |
+        pip install -e containers/cleanair[geo]
+        pip install -e containers/urbanair
     - name: Lint
-      run: pylint --ignore=experiment,models,cleanair.egg-info,tf1 containers/cleanair/*
+      run: |
+        pylint */ --ignore=cleanair,urbanair,odysseus,tests,jamcam_processing
+        pylint --ignore=experiment,models,cleanair.egg-info,tf1 containers/cleanair/*
+        pylint --ignore test_models --disable=R,C containers/tests/test_cleanair/* containers/tests/test_database_init/*
+        pylint containers/urbanair/* containers/tests/test_urbanair/*
 
   types:
     runs-on: ubuntu-latest
@@ -91,9 +97,14 @@ jobs:
     - name: Dependencies
       run: pip install -r containers/requirements.txt
     - name: Install
-      run: pip install -e containers/cleanair
+      run: |
+        pip install -e containers/cleanair
+        pip install -e containers/urbanair
     - name: Type hinting
-      run: mypy containers/cleanair
+      run:
+        mypy containers/cleanair
+        mypy containers/urbanair
+
 
   format:
     runs-on: ubuntu-latest
