@@ -41,10 +41,15 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v2
+    - uses: actions/setup-python@v4
+      with:
+        python-version:  ${{ env.PYTHON_VERSION }}
     - name: Dependencies
-      run: pip install -r containers/requirements.txt
+      run: |
+        apt install -y gdal-bin
+        pip install -r containers/requirements.txt
     - name: Install
-      run: pip install containers/cleanair
+      run: pip install containers/cleanair[geo]
     - name: Secretfile
       run: |
         mkdir -p .secrets
@@ -52,7 +57,9 @@ jobs:
     - name: Fill DB
       run: |
         python containers/entrypoints/setup/configure_db_roles.py -s $DB_SECRET_FILE -c configuration/database_role_config/local_database_config.yaml
-        python containers/entrypoints/setup/insert_static_datasets.py insert -s $DB_SECRET_FILE -t ${{ secrets.SAS_TOKEN }} -d street_canyon hexgrid london_boundary oshighway_roadlink scoot_detector
+        python containers/entrypoints/setup/insert_static_datasets.py insert -s $DB_SECRET_FILE -t $SAS_TOKEN -d street_canyon hexgrid london_boundary oshighway_roadlink scoot_detector
+      env:
+        SAS_TOKEN: ${{ secrets.SAS_TOKEN }}
     - name: Test DB connection
       run: pytest containers/tests/test_database_init --secretfile $DB_SECRET_FILE
     - name: Test cleanair
