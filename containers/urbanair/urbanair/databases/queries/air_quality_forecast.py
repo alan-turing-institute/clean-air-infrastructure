@@ -388,9 +388,10 @@ def cached_forecast_hexgrid_geojson(
     )
     # Return the query results as a GeoJSON FeatureCollection
     print("About to build features!")
-    features = ForecastResultGeoJson.build_features(
-        [(r._asdict()) for r in query_results]
-    )
+    # features = ForecastResultGeoJson.build_features(
+    #     [(r._asdict()) for r in query_results]
+    # )
+    features = ForecastResultGeoJson.build_features([dict(r) for r in query_results])
     print("build features :)")
     print(features)
     return ForecastResultGeoJson(
