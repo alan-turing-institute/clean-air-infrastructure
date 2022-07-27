@@ -100,10 +100,7 @@ jobs:
         pip install -e containers/cleanair
         pip install -e containers/urbanair
     - name: Type hinting
-      run:
-        mypy containers/cleanair
-        mypy containers/urbanair
-
+      run: mypy containers/cleanair/cleanair containers/urbanair/urbanair
 
   format:
     runs-on: ubuntu-latest
