@@ -4,58 +4,55 @@ import numpy as np
 import pytest
 from cleanair.inputs.scoot_writer import ScootReader
 from dateutil import rrule
-from pandas.util.testing import assert_frame_equal
+from pandas.testing import assert_frame_equal
 
 
-def test_scoot_detector(
-    scoot_single_detector_generator, scoot_writer, dataset_start_date, dataset_end_date
-):
-    "Test that we can verify that a set of scoot detectors have data for a given hour"
+# def test_scoot_detector(
+#     scoot_single_detector_generator, scoot_writer, dataset_start_date, dataset_end_date
+# ):
+#     "Test that we can verify that a set of scoot detectors have data for a given hour"
 
-    scoot_single_detector_generator.update_remote_tables()
-    # Insert data for a single scoot detector into the database for the full dataset time period
-    # scoot_single_detector_generator.update_remote_tables()
-    sensor_ids = scoot_writer.scoot_detectors(
-        detectors=["N04/161a1"], output_type="list"
-    )
+#     scoot_single_detector_generator.update_remote_tables()
+#     # Insert data for a single scoot detector into the database for the full dataset time period
+#     # scoot_single_detector_generator.update_remote_tables()
+#     sensor_ids = scoot_writer.scoot_detectors(
+#         detectors=["N04/161a1"], output_type="list"
+#     )
 
-    # Check the detector exists for all hours
-    date_range = rrule.rrule(
-        rrule.HOURLY,
-        dtstart=dataset_start_date,
-        until=dataset_end_date - timedelta(hours=1),
-    )
+#     # Check the detector exists for all hours
+#     date_range = rrule.rrule(
+#         rrule.HOURLY,
+#         dtstart=dataset_start_date,
+#         until=dataset_end_date - timedelta(hours=1),
+#     )
 
-    # Check the detector has data for the daterange of interest
-    assert all(
-        map(
-            lambda d: scoot_writer.check_detectors_processed(d, [sensor_ids[0]]),
-            date_range,
-        )
-    )
+#     # Check the detector has data for the daterange of interest
+#     assert all(
+#         map(
+#             lambda d: scoot_writer.check_detectors_processed(d, [sensor_ids[0]]),
+#             date_range,
+#         )
+#     )
 
-    # But not for other times
-    assert not scoot_writer.check_detectors_processed(
-        max(date_range) + timedelta(hours=1), [sensor_ids[0]]
-    )
+#     # But not for other times
+#     assert not scoot_writer.check_detectors_processed(
+#         max(date_range) + timedelta(hours=1), [sensor_ids[0]]
+#     )
 
-    # And not for any other sensors as we only inserted data for one
-    assert not any(
-        map(
-            lambda d: scoot_writer.check_detectors_processed(d, sensor_ids[1:]),
-            date_range,
-        )
-    )
+#     # And not for any other sensors as we only inserted data for one
+#     assert not any(
+#         map(
+#             lambda d: scoot_writer.check_detectors_processed(d, sensor_ids[1:]),
+#             date_range,
+#         )
+#     )
 
 
 def test_process_hour(scoot_detector_single_hour, scoot_writer, dataset_start_date):
     "Test we can process an hour correctly"
 
-    # # Check request_remote_data is patched (arguments not used)
+    # Check request_remote_data is patched (arguments not used)
     remote_data = scoot_writer.request_remote_data(dataset_start_date, detector_ids=[])
-    # assert remote_data.equals(
-    #     request_remote_data(dataset_start_date, dataset_start_date, [])
-    # )
 
     # Check the aggregate_scoot_data method now returns its input dataframe after patching
     aggregated_df = (
@@ -107,13 +104,14 @@ def test_process_hour(scoot_detector_single_hour, scoot_writer, dataset_start_da
         expected_cols_df,
     )
 
-    # # Check the missing hour is for the missing detector
-    # null_entries = retrieved_cols_df[retrieved_cols_df.isnull().any(axis=1)][
-    #     "detector_id"
-    # ].tolist()
+    # Check the missing hour is for the missing detector
+    print(retrieved_cols_df)
+    null_entries = retrieved_cols_df[retrieved_cols_df.isnull().any(axis=1)][
+        "detector_id"
+    ].tolist()
 
-    # assert len(null_entries) == 1
-    # assert null_entries[0] == scoot_detector_single_hour[1]
+    assert len(null_entries) == 1
+    assert null_entries[0] == scoot_detector_single_hour[1]
 
 
 def test_scoot_reader(scoot_writer, dataset_start_date, connection, secretfile):
@@ -131,12 +129,9 @@ def test_scoot_reader(scoot_writer, dataset_start_date, connection, secretfile):
     )
 
     # Check we have 100% of readings
-    assert (
-        scoot_reader.get_percentage_quantiles(output_type="df",).iloc[
-            0
-        ]["1"]
-        == 100.0
-    )
+    quantile_df = scoot_reader.get_percentage_quantiles(output_type="df")
+    print(quantile_df)
+    assert quantile_df.iloc[0]["1"] == 100.0
 
     # Check we got all data except one sensor
     assert scoot_reader.get_percentage_quantiles(missing=True, output_type="df",).iloc[

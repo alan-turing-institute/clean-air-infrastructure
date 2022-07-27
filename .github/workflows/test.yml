@@ -60,7 +60,7 @@ jobs:
       env:
         SAS_TOKEN: ${{ secrets.SAS_TOKEN }}
     - name: Test
-      run: pytest containers/tests/test_database_init --secretfile $DB_SECRET_FILE
+      run: pytest containers/tests --secretfile $DB_SECRET_FILE
 
   lint:
     runs-on: ubuntu-latest
