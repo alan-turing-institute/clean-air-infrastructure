@@ -2,6 +2,8 @@
 
 # pylint: disable=redefined-outer-name
 
+from datetime import timedelta
+from typing import List
 import pickle
 import pandas as pd
 import pytest
@@ -9,6 +11,30 @@ from cleanair.data_generators.scoot_generator import ScootGenerator
 from cleanair.inputs import SatelliteWriter, ScootWriter
 
 # fixtures for scoot
+
+
+@pytest.fixture(scope="function")
+def detector_list() -> List[str]:
+    """List of detector IDs"""
+    return [
+        "N00/002e1",
+        "N00/002g1",
+        "N00/002p1",
+        "N00/002x1",
+        "N00/002y1",
+        "N00/003a1",
+        "N00/004b1",
+        "N00/004d1",
+        "N00/004p1",
+        "N04/161a1",
+    ]
+
+
+@pytest.fixture(scope="function")
+def faulty_detector(detector_list) -> str:
+    """ID of a faulty detector"""
+    return detector_list[0]
+
 
 @pytest.fixture(scope="function")
 def scoot_single_detector_generator(
@@ -31,29 +57,30 @@ def scoot_single_detector_generator(
 
 @pytest.fixture(scope="function")
 def scoot_detector_single_hour(
-    dataset_start_date, dataset_end_date, secretfile, connection
-):
+    dataset_start_date, detector_list, faulty_detector, secretfile, connection
+) -> pd.DataFrame:
     "Generete a single hour of scoot data"
+    end_time = dataset_start_date + timedelta(hours=1)
     scoot_generator = ScootGenerator(
         dataset_start_date,
-        dataset_end_date,
+        end_time,
+        detectors=detector_list,
         secretfile=secretfile,
         connection=connection,
     )
 
     scoot_data_df = scoot_generator.generate_df()
-    first_detector_id = scoot_data_df["detector_id"].unique()[0]
     drop_first_detector_and_hours = scoot_data_df[
-        (scoot_data_df["detector_id"] != first_detector_id)
-        & (scoot_data_df["measurement_start_utc"] == pd.to_datetime(dataset_start_date))
+        scoot_data_df["detector_id"] != faulty_detector
     ]
-    return drop_first_detector_and_hours, first_detector_id
+    return drop_first_detector_and_hours
 
 
 @pytest.fixture(scope="function")
-def scoot_writer(
+def scoot_writer_fixture(
     monkeypatch,
     scoot_detector_single_hour,
+    detector_list,
     secretfile,
     connection,
     dataset_start_date,
@@ -70,10 +97,7 @@ def scoot_writer(
 
         Drops a single scoot detector which we should then write to the database as null
         """
-
-        drop_first_detector_and_hours = scoot_detector_single_hour[0]
-
-        unaggregated_scoot_df = drop_first_detector_and_hours.rename(
+        unaggregated_scoot_df = scoot_detector_single_hour.rename(
             columns={"measurement_start_utc": "timestamp"}
         ).drop("measurement_end_utc", axis=1)
 
@@ -96,15 +120,18 @@ def scoot_writer(
         aws_key_id="",
         end=dataset_end_date,
         nhours=nhours,
+        detector_ids=detector_list,
         secretfile=secretfile,
         connection=connection,
     )
     monkeypatch.setattr(writer, "request_remote_data", request_remote_data)
     monkeypatch.setattr(writer, "combine_by_detector_id", combine_by_detector_id)
 
-    return scoot_writer
+    return writer
+
 
 # fixtures for satellite
+
 
 @pytest.fixture()
 def copernicus_key():

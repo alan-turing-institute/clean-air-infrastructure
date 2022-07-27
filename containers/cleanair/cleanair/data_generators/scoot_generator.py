@@ -102,7 +102,7 @@ def generate_discrete_timeseries(
     amplitude_modifier: float = 10.0,
     shift_modifier: float = 3.0,
     gradiant: float = 0.0,
-) -> npt.NDArray[Int]:  # noqa: F821
+) -> npt.NDArray[int]:  # noqa: F821
     """Create a timeseries with discrete values."""
     # set seed
 

@@ -588,6 +588,7 @@ def scoot_generator(
         connection=connection,
     )
 
+
 @pytest.fixture(scope="class")
 def matern32_params() -> KernelParams:
     """Matern 32 kernel params."""
