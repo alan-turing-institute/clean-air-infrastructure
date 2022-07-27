@@ -60,10 +60,7 @@ jobs:
       env:
         SAS_TOKEN: ${{ secrets.SAS_TOKEN }}
     - name: Test
-      run: |
-        pytest containers/tests/test_database_init --secretfile $DB_SECRET_FILE
-        pytest containers/tests/test_cleanair/test_utils/test_dimension_calculator.py --secretfile $DB_SECRET_FILE
-        pytest containers/tests/test_urbanair --secretfile $DB_SECRET_FILE
+      run: pytest containers/tests/test_database_init --secretfile $DB_SECRET_FILE
 
   lint:
     runs-on: ubuntu-latest
@@ -73,6 +70,7 @@ jobs:
     - uses: actions/setup-python@v4
       with:
         python-version:  ${{ env.PYTHON_VERSION }}
+        cache: 'pip'
     - name: Dependencies
       run: pip install -r containers/requirements.txt
     - name: Install
@@ -94,6 +92,7 @@ jobs:
     - uses: actions/setup-python@v4
       with:
         python-version:  ${{ env.PYTHON_VERSION }}
+        cache: 'pip'
     - name: Dependencies
       run: pip install -r containers/requirements.txt
     - name: Install
@@ -114,6 +113,7 @@ jobs:
     - uses: actions/setup-python@v4
       with:
         python-version: ${{ env.PYTHON_VERSION }}
+        cache: 'pip'
     - name: Dependencies
       run: pip install -r containers/requirements.txt
     - name: Format
