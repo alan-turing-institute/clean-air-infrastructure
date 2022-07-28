@@ -63,10 +63,10 @@ class ScootGenerator(ScootQueryMixin, DBWriter):
         nrows = nreadings * len(detectors)
 
         data = dict(
-            detector_id=list(),
-            measurement_start_utc=list(),
-            measurement_end_utc=list(),
-            n_vehicles_in_interval=list(),
+            detector_id=[],
+            measurement_start_utc=[],
+            measurement_end_utc=[],
+            n_vehicles_in_interval=[],
             occupancy_percentage=np.zeros(nrows),
             congestion_percentage=np.zeros(nrows),
             saturation_percentage=np.zeros(nrows),
@@ -76,8 +76,8 @@ class ScootGenerator(ScootQueryMixin, DBWriter):
             saturation_raw_count=np.zeros(nrows),
             region=np.repeat("None", nrows),
         )
-        for d in detectors:
-            data["detector_id"].extend([d] * nreadings)
+        for detector in detectors:
+            data["detector_id"].extend([detector] * nreadings)
             data["measurement_start_utc"].extend(list(start))
             data["measurement_end_utc"].extend(list(end))
             data["n_vehicles_in_interval"].extend(
@@ -192,7 +192,7 @@ def generate_scoot_df(
     return scoot_df
 
 
-def create_daily_readings_df(readings: npt.NDArray[Int]) -> pd.DataFrame:  # noqa: F821
+def create_daily_readings_df(readings: npt.NDArray[npt.int]) -> pd.DataFrame:  # noqa: F821
     """Create a simple dataframe over one day for one detector."""
     random.seed(0)
     start_date = "2020-01-01"
