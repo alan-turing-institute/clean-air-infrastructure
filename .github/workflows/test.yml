@@ -60,7 +60,10 @@ jobs:
       env:
         SAS_TOKEN: ${{ secrets.SAS_TOKEN }}
     - name: Test
-      run: pytest containers/tests --secretfile $DB_SECRET_FILE
+      run: |
+        pytest containers/tests/test_database_init --secretfile $DB_SECRET_FILE
+        pytest containers/tests/test_cleanair --secretfile $DB_SECRET_FILE
+        pytest containers/tests/test_urbanair --secretfile $DB_SECRET_FILE
 
   lint:
     runs-on: ubuntu-latest
@@ -79,10 +82,8 @@ jobs:
         pip install -e containers/urbanair
     - name: Lint
       run: |
-        pylint */ --ignore=cleanair,urbanair,odysseus,tests,jamcam_processing
-        pylint --ignore=experiment,models,cleanair.egg-info,tf1 containers/cleanair/*
-        pylint --ignore test_models --disable=R,C containers/tests/test_cleanair/* containers/tests/test_database_init/*
-        pylint containers/urbanair/* containers/tests/test_urbanair/*
+        pylint --ignore=experiment,models,tf1 containers/cleanair/* containers/urbanair/* containers/entrypoints/*/*
+        pylint --ignore=test_models,test_odysseus --disable=R,C containers/tests/*
 
   types:
     runs-on: ubuntu-latest

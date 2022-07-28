@@ -192,7 +192,9 @@ def generate_scoot_df(
     return scoot_df
 
 
-def create_daily_readings_df(readings: npt.NDArray[npt.int]) -> pd.DataFrame:  # noqa: F821
+def create_daily_readings_df(
+    readings: npt.NDArray[npt.int],
+) -> pd.DataFrame:  # noqa: F821
     """Create a simple dataframe over one day for one detector."""
     random.seed(0)
     start_date = "2020-01-01"
