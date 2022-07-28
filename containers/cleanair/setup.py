@@ -68,7 +68,7 @@ setuptools.setup(
     use_scm_version={
         "root": "../..",
         "relative_to": __file__,
-        "fallback_version": "0.2.7",
+        "fallback_version": "0.2.13",
     },
     python_requires=">=3.8",
     scripts=["cli/urbanair"],

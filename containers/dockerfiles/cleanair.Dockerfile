@@ -1,6 +1,6 @@
 # key dependencies are already installed in the base image
-# FROM cleanairdocker.azurecr.io/cleanair_base:latest
-FROM cleanair_base:latest
+ARG  CLEANAIR_BASE_TAG=latest
+FROM cleanairdocker.azurecr.io/cleanair_base:${CLEANAIR_BASE_TAG}
 
 # Set the working directory to /app
 WORKDIR /app
