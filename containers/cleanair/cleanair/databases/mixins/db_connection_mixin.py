@@ -78,7 +78,7 @@ class DBConnectionMixin:
 
         # Attempt to open assuming secret_file is full path
         try:
-            with open(secret_file) as f_secret:
+            with open(secret_file, encoding="utf-8") as f_secret:
                 data = json.load(f_secret)
                 self.logger.info(
                     "Database connection information loaded from %s", green(secret_file)
@@ -106,7 +106,7 @@ class DBConnectionMixin:
             # Attempt to load secrets from each available file in turn
             for secret_fname in secrets_files:
                 try:
-                    with open(secret_fname) as f_secret:
+                    with open(secret_fname, encoding="utf-8") as f_secret:
                         data = json.load(f_secret)
                     self.logger.info(
                         "Database connection information loaded from %s",

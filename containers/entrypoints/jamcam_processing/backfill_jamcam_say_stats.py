@@ -65,7 +65,7 @@ while date != today:
         result = query.all()
 
         for row in result:
-            if row.camera_id not in data.keys():
+            if row.camera_id not in data:
                 data[row.camera_id] = {}
             if detection_class_string not in data[row.camera_id].keys():
                 data[row.camera_id][detection_class_string] = []

@@ -146,10 +146,10 @@ def get_azure_credentials():
     credential = AzureCliCredential()
     subscription_client = SubscriptionClient(credential)
     subscription_name = subscription_client.subscriptions.get(
-        subscription_id
+        subscription_id  # noqa
     ).display_name
     logging.info("Working in subscription: %s", emphasised(subscription_name))
-    return (subscription_id, tenant_id)
+    return (subscription_id, tenant_id)  # noqa
 
 
 def get_valid_storage_account_name(storage_mgmt_client):

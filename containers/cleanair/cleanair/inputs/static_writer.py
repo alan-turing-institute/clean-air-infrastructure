@@ -77,7 +77,7 @@ class StaticWriter(DBWriter):
                 green(self.table_name),
             )
             gdf = gdf.set_crs(crs=crs_27700, allow_override=True)
-        elif not (gdf.crs == crs_4326 or gdf.crs == crs_27700):
+        elif gdf.crs not in {crs_4326, crs_27700}:
             error_message = (
                 f"GeoDataFrame loaded from shape file for table {self.table_name} "
             )

@@ -4,6 +4,8 @@ from enum import Enum
 from typing import List
 from pydantic import BaseModel
 
+# pylint: disable=C0103
+
 
 class ExperimentName(str, Enum):
     """Valid names of experiments"""
