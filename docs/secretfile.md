@@ -8,37 +8,68 @@ You may also find it useful to look at our [guide for docker](docker.md).
 
 **The contents of this guide** include:
 
-- Connecting to the [production database](#production-database)
+- Connecting to the [Azure database](#Azure-database)
 - Secret file for a local [docker database](#docker-database)
 - [Mounting a secret file](#mounting-a-secrets-file) when running a docker file
 
 ***
 
-## Production database
+## Azure database
 
-The connection to the production database in Azure is managed through the urbanair CLI.
+The connection to the Azure database in Azure is managed through the urbanair CLI.
 The username and password are generated using the [Azure CLI](azure.md).
-*You do not need to create the secret file for the production database, it is created for you!*
 
-You can store the connection credentials for the production database by running:
+***With Turing account***
+
+You can store the connection credentials for the Azure database by running:
 
 ```bash
 urbanair init production
 ```
 
-You *should* now be able to connect to the production database using the urbanair CLI.
-If you would like to get the location of the JSON secret file for the production database,
+You *should* now be able to connect to the Azure database using the urbanair CLI.
+If you would like to get the location of the JSON secret file for the Azure database,
 you can run:
 
 ```bash
 urbanair config path
 ```
 
-If you would like to get the username and password stored in the production JSON secret file, use the `urbanair echo` CLI:
+If you would like to get the username and password stored in the Azure JSON secret file, use the `urbanair echo` CLI:
 
 ```bash
 urbanair echo dbuser
 urbanair echo dbtoken
+```
+
+***Without Turing account***
+
+We are going to store the settings for the azure database in a JSON file.First, create environment variables to store the location of filepaths and create the hidden `.secrets` directory. We recommend doing this inside the repo.
+
+```bash
+cd clean-air-infrastructure
+export SECRETS_DIR="$(pwd)/.secrets"
+export DB_SECRET_FILE="${SECRETS_DIR}/.db_secrets_azure.json"
+mkdir "${SECRETS_DIR}"
+```
+
+Next create `.db_secrets_azurer.json`:
+
+```bash
+echo '{   
+    "host": "cleanair-inputs-2021-server.postgres.database.azure.com",
+    "port": 5432,
+    "db_name": "cleanair_inputs_db",
+    "ssl_mode": "require",
+    "username": USERNAME,
+    "password": PASSWORD,
+}' >> $DB_SECRET_FILE
+```
+
+Fill the `USERNAME` and `PASSWORD` apporipiated.fThen run the comand to ???.
+
+```
+urbanair init local --secretfile $DB_SECRET_FILE
 ```
 
 ***
