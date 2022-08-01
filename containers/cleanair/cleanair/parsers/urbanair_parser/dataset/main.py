@@ -31,8 +31,6 @@ def download(
         "--training-data",
         help="Download training data",
     ),
-    # output_csv: bool = typer.Option(
-    #     False, "--output-csv", help="Output dataframes as csv", show_default=True
 ) -> None:
     """Setup load data"""
     secretfile: str = state["secretfile"]
