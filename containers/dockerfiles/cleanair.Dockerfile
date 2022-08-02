@@ -1,16 +1,6 @@
-# Use an official Python runtime as a parent image
-FROM python:3.10
-
-# Update certificates
-RUN apt update \
-    && apt install -y \
-        build-essential \
-        ca-certificates \
-        cmake \
-        gfortran \
-        libeccodes0 \
-        libgeos-dev
-
+# key dependencies are already installed in the base image
+ARG  CLEANAIR_BASE_TAG=latest
+FROM cleanairdocker.azurecr.io/cleanair_base:${CLEANAIR_BASE_TAG}
 
 # Set the working directory to /app
 WORKDIR /app
@@ -21,7 +11,6 @@ COPY scripts/ /app/scripts
 
 # set the version of cleanair
 ARG urbanair_version
-ENV SETUPTOOLS_SCM_PRETEND_VERSION ${urbanair_version}
 
 # Install packages
-RUN pip install "/app/cleanair" pyopenssl
+RUN SETUPTOOLS_SCM_PRETEND_VERSION_FOR_CLEANAIR=${urbanair_version} pip install "/app/cleanair" pyopenssl

@@ -143,6 +143,7 @@ class Connector(DBConnectionMixin):
                 session.begin_nested()
                 self.logger.debug("In nested session")
                 # then each time that SAVEPOINT ends, reopen it
+
                 @event.listens_for(session, "after_transaction_end")
                 def restart_savepoint(
                     session, transaction

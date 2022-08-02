@@ -1,0 +1,118 @@
+name: Tests
+
+on: [push]
+
+env:
+  DB_SECRET_FILE: .secrets/db_secrets_offline.json
+  PYTHON_VERSION: '3.10'
+
+jobs:
+  login:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Login to ACR
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ secrets.ACR_LOGIN_SERVER }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+  test:
+    runs-on: ubuntu-latest
+    container:
+      image: cleanairdocker.azurecr.io/cleanair_base:latest
+      credentials:
+        username: ${{ secrets.ACR_USERNAME }}
+        password: ${{ secrets.ACR_PASSWORD }}
+
+    services:
+      postgres:
+        image: postgis/postgis:12-3.2
+        env:
+          POSTGRES_DB: cleanair_test_db
+          POSTGRES_USER: cleanair_test_user
+          POSTGRES_HOST: postgres
+          POSTGRES_PORT: 5432
+          POSTGRES_PASSWORD: cleanair_test_password
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Dependencies
+      run: |
+        apt install -y gdal-bin
+        pip install -r containers/requirements.txt
+    - name: Install
+      run: |
+        pip install -e containers/cleanair[geo]
+        pip install -e containers/urbanair
+    - name: Secretfile
+      run: |
+        mkdir -p .secrets
+        echo '{"username": "cleanair_test_user", "password": "cleanair_test_password", "host": "postgres", "port": 5432, "db_name": "cleanair_test_db", "ssl_mode": "prefer"}' >> $DB_SECRET_FILE
+    - name: Fill DB
+      run: |
+        python containers/entrypoints/setup/configure_db_roles.py -s $DB_SECRET_FILE -c configuration/database_role_config/local_database_config.yaml
+        python containers/entrypoints/setup/insert_static_datasets.py insert -s $DB_SECRET_FILE -t $SAS_TOKEN -d street_canyon hexgrid london_boundary oshighway_roadlink scoot_detector
+      env:
+        SAS_TOKEN: ${{ secrets.SAS_TOKEN }}
+    - name: Test
+      run: |
+        pytest containers/tests/test_database_init --secretfile $DB_SECRET_FILE
+        pytest containers/tests/test_cleanair --secretfile $DB_SECRET_FILE
+        pytest containers/tests/test_urbanair --secretfile $DB_SECRET_FILE
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - uses: actions/setup-python@v4
+      with:
+        python-version:  ${{ env.PYTHON_VERSION }}
+        cache: 'pip'
+    - name: Dependencies
+      run: pip install -r containers/requirements.txt
+    - name: Install
+      run: |
+        pip install -e containers/cleanair[geo]
+        pip install -e containers/urbanair
+    - name: Lint
+      run: |
+        pylint --ignore=experiment,models,tf1 containers/cleanair/* containers/urbanair/* containers/entrypoints/*/*
+        pylint --ignore=test_models,test_odysseus --disable=R,C containers/tests/*
+
+  types:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - uses: actions/setup-python@v4
+      with:
+        python-version:  ${{ env.PYTHON_VERSION }}
+        cache: 'pip'
+    - name: Dependencies
+      run: pip install -r containers/requirements.txt
+    - name: Install
+      run: |
+        pip install -e containers/cleanair
+        pip install -e containers/urbanair
+    - name: Type hinting
+      run: mypy containers/cleanair/cleanair containers/urbanair/urbanair
+
+  format:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        cache: 'pip'
+    - name: Dependencies
+      run: pip install -r containers/requirements.txt
+    - name: Format
+      run: black --check */
