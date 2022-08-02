@@ -54,7 +54,7 @@ def production() -> None:
     PROD_SECRET_DICT["username"] = username
 
     # Create config secretfile
-    with open(CONFIG_SECRETFILE_PATH, "w") as secretfile:
+    with open(CONFIG_SECRETFILE_PATH, "w", encoding="utf-8") as secretfile:
         json.dump(PROD_SECRET_DICT, secretfile, indent=4)
 
     typer.echo(

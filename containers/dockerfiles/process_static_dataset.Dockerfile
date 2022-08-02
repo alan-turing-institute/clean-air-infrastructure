@@ -11,10 +11,12 @@ WORKDIR /app
 # Copy the cleanair directory contents into the container
 COPY cleanair /app/cleanair
 
-# RUN python -m pip install -U cffi
+# set the version of cleanair
+ARG urbanair_version
+ENV SETUPTOOLS_SCM_PRETEND_VERSION ${urbanair_version}
 
 # Install cleanair
-RUN python -m pip install "/app/cleanair"
+RUN python -m pip install "/app/cleanair[geo]"
 
 # Copy the run script into the container
 COPY entrypoints/setup/insert_static_datasets.py /app

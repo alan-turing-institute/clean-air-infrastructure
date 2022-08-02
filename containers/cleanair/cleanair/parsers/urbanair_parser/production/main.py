@@ -10,6 +10,7 @@ from ..shared_args import ExperimentDir
 app = typer.Typer(help="Production CLI")
 
 
+# pylint: disable=C0103
 class StaticDynamic(str, Enum):
     """Is the model static or dynamic?"""
 

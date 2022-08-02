@@ -383,7 +383,7 @@ class SatelliteWriter(
         )
 
         # pylint: disable=singleton-comparison
-        arg_list = arg_df[arg_df["has_data"] != True][
+        arg_list = arg_df[arg_df["has_data"] is not True][
             ["reference_start_utc", "species"]
         ].to_records(index=False)
 

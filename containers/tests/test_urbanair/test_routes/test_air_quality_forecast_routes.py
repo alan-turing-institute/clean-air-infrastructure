@@ -122,7 +122,7 @@ class TestForecastJsonEndpoint(BaseForecastEndPoint):
             + "+00:00"
         )
 
-        assert all([d["measurement_start_utc"] == request_hour for d in data])
+        assert all(d["measurement_start_utc"] == request_hour for d in data)
 
 
 class TestForecastGeoJsonEndpoint(BaseForecastEndPoint):
@@ -171,10 +171,8 @@ class TestForecastGeoJsonEndpoint(BaseForecastEndPoint):
             + "+00:00"
         )
         assert all(
-            [
-                d["properties"]["measurement_start_utc"] == request_hour
-                for d in data["features"]
-            ]
+            d["properties"]["measurement_start_utc"] == request_hour
+            for d in data["features"]
         )
 
         # Require that we have the same number of input and output geometries
@@ -188,10 +186,8 @@ class TestForecastGeoJsonEndpoint(BaseForecastEndPoint):
         # Require all output geometries to have (close-to) 100% overlap with an input geometry
         for geom_out in output_geometries:
             assert any(
-                [
-                    geom_out.union(geom_in).area / geom_out.area < 1.01
-                    for geom_in in input_geometries
-                ]
+                geom_out.union(geom_in).area / geom_out.area < 1.01
+                for geom_in in input_geometries
             )
 
 
@@ -245,8 +241,6 @@ class TestForecastGeometriesEndpoint(BaseForecastEndPoint):
         # Require all output geometries to have (close-to) 100% overlap with an input geometry
         for geom_out in output_geometries:
             assert any(
-                [
-                    geom_out.union(geom_in).area / geom_out.area < 1.01
-                    for geom_in in input_geometries
-                ]
+                geom_out.union(geom_in).area / geom_out.area < 1.01
+                for geom_in in input_geometries
             )

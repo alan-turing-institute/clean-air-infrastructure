@@ -106,16 +106,15 @@ class ScootReader(DateRangeMixin, ScootQueryMixin, DBReader):
 
         "Check whether expected scoot data is in database"
         expected_readings = self.__gen_expected_readings(
-            start_date, end_date, detector_ids, output_type="subquery"
-        )
+            start_date, end_date, detector_ids
+        ).subquery()
 
         actual_readings = self.scoot_readings(
             start=start_date,
             upto=end_date,
             detectors=detector_ids,
             drop_null=False,
-            output_type="subquery",
-        )
+        ).subquery()
 
         with self.dbcnxn.open_session() as session:
 
@@ -171,7 +170,7 @@ class ScootReader(DateRangeMixin, ScootQueryMixin, DBReader):
                 reading_status_sq.c.expected_measurement_start_utc.label("day"),
                 (
                     cast(
-                        func.sum(cast(missing_row == False, Integer)),
+                        func.sum(cast(missing_row is False, Integer)),
                         Float,
                     )
                     / cast(func.count(missing_row), Float)
@@ -192,6 +191,8 @@ class ScootReader(DateRangeMixin, ScootQueryMixin, DBReader):
             missing=missing,
             output_type="subquery",
         )
+        for col in percentage_by_sensor_day_sq.c:
+            print(col)
 
         def cum_quant(lower: float, upper: float) -> Any:
             "Calculate the percentage in (lower, upper] and label the column [upper]"
@@ -529,7 +530,7 @@ class ScootWriter(DateRangeMixin, DBWriter, ScootQueryMixin):
             df_readings, measurement_start_utc
         )
 
-        # Join with expected readings to get nulls where no data was retrived from S3 bucket
+        # Join with expected readings to get nulls where no data was retrieved from S3 bucket
         df_joined_with_expected = self.join_with_expected_readings(
             df_aggregated_readings,
             measurement_start_utc,

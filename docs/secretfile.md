@@ -4,13 +4,12 @@ The connection information for a PostgreSQL database is stored in a JSON "secret
 It contains entries for the username, password, host, port, database name and SSL mode.
 
 **Before starting this guide**, please make sure you have [installed the packages](installation.md), [logged into the Azure CLI](azure.md) and read the [developer guide](developer.md).
-You may also find it useful to look at our [guide for docker](docker.md).
+You may also find it useful to look at our [guide for docker](docker.md) and [mounting a secret file](docker.md#mounting-a-secrets-file).
 
 **The contents of this guide** include:
 
 - Connecting to the [production database](#production-database)
 - Secret file for a local [docker database](#docker-database)
-- [Mounting a secret file](#mounting-a-secrets-file) when running a docker file
 
 ***
 
@@ -71,22 +70,3 @@ echo '{
     "ssl_mode": "prefer"
 }' >> $DB_SECRET_FILE
 ```
-
-***
-
-## Mounting a secrets file
-
-If you are running a docker container and you need the container to connect to the database,
-you will need to [mount the directory](https://docs.docker.com/storage/bind-mounts/) `SECRETS_DIR` containing the JSON secret file on the host machine onto a target directory `/secrets` on the container file system.
-
-Add the `-v "${SECRET_DIR}":/secrets` option to any `docker run` commands that need a database connection.
-
-You will also need to *append* the location of the JSON secret file by using the `--secretfile` option for most urbanair CLI commands.
-
-In summary, a docker run command might look something like:
-
-```bash
-docker run -v "${SECRET_DIR}":/secrets ... --secretfile /secrets/.db_secrets_docker.json
-```
-
-If you don't use the `--secretfile` option for running the command, you *might* also need to add an environment variable that tells the *docker container* about the name of the secrets file by adding `-e DB_SECRET_FILE=".db_secrets_docker.json"`.
