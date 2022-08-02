@@ -4,7 +4,6 @@ Authenticate with Azure and get relevant keys
 # pylint: skip-file
 import logging
 import termcolor
-import os
 from azure.identity import AzureCliCredential
 from azure.keyvault import KeyVaultClient
 from azure.mgmt.keyvault import KeyVaultManagementClient

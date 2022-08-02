@@ -50,7 +50,7 @@ class TestAirQaulityMetrics:
         self, metrics_calculator, observation_df, result_df
     ):
         """Test temporal metrics."""
-        assert not "forecast" in result_df.columns
+        assert "forecast" not in result_df.columns
         assert "forecast" in observation_df.columns
         metrics_calculator.evaluate_temporal_metrics(
             observation_df, preprocess_dataframe_types(result_df)

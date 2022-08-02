@@ -11,8 +11,8 @@ conda activate urbanair
 # set the conda-forge channel as the top priority
 conda config --env --add channels conda-forge
 conda config --env --set channel_priority strict
-# now install python, geopandas, plus any other libraries
-conda install python=3.10 geopandas=0.10.2
+# now install python, ecCodes, geopandas, plus any other libraries
+conda install python=3.10 geopandas=0.10.2 eccodes==2.26.0
 ```
 
 We strongly recommend [installing geopandas](https://geopandas.org/en/stable/getting_started/install.html)
