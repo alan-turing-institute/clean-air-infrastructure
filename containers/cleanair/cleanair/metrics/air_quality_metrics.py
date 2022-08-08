@@ -3,7 +3,7 @@
 from datetime import timedelta
 from typing import Dict, List, Optional
 import pandas as pd
-import sklearn
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score as r2s
 from ..databases import DBReader, DBWriter, get_columns_of_table
 from ..databases.tables import (
     AirQualityDataTable,
@@ -137,15 +137,15 @@ class AirQualityMetrics(DBWriter, InstanceQueryMixin, ResultQueryMixin):
             pollutant=pollutant.value,
         )
         if self.mae:
-            group_metrics["mae"] = sklearn.metrics.mean_absolute_error(
+            group_metrics["mae"] = mean_absolute_error(
                 group_df[pollutant.value], group_df[pollutant.value + "_mean"]
             )
         if self.mse:
-            group_metrics["mse"] = sklearn.metrics.mean_squared_error(
+            group_metrics["mse"] = mean_squared_error(
                 group_df[pollutant.value], group_df[pollutant.value + "_mean"]
             )
         if self.r2_score:
-            group_metrics["r2_score"] = sklearn.metrics.r2_score(
+            group_metrics["r2_score"] = r2s(
                 group_df[pollutant.value], group_df[pollutant.value + "_mean"]
             )
         return group_metrics
@@ -162,7 +162,7 @@ class AirQualityMetrics(DBWriter, InstanceQueryMixin, ResultQueryMixin):
             "Evaluating metrics temporally - group by datetime and calculate metrics across each time slice."
         )
         groups = joined_df.groupby(["measurement_start_utc", "forecast"])
-        metrics_records = list()
+        metrics_records = []
         for (timestamp, forecast), group_df in groups:
             for pollutant in self.data_config.species:
                 if len(group_df) == 0:
@@ -191,7 +191,7 @@ class AirQualityMetrics(DBWriter, InstanceQueryMixin, ResultQueryMixin):
             "Evaluating metrics spatially - group by point_id and calculate metrics for each sensor."
         )
         groups = joined_df.groupby(["point_id", "forecast"])
-        metrics_records = list()
+        metrics_records = []
         for (point_id, forecast), group_df in groups:
             for pollutant in self.data_config.species:
                 if len(group_df) == 0:

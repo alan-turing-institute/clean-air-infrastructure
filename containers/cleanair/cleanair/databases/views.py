@@ -73,7 +73,7 @@ class SetViewOwner(DDLElement):
 
 @compiler.compiles(SetViewOwner)
 def compile_set_view_owner(element, compiler, **kw):
-    return "ALTER {} VIEW {} OWNER TO {}".format(
+    return "ALTER {} VIEW {} OWNER TO {}".format(  # noqa
         "MATERIALIZED " if element.materialized else "",
         element.name,
         element.owner,
@@ -94,12 +94,14 @@ def create_table_from_selectable(
         sa.Column(
             c.name, c.type, key=aliases.get(c.name, c.name), primary_key=c.primary_key
         )
-        for c in selectable.c
+        for c in selectable.subquery().columns
     ] + indexes
     table = sa.Table(name, metadata, *args, schema=schema)
 
-    if not any([c.primary_key for c in selectable.c]):
-        table.append_constraint(PrimaryKeyConstraint(*[c.name for c in selectable.c]))
+    if not any([c.primary_key for c in selectable.subquery().columns]):
+        table.append_constraint(
+            PrimaryKeyConstraint(*[c.name for c in selectable.subquery().columns])
+        )
     return table
 
 
@@ -193,7 +195,9 @@ def create_view(name, selectable, metadata, cascade_on_drop=True):
         for idx in table.indexes:
             idx.create(connection)
 
-    sa.event.listen(metadata, "before_drop", DropView(name, cascade=cascade_on_drop))
+    sa.event.listen(
+        metadata, "before_drop", DropView(name, cascade=cascade_on_drop)  # noqa
+    )
     return table
 
 

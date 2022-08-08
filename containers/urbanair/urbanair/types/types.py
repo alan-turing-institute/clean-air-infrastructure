@@ -3,6 +3,7 @@ from enum import Enum, unique
 from typing import Any, Dict, List, Union
 
 
+# pylint: disable=invalid-name
 @unique
 class DetectionClass(str, Enum):
     """Possible JamCam detection Types"""

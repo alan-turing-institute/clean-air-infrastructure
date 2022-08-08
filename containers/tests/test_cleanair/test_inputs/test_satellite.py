@@ -13,41 +13,6 @@ from dateutil.parser import isoparse
 from dateutil.rrule import HOURLY, rrule
 
 
-@pytest.fixture()
-def copernicus_key():
-    "A fake copernicus API key"
-    return "__sadsfwertgasdgfasd34534atr4W__"
-
-
-@pytest.fixture()
-def grib_data_df(shared_datadir):
-    """grib file in pandas dataframe"""
-    return shared_datadir / "example_grib_df.pkl"
-
-
-@pytest.fixture()
-def grib_file(shared_datadir):
-    """Raw grib datafile"""
-
-    return shared_datadir / "example.grib"
-
-
-@pytest.fixture()
-def mock_request_satellite_data(monkeypatch, grib_data_df):
-    """Mock the copernicus api response. Returns a bytes object"""
-
-    # pylint: disable=unused-argument
-    def get_grib_df(self, start_date, species):
-        """Overrides SatelliteWriter.request_satellite_data
-        Arguments have no effect. Returns data from a file
-        """
-        with open(grib_data_df, "rb") as grib_f:
-            dat = pickle.load(grib_f)
-            return dat
-
-    monkeypatch.setattr(SatelliteWriter, "request_satellite_data", get_grib_df)
-
-
 def test_init_satellite_writer(copernicus_key, secretfile, connection):
     """Test we can initialise the satellite writer"""
     satellite_writer = SatelliteWriter(
@@ -57,18 +22,18 @@ def test_init_satellite_writer(copernicus_key, secretfile, connection):
     assert satellite_writer.access_key == copernicus_key
 
 
-# def test_read_grib(grib_file, copernicus_key, secretfile, connection):
-# "This test fails because I cant install correct dependencies of travis"
-#     satellite_writer = SatelliteWriter(
-#         copernicus_key=copernicus_key, secretfile=secretfile, connection=connection
-#     )
+def test_read_grib(grib_file, copernicus_key, secretfile, connection):
+    """Test reading a GRIB file"""
+    satellite_writer = SatelliteWriter(
+        copernicus_key=copernicus_key, secretfile=secretfile, connection=connection
+    )
 
-#     grib_array = satellite_writer.read_grib_file(grib_file)
+    grib_array = satellite_writer.read_grib_file(grib_file)
 
-#     grib_df = grib_array.to_dataframe()
+    grib_df = grib_array.to_dataframe()
 
-#     # I put 73 hours of data in this file although we use 72. There are 32 sat tiles in the region of interest
-#     assert grib_df.shape == (73 * 32, 4)
+    # I put 73 hours of data in this file although we use 72. There are 32 sat tiles in the region of interest
+    assert grib_df.shape == (73 * 32, 4)
 
 
 def test_readgrib_missing_file(copernicus_key, secretfile, connection):
@@ -76,7 +41,7 @@ def test_readgrib_missing_file(copernicus_key, secretfile, connection):
 
     # pylint: disable=singleton-comparison
     grib_file = "afilethatdoesntexist_sdfaetq342rasdfasdfa.grib2"
-    assert os.path.exists(grib_file) == False
+    assert os.path.exists(grib_file) is False
 
     satellite_writer = SatelliteWriter(
         copernicus_key=copernicus_key, secretfile=secretfile, connection=connection

@@ -2,9 +2,10 @@
 
 # install gdal and restart postgres
 sudo apt-get update
-sudo apt-get -y install gdal-bin
+sudo apt-get -y install gdal-bin python3-geopandas
 sudo sed -i -e '/local.*peer/s/postgres/all/' -e 's/peer\|md5/trust/g' /etc/postgresql/*/main/pg_hba.conf
 sudo systemctl restart postgresql@11-main
+
 
 # create secretfile for db
 mkdir -p .secrets

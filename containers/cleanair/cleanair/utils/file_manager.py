@@ -27,13 +27,6 @@ from ..types import (
 )
 
 if TYPE_CHECKING:
-    # turn off tensorflow warnings for gpflow
-    import os
-    import tensorflow as tf
-
-    os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
-    tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
-    import gpflow  # pylint: disable=wrong-import-position,wrong-import-order
     from pydantic import BaseModel
 
 
@@ -92,8 +85,8 @@ class FileManager:
                     target_file=str(zipfile_path),
                     sas_token=sas_token,
                 )
-            except ResourceNotFoundError:
-                raise ExperimentInstanceNotFoundError(blob_id)
+            except ResourceNotFoundError as resource_error:
+                raise ExperimentInstanceNotFoundError(blob_id) from resource_error
 
             unpack_archive(zipfile_path, input_dir)
 
@@ -254,11 +247,11 @@ class FileManager:
 
     def load_model(
         self,
-        load_fn: Callable[[Path, ModelName], gpflow.models.GPModel],
+        load_fn: Callable[[Path, ModelName], Any],
         model_name: ModelName,
         compile_model: bool = True,
-        tf_session: Optional[tf.compat.v1.Session] = None,
-    ) -> gpflow.models.GPModel:
+        tf_session: Optional[Any] = None,
+    ) -> Any:
         """Load a model from the cache.
 
         Args:
@@ -285,8 +278,8 @@ class FileManager:
 
     def save_model(
         self,
-        model: gpflow.models.GPModel,
-        save_fn: Callable[[gpflow.models.GPModel, Path, ModelName], None],
+        model: Any,
+        save_fn: Callable[[Any, Path, ModelName], None],
         model_name: ModelName,
     ) -> None:
         """Save a model to file.
@@ -308,7 +301,7 @@ class FileManager:
             "Loading model parameters from a json file for %s", model_name
         )
         params_fp = self.input_dir / FileManager.INITIAL_MODEL_PARAMS
-        with open(params_fp, "r") as params_file:
+        with open(params_fp, "r", encoding="utf-8") as params_file:
             params_dict = json.load(params_file)
         return model_params_from_dict(model_name, params_dict)
 
@@ -324,7 +317,7 @@ class FileManager:
         """Save the model params to a json file"""
         self.logger.debug("Saving model params to a json file")
         params_fp = self.input_dir / file
-        with open(params_fp, "w") as params_file:
+        with open(params_fp, "w", encoding="utf-8") as params_file:
             json.dump(model_params.dict(), params_file, indent=4)
 
     def save_forecast_to_pickle(self, y_pred: TargetDict) -> None:
@@ -403,24 +396,28 @@ class FileManager:
         """Save a list of floats that record the ELBO"""
         self.logger.info("Saving the ELBO to file")
         elbo_fp = self.input_dir / FileManager.MODEL_ELBO_JSON
-        with open(elbo_fp, "w") as elbo_file:
+        with open(elbo_fp, "w", encoding="utf-8") as elbo_file:
             json.dump(elbo, elbo_file)
 
     def load_elbo(self) -> List[float]:
         """Load the list of ELBO floats from json file"""
         self.logger.info("Reading the ELBO from json file")
         elbo_fp = self.input_dir / FileManager.MODEL_ELBO_JSON
-        with open(elbo_fp, "r") as elbo_file:
+        with open(elbo_fp, "r", encoding="utf-8") as elbo_file:
             return json.load(elbo_file)
 
     def write_instance_to_json(self, instance: InstanceMixin) -> None:
         """Writes an instance to a json file"""
-        with open(self.input_dir / self.INSTANCE_JSON, "w") as json_file:
+        with open(
+            self.input_dir / self.INSTANCE_JSON, "w", encoding="utf-8"
+        ) as json_file:
             json.dump(instance.dict(), json_file)
 
     def read_instance_from_json(self) -> InstanceMixin:
         """Reads a dictionary containing the instance from a json file"""
-        with open(self.input_dir / self.INSTANCE_JSON, "r") as json_file:
+        with open(
+            self.input_dir / self.INSTANCE_JSON, "r", encoding="utf-8"
+        ) as json_file:
             instance_dict: Dict = json.load(json_file)
             model_name = instance_dict.get("model_name")
             model_params = model_params_from_dict(
@@ -443,10 +440,14 @@ class FileManager:
 
     def write_training_metrics_to_json(self, training_metrics: TrainingMetrics) -> None:
         """Write the metrics to a json file"""
-        with (self.input_dir / self.MODEL_TRAINING_METRICS_JSON).open("w") as json_file:
+        with (self.input_dir / self.MODEL_TRAINING_METRICS_JSON).open(
+            "w", encoding="utf-8"
+        ) as json_file:
             json_file.write(training_metrics.json(indent=4))
 
     def read_training_metrics_from_json(self) -> TrainingMetrics:
         """Read metrics from json"""
-        with open(self.input_dir / self.MODEL_TRAINING_METRICS_JSON, "r") as json_file:
+        with open(
+            self.input_dir / self.MODEL_TRAINING_METRICS_JSON, "r", encoding="utf-8"
+        ) as json_file:
             return TrainingMetrics(**json.load(json_file))

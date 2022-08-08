@@ -33,7 +33,7 @@ Infrastructure developers should additionally check which Azure subscriptions yo
 az account list --output table --refresh
 ```
 
-Then set your default subscription to the Clean Air project (if you cannot see it in the output generated from the last line you do not have access):
+Then set your default subscription to the UrbanAir project (if you cannot see it in the output generated from the last line you do not have access):
 ```bash
-az account set --subscription "Urbanair"
+az account set --subscription "UrbanAir"
 ```

@@ -30,8 +30,8 @@ def remove() -> None:
     if confirm == "y":
         try:
             shutil.rmtree(APP_DIR)
-        except Exception:
+        except Exception as vague_exception:
             typer.echo(f"Failed to delete directory {str(APP_DIR)}")
-            raise typer.Abort()
+            raise typer.Abort() from vague_exception
     else:
         raise typer.Abort()

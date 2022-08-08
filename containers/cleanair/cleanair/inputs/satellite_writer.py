@@ -353,7 +353,7 @@ class SatelliteWriter(
                 "Merging %i satellite discrete sites into SatelliteGrid table",
                 satellite_grid_points_df.shape[0],
             )
-            satellite_discrete_sites = [
+            _ = [
                 session.merge(site)
                 for site in satellite_grid_points_df.apply(
                     lambda site: SatelliteGrid.build_entry(
@@ -383,7 +383,7 @@ class SatelliteWriter(
         )
 
         # pylint: disable=singleton-comparison
-        arg_list = arg_df[arg_df["has_data"] != True][
+        arg_list = arg_df[arg_df["has_data"] is not True][
             ["reference_start_utc", "species"]
         ].to_records(index=False)
 

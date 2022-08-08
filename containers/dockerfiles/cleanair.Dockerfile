@@ -1,13 +1,6 @@
-# Use an official Python runtime as a parent image
-FROM python:3.7
-
-# Update certificates
-RUN apt-get update \
-    && apt-get install openssl \
-    && apt-get install ca-certificates  cmake build-essential gfortran -y
-
-# Dependencies for satellite processing
-RUN apt-get install libeccodes0 -y
+# key dependencies are already installed in the base image
+ARG  CLEANAIR_BASE_TAG=latest
+FROM cleanairdocker.azurecr.io/cleanair_base:${CLEANAIR_BASE_TAG}
 
 # Set the working directory to /app
 WORKDIR /app
@@ -18,7 +11,6 @@ COPY scripts/ /app/scripts
 
 # set the version of cleanair
 ARG urbanair_version
-ENV SETUPTOOLS_SCM_PRETEND_VERSION ${urbanair_version}
 
-# Install any needed packages specified in requirements.txt
-RUN pip install '/app/cleanair[models,traffic]' pyopenssl
+# Install packages
+RUN SETUPTOOLS_SCM_PRETEND_VERSION_FOR_CLEANAIR=${urbanair_version} pip install "/app/cleanair" pyopenssl

@@ -31,10 +31,10 @@ def UpTo_callback(value: str) -> str:
     "process UpTo arg"
     try:
         return as_datetime(value).isoformat()
-    except ValueError:
+    except ValueError as value_error:
         raise typer.BadParameter(
             f"Value must be a iso datetime of the form %Y-%m-%d, %Y-%m-%dT%H:%M:%S. Or in {TIMESTRINGS}"
-        )
+        ) from value_error
 
 
 def NDays_callback(value: int) -> int:
@@ -61,14 +61,15 @@ def CopernicusKey_callback(value: str) -> str:
             with open(
                 os.path.abspath(
                     os.path.join(os.sep, "secrets", "copernicus_secrets.json")
-                )
+                ),
+                encoding="utf-8",
             ) as f_secret:
                 data = json.load(f_secret)
                 value = data["copernicus_key"]
-        except (json.decoder.JSONDecodeError, FileNotFoundError):
+        except (json.decoder.JSONDecodeError, FileNotFoundError) as param_error:
             raise typer.BadParameter(
                 "Copernicus key not provided and could not find in 'secrets/copernicus_secrets.json'"
-            )
+            ) from param_error
 
     return value
 
@@ -78,14 +79,15 @@ def AWSID_callback(value: str) -> str:
     if value == "":
         try:
             with open(
-                os.path.abspath(os.path.join(os.sep, "secrets", "aws_secrets.json"))
+                os.path.abspath(os.path.join(os.sep, "secrets", "aws_secrets.json")),
+                encoding="utf-8",
             ) as f_secret:
                 data = json.load(f_secret)
                 return data["aws_key_id"]
-        except (json.decoder.JSONDecodeError, FileNotFoundError):
+        except (json.decoder.JSONDecodeError, FileNotFoundError) as param_error:
             raise typer.BadParameter(
                 "aws-key-id not provided and could not be found in 'secrets/aws_secrets.json'"
-            )
+            ) from param_error
 
     return value
 
@@ -95,14 +97,15 @@ def AWSKey_callback(value: str) -> str:
     if value == "":
         try:
             with open(
-                os.path.abspath(os.path.join(os.sep, "secrets", "aws_secrets.json"))
+                os.path.abspath(os.path.join(os.sep, "secrets", "aws_secrets.json")),
+                encoding="utf-8",
             ) as f_secret:
                 data = json.load(f_secret)
                 return data["aws_key"]
-        except (json.decoder.JSONDecodeError, FileNotFoundError):
+        except (json.decoder.JSONDecodeError, FileNotFoundError) as param_error:
             raise typer.BadParameter(
                 "aws-key not provided and could not be found in 'secrets/aws_secrets.json'"
-            )
+            ) from param_error
     return value
 
 

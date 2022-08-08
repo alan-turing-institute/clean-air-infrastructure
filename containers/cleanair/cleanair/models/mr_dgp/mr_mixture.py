@@ -1,5 +1,5 @@
 """
-    MR_DGP is made up of a mixture of mixtures, as defined in the graphical model of MR_DGP. This class implements 
+    MR_DGP is made up of a mixture of mixtures, as defined in the graphical model of MR_DGP. This class implements
         the mixing of multi-resolution data.
 """
 import tensorflow as tf
@@ -369,7 +369,9 @@ class MR_Mixture(Model):
                 )  # trained onto the first dataset
                 ell = scale * _ell
 
-                ell = tf.Print(ell, [tf.reduce_sum(ell)], "dgp ell: ".format(i=i))
+                ell = tf.Print(
+                    ell, [tf.reduce_sum(ell)], "dgp ell: ".format(i=i)  # noqa
+                )
 
                 dgp_ell_arr.append(ell)
 

@@ -108,7 +108,6 @@ def schema():
         "dynamic_features",
         "interest_points",
         "model_features",
-        "model_results",
         "processed_data",
         "static_data",
         "static_features",

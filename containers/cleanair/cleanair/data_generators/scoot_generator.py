@@ -5,13 +5,13 @@ from typing import TYPE_CHECKING, Optional, List
 import string
 import random
 import numpy as np
+import numpy.typing as npt
 import pandas as pd
-from cleanair.databases import DBWriter
-from cleanair.databases.tables import ScootReading
-from cleanair.mixins import ScootQueryMixin
+from ..databases import DBWriter
+from ..databases.tables import ScootReading
+from ..mixins import ScootQueryMixin
 
 if TYPE_CHECKING:
-    from nptyping import NDArray, Int
     from cleanair.types import Borough
 
 
@@ -49,7 +49,7 @@ class ScootGenerator(ScootQueryMixin, DBWriter):
         "Generate a dataframe of scoot data"
         np.random.seed(0)
         # Theres no scoot readings in the DB - lets put in some fake ones
-        start = pd.date_range(self.start, self.upto, freq="H", closed="left")
+        start = pd.date_range(self.start, self.upto, freq="H", inclusive="left")
         end = start + pd.DateOffset(hours=1)
         nreadings = len(start)  # number of readings for each detector
         # Detectors are already in the database as static data
@@ -63,10 +63,10 @@ class ScootGenerator(ScootQueryMixin, DBWriter):
         nrows = nreadings * len(detectors)
 
         data = dict(
-            detector_id=list(),
-            measurement_start_utc=list(),
-            measurement_end_utc=list(),
-            n_vehicles_in_interval=list(),
+            detector_id=[],
+            measurement_start_utc=[],
+            measurement_end_utc=[],
+            n_vehicles_in_interval=[],
             occupancy_percentage=np.zeros(nrows),
             congestion_percentage=np.zeros(nrows),
             saturation_percentage=np.zeros(nrows),
@@ -76,8 +76,8 @@ class ScootGenerator(ScootQueryMixin, DBWriter):
             saturation_raw_count=np.zeros(nrows),
             region=np.repeat("None", nrows),
         )
-        for d in detectors:
-            data["detector_id"].extend([d] * nreadings)
+        for detector in detectors:
+            data["detector_id"].extend([detector] * nreadings)
             data["measurement_start_utc"].extend(list(start))
             data["measurement_end_utc"].extend(list(end))
             data["n_vehicles_in_interval"].extend(
@@ -102,7 +102,7 @@ def generate_discrete_timeseries(
     amplitude_modifier: float = 10.0,
     shift_modifier: float = 3.0,
     gradiant: float = 0.0,
-) -> NDArray[Int]:
+) -> npt.NDArray[int]:  # noqa: F821
     """Create a timeseries with discrete values."""
     # set seed
 
@@ -192,7 +192,9 @@ def generate_scoot_df(
     return scoot_df
 
 
-def create_daily_readings_df(readings: NDArray[Int]) -> pd.DataFrame:
+def create_daily_readings_df(
+    readings: npt.NDArray[npt.int],
+) -> pd.DataFrame:  # noqa: F821
     """Create a simple dataframe over one day for one detector."""
     random.seed(0)
     start_date = "2020-01-01"

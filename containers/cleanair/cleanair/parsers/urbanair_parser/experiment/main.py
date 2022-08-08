@@ -5,12 +5,11 @@ from typing import Callable, List, Optional
 from pathlib import Path
 import typer
 from ....databases.queries import AirQualityInstanceQuery
-from ....experiment import (
-    ExperimentMixin,
+from ....experiment import ExperimentMixin, generate_air_quality_experiment
+from ....experiment.air_quality_experiment import (
     RunnableAirQualityExperiment,
     SetupAirQualityExperiment,
     UpdateAirQualityExperiment,
-    generate_air_quality_experiment,
 )
 from ....loggers import initialise_logging
 from ....types.enum_types import ClusterId
@@ -20,7 +19,7 @@ from ....models import ModelData
 from ..shared_args import ExperimentDir
 from ..state import state
 from ....types import ExperimentName
-from ....utils import FileManager
+from ....utils.file_manager import FileManager
 
 app = typer.Typer(help="Experiment CLI")
 

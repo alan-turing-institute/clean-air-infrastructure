@@ -7,11 +7,12 @@ from itertools import groupby
 from typing import Dict, List, Tuple, overload, Callable
 
 import numpy as np
+import numpy.typing as npt
 import pandas as pd
-from nptyping import NDArray, Float64
 from pydantic import ValidationError
-from sqlalchemy import func, text, column, String, cast, and_
+from sqlalchemy import func, text, column, String, cast, and_, values, literal
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import aliased
 from sqlalchemy.sql.expression import Alias
 from cleanair.types.enum_types import DynamicFeatureNames
 
@@ -22,7 +23,6 @@ from .schemas import (
     StaticFeaturesWithSensors,
 )
 from ..databases import DBReader
-from ..databases.base import Values
 from ..databases.tables import (
     StaticFeature,
     DynamicFeature,
@@ -147,13 +147,15 @@ class ModelDataExtractor:
     @overload
     def get_array(
         self, data_df: pd.DataFrame, x_names, species: None
-    ) -> Tuple[pd.Index, NDArray[Float64]]:
+    ) -> Tuple[pd.Index, npt.NDArray[np.float64]]:
         ...
 
     @overload
     def get_array(
         self, data_df: pd.DataFrame, x_names, species: List[Species]
-    ) -> Tuple[pd.Index, NDArray[Float64], Dict[Species, NDArray[Float64]]]:
+    ) -> Tuple[
+        pd.Index, npt.NDArray[np.float64], Dict[Species, npt.NDArray[np.float64]]
+    ]:
         ...
 
     def get_array(self, data_df, x_names, species=None):
@@ -162,7 +164,7 @@ class ModelDataExtractor:
         X = data_df[x_names].to_numpy()
 
         if species:
-            Y: Dict[Species, NDArray[Float64]] = {
+            Y: Dict[Species, npt.NDArray[np.float64]] = {
                 spec: np.expand_dims(data_df[spec.value].to_numpy(), axis=1)
                 for spec in species
             }
@@ -173,7 +175,9 @@ class ModelDataExtractor:
 
     def get_array_satellite(
         self, data_df: pd.DataFrame, x_names, species: List[Species]
-    ) -> Tuple[pd.Index, NDArray[Float64], Dict[Species, NDArray[Float64]]]:
+    ) -> Tuple[
+        pd.Index, npt.NDArray[np.float64], Dict[Species, npt.NDArray[np.float64]]
+    ]:
         """Always returns an index, X and Y"""
 
         data_df_sorted = data_df.sort_values(
@@ -201,7 +205,7 @@ class ModelDataExtractor:
         # Get X_array
         sat_df = data_df_sorted[x_names]
         X = sat_df.to_numpy().reshape((n_boxes * n_hours, n_interest_points, n_x_names))
-        Y: Dict[Species, NDArray[Float64]] = {}
+        Y: Dict[Species, npt.NDArray[np.float64]] = {}
 
         # Get Y_array
         for spec in species:
@@ -448,22 +452,14 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
 
             # Get a row with all the point ids requested
             point_id_sq = session.query(
-                Values(
-                    [
-                        column("point_id", String),
-                    ],
-                    *[(point_id,) for point_id in point_ids],
-                    alias_name="point_ids",
+                values(column("point_id", String), name="point_ids").data(
+                    [(point_id,) for point_id in point_ids]
                 )
             ).subquery()
 
             feature_sq = session.query(
-                Values(
-                    [
-                        column("feature_name", String),
-                    ],
-                    *[(feature.value,) for feature in features],
-                    alias_name="features",
+                values(column("feature_name", String), name="features").data(
+                    [(feature.value,) for feature in features]
                 )
             ).subquery()
 
@@ -570,28 +566,24 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
 
             # Get a row with all the point ids requested
             point_id_sq = session.query(
-                Values(
-                    [
-                        column("point_id", String),
-                    ],
-                    *[(point_id,) for point_id in point_ids],
-                    alias_name="point_ids",
+                values(column("point_id", String), name="point_ids").data(
+                    [(point_id,) for point_id in point_ids]
                 )
             ).subquery()
 
+            # Get a column with all the features
             feature_sq = session.query(
-                Values(
-                    [
-                        column("feature_name", String),
-                    ],
-                    *[(feature.value,) for feature in features],
-                    alias_name="features",
+                values(column("feature_name", String), name="features").data(
+                    [(feature.value,) for feature in features]
                 )
             ).subquery()
 
-            point_id_feature_cross_join_sq = session.query(
-                point_id_sq, feature_sq
-            ).subquery()
+            # the Cartesian product (cross join) of point ids and features
+            point_id_feature_cross_join_sq = (
+                session.query(point_id_sq, feature_sq)
+                .join(feature_sq, literal(True))
+                .subquery()
+            )
 
             london_boundary = self.query_london_boundary(output_type="subquery")
 
@@ -675,12 +667,8 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
             ]
 
             cols.append(
-                Values(
-                    [
-                        column("species_code", String),
-                    ],
-                    *[(polutant.value,) for polutant in species],
-                    alias_name="t2",
+                values(column("species_code", String), name="t2").data(
+                    [(polutant.value,) for polutant in species]
                 )
             )
 

@@ -8,13 +8,13 @@ from cleanair.metrics import (
     confidence_interval_95,
     probable_error,
 )
-from nptyping import NDArray, Float64
+import numpy.typing as npt
 
 
 def test_confidence_interval(
-    y_test: NDArray[Float64],
-    y_pred: NDArray[Float64],
-    y_var: NDArray[Float64],
+    y_test: npt.NDArray[np.float64],
+    y_pred: npt.NDArray[np.float64],
+    y_var: npt.NDArray[np.float64],
 ) -> None:
     """Test the confidence intervals metrics."""
     assert confidence_interval(y_test, y_pred, y_var) == confidence_interval_95(
