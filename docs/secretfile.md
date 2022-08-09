@@ -4,13 +4,12 @@ The connection information for a PostgreSQL database is stored in a JSON "secret
 It contains entries for the username, password, host, port, database name and SSL mode.
 
 **Before starting this guide**, please make sure you have [installed the packages](installation.md), [logged into the Azure CLI](azure.md) and read the [developer guide](developer.md).
-You may also find it useful to look at our [guide for docker](docker.md).
+You may also find it useful to look at our [guide for docker](docker.md) and [mounting a secret file](docker.md#mounting-a-secrets-file).
 
 **The contents of this guide** include:
 
 - Connecting to the [Azure database](#Azure-database)
 - Secret file for a local [docker database](#docker-database)
-- [Mounting a secret file](#mounting-a-secrets-file) when running a docker file
 
 ***
 
@@ -102,6 +101,7 @@ echo '{
     "ssl_mode": "prefer"
 }' >> $DB_SECRET_FILE
 ```
+<<<<<<< HEAD
 
 ***
 
@@ -121,3 +121,5 @@ docker run -v "${SECRET_DIR}":/secrets ... --secretfile /secrets/.db_secrets_doc
 ```
 
 If you don't use the `--secretfile` option for running the command, you *might* also need to add an environment variable that tells the *docker container* about the name of the secrets file by adding `-e DB_SECRET_FILE=".db_secrets_docker.json"`.
+=======
+>>>>>>> master

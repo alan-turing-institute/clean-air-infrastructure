@@ -32,66 +32,44 @@ stages:
 
     # Set cleanair version
     - bash: |
-        echo "##vso[task.setvariable variable=urbanair_version]$(git tag --sort=creatordate | head -1 | sed 's/^.//')"
+        echo "##vso[task.setvariable variable=urbanair_version]$(git tag --sort=creatordate | tail -1 | sed 's/^.//')"
       displayName: 'Set cleanair version'
 
-    # CleanAir Package (inputs, feature processing)
-    - script: |
-        docker build --build-arg urbanair_version=$(urbanair_version) -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/cleanair:$(Build.SourceVersion) -f containers/dockerfiles/cleanair.Dockerfile containers
-      displayName: 'Build a docker image for inputs and feature processing'
+    # CleanAir base image
+    - script: docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/cleanair_base:$(Build.SourceVersion) -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/cleanair_base:latest -f containers/dockerfiles/cleanair_base.Dockerfile containers
+      displayName: 'Build dependencies of cleanair'
+
+    # CleanAir Package
+    - script: docker build --build-arg urbanair_version=$(urbanair_version) --build-arg CLEANAIR_BASE_TAG=$(Build.SourceVersion) -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/cleanair:$(Build.SourceVersion) -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/cleanair:latest -f containers/dockerfiles/cleanair.Dockerfile containers
+      displayName: 'Build cleanair image'
+
+    # Process static dataset
+    - script: docker build --build-arg urbanair_version=$(urbanair_version) -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/process_static_dataset:$(Build.SourceVersion) -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/process_static_dataset:latest -f containers/dockerfiles/process_static_dataset.Dockerfile containers
+      displayName: 'Build cleanair image'
 
     # Urbanair API
-    - script: |
-        docker build --build-arg urbanair_version=$(urbanair_version) -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/urbanairapi:$(Build.SourceVersion) -f containers/dockerfiles/urbanairapi.Dockerfile containers
+    - script: docker build --build-arg urbanair_version=$(urbanair_version) -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/urbanairapi:$(Build.SourceVersion) -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/urbanairapi:latest -f containers/dockerfiles/urbanairapi.Dockerfile containers
       displayName: 'Build urbanair API image'
 
-    # JamCam cronjobs (Both Cleanair and UrbanAir packages)
+    # JamCam cronjobs
     - script: |
-        docker build --build-arg urbanair_version=$(urbanair_version) --build-arg git_hash=$(git show -s --format=%H) -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/jamcamcron:$(Build.SourceVersion) -f containers/dockerfiles/jamcam.Dockerfile containers
+        docker build --build-arg urbanair_version=$(urbanair_version) --build-arg git_hash=$(git show -s --format=%H) -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/jamcamcron:$(Build.SourceVersion) -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/jamcamcron:$(Build.SourceVersion):latest -f containers/dockerfiles/jamcam.Dockerfile containers
       displayName: "Build jamcam cronjob image"
 
-    # Push CleanAir and UrbanAir to ACR and remove local images
-    - script: |
-        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/cleanair:$(Build.SourceVersion)
-        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/urbanairapi:$(Build.SourceVersion)
-        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/jamcamcron:$(Build.SourceVersion)
-        docker image rmi $(CONTAINER-REGISTRY-LOGIN-SERVER)/cleanair:$(Build.SourceVersion) $(CONTAINER-REGISTRY-LOGIN-SERVER)/urbanairapi:$(Build.SourceVersion) $(CONTAINER-REGISTRY-LOGIN-SERVER)/jamcamcron:$(Build.SourceVersion)
-      displayName: 'Push CleanAir and UrbanAir and remove images'
-
-    # Tensorflow docker images with python 3.7
-    # - script: | 
-    #     docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/tf1_py37:latest -f containers/dockerfiles/tf1_py37.Dockerfile containers
-    #   displayName: "Build tensorflow 1 image"
-    - script: | 
-        docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/tf1_py37_gpu:latest -f containers/dockerfiles/tf1_py37_gpu.Dockerfile containers
-      displayName: "Build tensorflow 1 GPU image"
-    - script: | 
-        docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/tf2_py37_gpu:latest -f containers/dockerfiles/tf2_py37_gpu.Dockerfile containers
-      displayName: "Build tensorflow 2 GPU image"
-
-    # Model fitting
-    # - script: | 
-    #     docker build --build-arg git_hash=$(git show -s --format=%H) -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/model_fitting:$(Build.SourceVersion) -f containers/dockerfiles/model_fitting.Dockerfile containers
-    #   displayName: "Build model fitting image"
-    - script: | 
-        docker build --build-arg urbanair_version=$(urbanair_version) --build-arg git_hash=$(git show -s --format=%H) -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/model_fitting_gpu:$(Build.SourceVersion) -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/model_fitting_gpu:latest -f containers/dockerfiles/model_fitting_gpu.Dockerfile containers
-      displayName: "Build gpu model fitting image"
-    # Odysseus
-    - script: |
-         docker build --build-arg urbanair_version=$(urbanair_version) -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/odysseus:$(Build.SourceVersion) -f containers/dockerfiles/odysseus.Dockerfile containers
-      displayName: 'Building the Odysseus image'
     # List available images
     - script: |
         docker images
       displayName: 'List images'
-    # Push Docker images to ACR
+
+    # Push to ACR and remove local images
     - script: |
-        # docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/model_fitting:$(Build.SourceVersion)
-        # docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/tf1_py37_gpu:latest
-        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/model_fitting_gpu:$(Build.SourceVersion)
-        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/model_fitting_gpu:latest
-        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/odysseus:$(Build.SourceVersion)
-      displayName: 'Push Docker images to ACR'
+        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/cleanair_base --all-tags
+        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/cleanair --all-tags
+        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/process_static_dataset --all-tags
+        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/urbanairapi --all-tags
+        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/jamcamcron --all-tags
+        docker image rmi $(CONTAINER-REGISTRY-LOGIN-SERVER)/cleanair_base $(CONTAINER-REGISTRY-LOGIN-SERVER)/cleanair $(CONTAINER-REGISTRY-LOGIN-SERVER)/urbanairapi $(CONTAINER-REGISTRY-LOGIN-SERVER)/jamcamcron
+      displayName: 'Push CleanAir and UrbanAir and remove images'
 
 - stage: Kubernetes
   displayName: Update Helm chart on Azure Kubernetes cluster
