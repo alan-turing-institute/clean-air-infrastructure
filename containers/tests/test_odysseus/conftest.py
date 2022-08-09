@@ -1,7 +1,7 @@
 """Fixtures for odysseus module."""
 
 import pytest
-from ..data_generators.scoot_generator import generate_scoot_df
+from cleanair.data_generators.scoot_generator import generate_scoot_df
 
 
 @pytest.fixture(scope="function")

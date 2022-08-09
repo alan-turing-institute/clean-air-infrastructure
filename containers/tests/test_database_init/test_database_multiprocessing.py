@@ -3,6 +3,7 @@ from concurrent.futures import ThreadPoolExecutor
 import pytest
 from cleanair.databases import DBReader
 
+
 # pylint: disable=C0103,W0621,W0613
 @pytest.fixture()
 def example_db_function(secretfile, connection):

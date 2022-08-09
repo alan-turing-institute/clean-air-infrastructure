@@ -23,7 +23,6 @@ from ..types import (
     Source,
     Species,
     StaticFeatureNames,
-    DynamicFeatureNames,
     DataConfig,
     FullDataConfig,
     FeatureBufferSize,
