@@ -6,6 +6,7 @@ from sqlalchemy import func
 from ...databases.tables import HexGrid
 from ...decorators import db_query
 
+
 class HexGridQueryMixin:
     """Mixin for querying hexgrid with geometries"""
 
