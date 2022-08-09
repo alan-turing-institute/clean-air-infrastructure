@@ -20,7 +20,7 @@ from ....types import (
     FeatureBufferSize,
 )
 from ....loggers import red, green
-from ....utils import FileManager
+from ....utils.file_manager import FileManager
 
 app = typer.Typer(help="Get data for model fitting")
 
@@ -41,7 +41,8 @@ def delete_model_cache(overwrite: bool):
     cache_content = [
         DATA_CACHE / FileManager.DATA_CONFIG,
         DATA_CACHE / FileManager.DATA_CONFIG_FULL,
-        DATA_CACHE / FileManager.MODEL_PARAMS,
+        DATA_CACHE / FileManager.INITIAL_MODEL_PARAMS,
+        DATA_CACHE / FileManager.FINAL_MODEL_PARAMS,
         DATA_CACHE / FileManager.PRED_FORECAST_PICKLE,
         DATA_CACHE / FileManager.PRED_TRAINING_PICKLE,
         DATA_CACHE / FileManager.TEST_DATA_PICKLE,
@@ -58,7 +59,9 @@ def delete_model_cache(overwrite: bool):
 def generate_config(
     input_dir: Path = InputDir,
     trainupto: str = typer.Option(
-        "today", callback=UpTo_callback, help="Up to what datetime to train the model",
+        "today",
+        callback=UpTo_callback,
+        help="Up to what datetime to train the model",
     ),
     traindays: int = typer.Option(
         2, callback=NDays_callback, help="Number of days to train on", show_default=True
@@ -91,25 +94,14 @@ def generate_config(
         show_default=True,
     ),
     static_features: List[StaticFeatureNames] = typer.Option(
-        [
-            StaticFeatureNames.total_road_length.value,
-            StaticFeatureNames.total_a_road_length.value,
-            StaticFeatureNames.total_a_road_primary_length.value,
-            StaticFeatureNames.total_b_road_length.value,
-            StaticFeatureNames.grass.value,
-            StaticFeatureNames.building_height.value,
-            StaticFeatureNames.water.value,
-            StaticFeatureNames.park.value,
-            StaticFeatureNames.max_canyon_narrowest.value,
-            StaticFeatureNames.max_canyon_ratio.value,
-        ],
-        help="Features to predict on",
+        [],
+        help="Spatial features that do not change over time",
+        show_default=True,
     ),
     dynamic_features: List[DynamicFeatureNames] = typer.Option(
-        [
-            DynamicFeatureNames.max_n_vehicles.value,
-            DynamicFeatureNames.avg_n_vehicles.value,
-        ]
+        [],
+        help="Features that change over time such as average number of vehicles. Default is no dynamic features.",
+        show_default=True,
     ),
     feature_buffer: List[FeatureBufferSize] = typer.Option(
         ["1000", "500"], help="Size of buffer for features", show_default=True
@@ -179,10 +171,14 @@ def generate_full_config(input_dir: Path = InputDir) -> None:
 def download(
     input_dir: Path = InputDir,
     training_data: bool = typer.Option(
-        False, "--training-data", help="Download training data",
+        False,
+        "--training-data",
+        help="Download training data",
     ),
     prediction_data: bool = typer.Option(
-        False, "--prediction-data", help="Download prediction data",
+        False,
+        "--prediction-data",
+        help="Download prediction data",
     ),
     output_csv: bool = typer.Option(
         False, "--output-csv", help="Output dataframes as csv", show_default=True

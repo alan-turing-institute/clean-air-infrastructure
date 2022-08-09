@@ -3,15 +3,13 @@ Fixtures for the cleanair module.
 """
 # pylint: disable=redefined-outer-name,C0103
 from typing import Tuple
-from datetime import timedelta
+from datetime import datetime, timedelta
 import pytest
 from dateutil import rrule
 from dateutil.parser import isoparse
 import numpy as np
-import pandas as pd
-from nptyping import NDArray
+import numpy.typing as npt
 from cleanair.databases import DBWriter
-from cleanair.inputs.scoot_writer import ScootWriter
 from cleanair.databases.tables import (
     MetaPoint,
     LAQNSite,
@@ -34,7 +32,7 @@ from cleanair.databases.tables.fakes import (
     SatelliteGridSchema,
     SatelliteForecastSchema,
 )
-from cleanair.instance import AirQualityInstance
+from cleanair.experiment import AirQualityInstance
 from cleanair.models import ModelConfig, ModelData
 from cleanair.types import (
     BaseModelParams,
@@ -49,7 +47,8 @@ from cleanair.types import (
     Species,
     SVGPParams,
 )
-from ..data_generators.scoot_generator import ScootGenerator
+from cleanair.data_generators.scoot_generator import ScootGenerator
+
 
 # pylint: disable=W0613
 @pytest.fixture(scope="class")
@@ -93,7 +92,7 @@ def valid_config(dataset_start_date, dataset_end_date, num_forecast_days):
 
 
 @pytest.fixture(scope="class")
-def valid_full_config_dataset(valid_config, model_config, fake_cleanair_dataset):
+def valid_full_config(valid_config, model_config, fake_cleanair_dataset):
     "Generate a full configuration file"
     return model_config.generate_full_config(valid_config)
 
@@ -108,6 +107,12 @@ def dataset_start_date():
 def dataset_end_date():
     "Fake dataset end date"
     return isoparse("2020-01-05")
+
+
+@pytest.fixture(scope="function")
+def fit_start_time() -> datetime:
+    """Datetime for when model started fitting."""
+    return datetime(2020, 1, 5, 1, 0, 0)
 
 
 @pytest.fixture(scope="module")
@@ -244,7 +249,9 @@ def laqn_reading_records(laqn_site_records, dataset_start_date, dataset_end_date
             for species in Species:
 
                 for measurement_start_time in rrule.rrule(
-                    rrule.HOURLY, dtstart=dataset_start_date, until=dataset_end_date,
+                    rrule.HOURLY,
+                    dtstart=dataset_start_date,
+                    until=dataset_end_date,
                 ):
 
                     laqn_readings.append(
@@ -269,7 +276,9 @@ def aqe_reading_records(aqe_site_records, dataset_start_date, dataset_end_date):
             for species in Species:
 
                 for measurement_start_time in rrule.rrule(
-                    rrule.HOURLY, dtstart=dataset_start_date, until=dataset_end_date,
+                    rrule.HOURLY,
+                    dtstart=dataset_start_date,
+                    until=dataset_end_date,
                 ):
 
                     aqe_readings.append(
@@ -334,7 +343,7 @@ def satellite_meta_point_and_box_records(satellite_box_records):
         half_grid: float,
         n_points_lat: int,
         n_points_lon: int,
-    ) -> NDArray:
+    ) -> npt.NDArray:
         "Return a grid of satellite points centred at a grid square"
         lat_space = np.linspace(
             point[0] - half_grid + (half_grid / n_points_lat),
@@ -372,7 +381,9 @@ def satellite_meta_point_and_box_records(satellite_box_records):
 
 @pytest.fixture(scope="module")
 def satellite_forecast(
-    satellite_box_records, dataset_start_date, dataset_end_date,
+    satellite_box_records,
+    dataset_start_date,
+    dataset_end_date,
 ):
     """Generate satellitee forecast data"""
 
@@ -381,10 +392,14 @@ def satellite_forecast(
     for box in box_ids:
         for species in Species:
             for reference_start_utc in rrule.rrule(
-                rrule.DAILY, dtstart=dataset_start_date, until=dataset_end_date,
+                rrule.DAILY,
+                dtstart=dataset_start_date,
+                until=dataset_end_date,
             ):
                 for measurement_start_utc in rrule.rrule(
-                    rrule.HOURLY, dtstart=reference_start_utc, count=72,
+                    rrule.HOURLY,
+                    dtstart=reference_start_utc,
+                    count=72,
                 ):
 
                     all_satellite_forecast.append(
@@ -447,12 +462,16 @@ def fake_laqn_static_dataset(
 
     # Insert meta data
     writer.commit_records(
-        [i.dict() for i in meta_records], on_conflict="overwrite", table=MetaPoint,
+        [i.dict() for i in meta_records],
+        on_conflict="overwrite",
+        table=MetaPoint,
     )
 
     # Insert LAQNSite data
     writer.commit_records(
-        [i.dict() for i in laqn_site_records], on_conflict="overwrite", table=LAQNSite,
+        [i.dict() for i in laqn_site_records],
+        on_conflict="overwrite",
+        table=LAQNSite,
     )
 
     # Insert LAQNReading data
@@ -488,7 +507,9 @@ def fake_cleanair_dataset(
 
     # Insert AQESite data
     writer.commit_records(
-        [i.dict() for i in aqe_site_records], on_conflict="overwrite", table=AQESite,
+        [i.dict() for i in aqe_site_records],
+        on_conflict="overwrite",
+        table=AQESite,
     )
 
     # Insert AQEReading data
@@ -509,7 +530,8 @@ def fake_cleanair_dataset(
     sat_box_map = satellite_meta_point_and_box_records[1]
     # For some reason this insert fails using core
     writer.commit_records(
-        [SatelliteGrid(**i.dict()) for i in sat_box_map], on_conflict="overwrite",
+        [SatelliteGrid(**i.dict()) for i in sat_box_map],
+        on_conflict="overwrite",
     )
 
     # Insert satellite readings
@@ -551,7 +573,10 @@ def laqn_full_config(fake_laqn_static_dataset, laqn_config, model_config):
 
 @pytest.fixture(scope="function")
 def scoot_generator(
-    secretfile, connection, dataset_start_date, dataset_end_date,
+    secretfile,
+    connection,
+    dataset_start_date,
+    dataset_end_date,
 ) -> ScootGenerator:
     """Write scoot data to database"""
     return ScootGenerator(
@@ -564,96 +589,6 @@ def scoot_generator(
     )
 
 
-@pytest.fixture(scope="function")
-def scoot_single_detector_generator(
-    secretfile, connection, dataset_start_date, dataset_end_date,
-):
-    """Write scoot data to database"""
-    return ScootGenerator(
-        dataset_start_date,
-        dataset_end_date,
-        offset=0,
-        limit=1,
-        detectors=["N04/161a1"],
-        secretfile=secretfile,
-        connection=connection,
-    )
-
-
-@pytest.fixture(scope="function")
-def scoot_detector_single_hour(
-    dataset_start_date, dataset_end_date, secretfile, connection
-):
-    "Generete a single hour of scoot data"
-    scoot_generator = ScootGenerator(
-        dataset_start_date,
-        dataset_end_date,
-        secretfile=secretfile,
-        connection=connection,
-    )
-
-    scoot_data_df = scoot_generator.generate_df()
-    first_detector_id = scoot_data_df["detector_id"].unique()[0]
-    drop_first_detector_and_hours = scoot_data_df[
-        (scoot_data_df["detector_id"] != first_detector_id)
-        & (scoot_data_df["measurement_start_utc"] == pd.to_datetime(dataset_start_date))
-    ]
-    return drop_first_detector_and_hours, first_detector_id
-
-
-@pytest.fixture(scope="function")
-def scoot_writer(
-    monkeypatch,
-    scoot_detector_single_hour,
-    secretfile,
-    connection,
-    dataset_start_date,
-    dataset_end_date,
-):
-    "Return a ScootWriter instance which inserts data for all detectors but one"
-
-    def request_remote_data(
-        start_datetime_utc, detector_ids,
-    ):
-        """Patch the request_remote_data method
-
-        Drops a single scoot detector which we should then write to the database as null
-        """
-
-        drop_first_detector_and_hours = scoot_detector_single_hour[0]
-
-        unaggregated_scoot_df = drop_first_detector_and_hours.rename(
-            columns={"measurement_start_utc": "timestamp"}
-        ).drop("measurement_end_utc", axis=1)
-
-        # Convert to unix time
-        unaggregated_scoot_df["timestamp"] = unaggregated_scoot_df["timestamp"].apply(
-            lambda x: x.timestamp()
-        )
-
-        unaggregated_scoot_df["detector_fault"] = False
-
-        return unaggregated_scoot_df
-
-    def combine_by_detector_id(data_df):
-        return data_df
-
-    nhours = (dataset_end_date - dataset_start_date).total_seconds() / (60 * 60)
-
-    scoot_writer = ScootWriter(
-        aws_key="",
-        aws_key_id="",
-        end=dataset_end_date,
-        nhours=nhours,
-        secretfile=secretfile,
-        connection=connection,
-    )
-    monkeypatch.setattr(scoot_writer, "request_remote_data", request_remote_data)
-    monkeypatch.setattr(scoot_writer, "combine_by_detector_id", combine_by_detector_id)
-
-    return scoot_writer
-
-
 @pytest.fixture(scope="class")
 def matern32_params() -> KernelParams:
     """Matern 32 kernel params."""
@@ -663,6 +598,7 @@ def matern32_params() -> KernelParams:
         lengthscales=1.0,
         variance=1.0,
         ARD=True,
+        input_dim=3,
     )
 
 
@@ -681,7 +617,10 @@ def base_model(matern32_params: KernelParams) -> BaseModelParams:
 @pytest.fixture(scope="class")
 def svgp_model_params(base_model: BaseModelParams) -> SVGPParams:
     """Create a model params pydantic class."""
-    return SVGPParams(**base_model.dict(), jitter=0.1,)
+    return SVGPParams(
+        **base_model.dict(),
+        jitter=0.1,
+    )
 
 
 @pytest.fixture(scope="class")
@@ -694,6 +633,7 @@ def mr_linear_params() -> KernelParams:
         variance=[1.0, 1.0, 1.0],
         ARD=True,
         active_dims=[0, 1, 2],
+        input_dim=3,
     )
 
 
@@ -728,23 +668,64 @@ def model_config(secretfile, connection_class):
     return ModelConfig(secretfile=secretfile, connection=connection_class)
 
 
-@pytest.fixture(scope="class")
+@pytest.fixture(scope="function")
 def model_data(secretfile, connection_class):
     "Return a ModelData instance"
     return ModelData(secretfile=secretfile, connection=connection_class)
 
 
+@pytest.fixture(scope="function")
+def sat_config(dataset_start_date):
+    """Satellite dataset with no feature."""
+    return DataConfig(
+        train_start_date=dataset_start_date,
+        train_end_date=dataset_start_date + timedelta(days=1),
+        pred_start_date=dataset_start_date + timedelta(days=1),
+        pred_end_date=dataset_start_date + timedelta(days=2),
+        include_prediction_y=False,
+        train_sources=[Source.laqn, Source.satellite],
+        pred_sources=[Source.laqn],
+        train_interest_points={Source.laqn.value: "all", Source.satellite.value: "all"},
+        pred_interest_points={Source.laqn.value: "all", Source.satellite.value: "all"},
+        species=[Species.NO2],
+        static_features=[StaticFeatureNames.total_a_road_length],
+        dynamic_features=[],
+        buffer_sizes=[FeatureBufferSize.two_hundred],
+        norm_by=Source.laqn,
+        model_type=ModelName.mrdgp,
+    )
+
+
+@pytest.fixture(scope="function")
+def sat_full_config(sat_config, model_config):
+    """Generate full config for laqn + sat."""
+    model_config.validate_config(sat_config)
+    return model_config.generate_full_config(sat_config)
+
+
 @pytest.fixture(scope="class")
-def fake_laqn_svgp_instance(
-    secretfile, connection_class, svgp_model_params, laqn_full_config, model_config
+def laqn_svgp_instance(
+    secretfile, connection_class, laqn_full_config, svgp_model_params
 ):
-    """Write an instance to the database. Return the instance."""
-    instance = AirQualityInstance(
-        laqn_full_config,
-        ModelName.svgp,
-        svgp_model_params,
+    """LAQN data and a SVGP model params inside an instance"""
+    return AirQualityInstance(
+        data_config=laqn_full_config,
+        model_name=ModelName.svgp,
+        model_params=svgp_model_params,
         secretfile=secretfile,
         connection=connection_class,
     )
-    instance.update_remote_tables()
-    return instance
+
+
+@pytest.fixture(scope="function")
+def sat_mrdgp_instance(
+    secretfile, connection_class, mrdgp_model_params, sat_full_config
+):
+    """Satellite + LAQN data with MRDGP model params"""
+    return AirQualityInstance(
+        data_config=sat_full_config,
+        model_name=ModelName.mrdgp,
+        model_params=mrdgp_model_params,
+        secretfile=secretfile,
+        connection=connection_class,
+    )

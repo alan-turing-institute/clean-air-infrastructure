@@ -8,8 +8,7 @@ import os
 import random
 import string
 import termcolor
-from azure.common.client_factory import get_client_from_cli_profile
-from azure.common.credentials import get_azure_cli_credentials
+from azure.identity import AzureCliCredential
 from azure.mgmt.keyvault import KeyVaultManagementClient
 from azure.keyvault import KeyVaultClient
 from azure.mgmt.resource import ResourceManagementClient
@@ -27,13 +26,13 @@ def build_backend(args):
     logging.info(
         "Ensuring existence of resource group: %s", emphasised(args.resource_group)
     )
-    resource_mgmt_client = get_client_from_cli_profile(ResourceManagementClient)
+    resource_mgmt_client = ResourceManagementClient(AzureCliCredential())
     resource_mgmt_client.resource_groups.create_or_update(
         args.resource_group, {"location": args.location}
     )
 
     # Check whether there is already a storage account and generate one if not
-    storage_mgmt_client = get_client_from_cli_profile(StorageManagementClient)
+    storage_mgmt_client = StorageManagementClient(AzureCliCredential())
     storage_account_name = None
     for storage_account in storage_mgmt_client.storage_accounts.list_by_resource_group(
         args.resource_group
@@ -104,7 +103,7 @@ def emphasised(text):
 
 def ensure_keyvault(resource_group, location, tenant_id, azure_group_id):
     """Ensure that a key vault exists for storing secrets"""
-    key_vault_mgmt_client = get_client_from_cli_profile(KeyVaultManagementClient)
+    key_vault_mgmt_client = KeyVaultManagementClient(AzureCliCredential())
     return key_vault_mgmt_client.vaults.create_or_update(
         resource_group,
         "terraform-configuration",
@@ -143,13 +142,14 @@ def generate_new_storage_account(storage_mgmt_client, resource_group, location):
 
 def get_azure_credentials():
     """Get subscription and tenant IDs"""
-    _, subscription_id, tenant_id = get_azure_cli_credentials(with_tenant=True)
-    subscription_client = get_client_from_cli_profile(SubscriptionClient)
+
+    credential = AzureCliCredential()
+    subscription_client = SubscriptionClient(credential)
     subscription_name = subscription_client.subscriptions.get(
-        subscription_id
+        subscription_id  # noqa
     ).display_name
     logging.info("Working in subscription: %s", emphasised(subscription_name))
-    return (subscription_id, tenant_id)
+    return (subscription_id, tenant_id)  # noqa
 
 
 def get_valid_storage_account_name(storage_mgmt_client):
@@ -172,7 +172,7 @@ def record_all_secrets(vault_uri, vault_name, secrets):
     """Ensure secrets are recorded in the key"""
     # pylint: disable=R0915
     # Write secrets to the key vault
-    kv_client = get_client_from_cli_profile(KeyVaultClient)
+    kv_client = KeyVaultClient(AzureCliCredential())
     logging.info("Ensuring secrets are in key vault: %s", emphasised(vault_name))
     available_secrets = [s.id.split("/")[-1] for s in kv_client.get_secrets(vault_uri)]
 

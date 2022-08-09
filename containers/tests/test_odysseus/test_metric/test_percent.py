@@ -4,7 +4,7 @@ import pytest
 import numpy as np
 import pandas as pd
 from odysseus import metric
-from ...data_generators import scoot_generator
+from cleanair.data_generators import scoot_generator
 
 # pylint: disable=redefined-outer-name
 
@@ -13,7 +13,9 @@ from ...data_generators import scoot_generator
 def baseline_df() -> pd.DataFrame:
     """Three weeks of baseline data for 5 scoot detectors."""
     return scoot_generator.generate_scoot_df(
-        end_date="2020-01-23", day_of_week=2, num_detectors=5,
+        end_date="2020-01-23",
+        day_of_week=2,
+        num_detectors=5,
     )
 
 
@@ -21,7 +23,9 @@ def baseline_df() -> pd.DataFrame:
 def comparison_df() -> pd.DataFrame:
     """Comparison day for 5 scoot detectors."""
     return scoot_generator.generate_scoot_df(
-        end_date="2020-01-02", day_of_week=2, num_detectors=5,
+        end_date="2020-01-02",
+        day_of_week=2,
+        num_detectors=5,
     )
 
 
@@ -29,7 +33,9 @@ def comparison_df() -> pd.DataFrame:
 def missing_baseline_df() -> pd.DataFrame:
     """Three weeks of baseline data for 4 scoot detectors."""
     return scoot_generator.generate_scoot_df(
-        end_date="2020-01-23", day_of_week=2, num_detectors=4,
+        end_date="2020-01-23",
+        day_of_week=2,
+        num_detectors=4,
     )
 
 
@@ -37,7 +43,9 @@ def missing_baseline_df() -> pd.DataFrame:
 def missing_comparison_df() -> pd.DataFrame:
     """Comparison day for 4 scoot detectors."""
     return scoot_generator.generate_scoot_df(
-        end_date="2020-01-02", day_of_week=2, num_detectors=4,
+        end_date="2020-01-02",
+        day_of_week=2,
+        num_detectors=4,
     )
 
 
@@ -93,7 +101,8 @@ def __test_percent_df(percent_df: pd.DataFrame):
 
 
 def test_missing_baseline(
-    missing_baseline_df: pd.DataFrame, comparison_df: pd.DataFrame,
+    missing_baseline_df: pd.DataFrame,
+    comparison_df: pd.DataFrame,
 ):
     """Test the percent of baseline correctly handles a missing detector in the baseline dataframe."""
     percent_df = metric.percent_of_baseline(missing_baseline_df, comparison_df)
@@ -111,7 +120,8 @@ def test_missing_baseline(
 
 
 def test_missing_comparison(
-    baseline_df: pd.DataFrame, missing_comparison_df: pd.DataFrame,
+    baseline_df: pd.DataFrame,
+    missing_comparison_df: pd.DataFrame,
 ):
     """Test the percent of baseline correctly handles a missing detector in the comparison dataframe."""
     percent_df = metric.percent_of_baseline(baseline_df, missing_comparison_df)

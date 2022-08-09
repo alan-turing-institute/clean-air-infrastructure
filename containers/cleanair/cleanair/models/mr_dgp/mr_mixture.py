@@ -1,5 +1,5 @@
 """
-    MR_DGP is made up of a mixture of mixtures, as defined in the graphical model of MR_DGP. This class implements 
+    MR_DGP is made up of a mixture of mixtures, as defined in the graphical model of MR_DGP. This class implements
         the mixing of multi-resolution data.
 """
 import tensorflow as tf
@@ -14,7 +14,7 @@ from .mr_svgp import MR_SVGP
 
 class MR_Mixture(Model):
     """
-        Implementation of MR_DGP mixture. Each mixture is a GPFlow model.
+    Implementation of MR_DGP mixture. Each mixture is a GPFlow model.
     """
 
     def __init__(
@@ -31,12 +31,12 @@ class MR_Mixture(Model):
         **kwargs
     ):
         """
-            datasets: an array of arrays [X_a, Y_a] ordered by 'trust', ie datasets[0] is the most reliable 
-            inducing_points_locations: an array of inducing locations for each of the datasets  
-            kernels: an array of kernels for each of the datasets  
-            noise_sigmas: an array of noise_sigmas for each of the datasets  
-            mixing_weight (MR_Mixing_Weight): an object that will combine the predictions from each of the local experts
-            parent_mixtures: an array of parent mixture models
+        datasets: an array of arrays [X_a, Y_a] ordered by 'trust', ie datasets[0] is the most reliable
+        inducing_points_locations: an array of inducing locations for each of the datasets
+        kernels: an array of kernels for each of the datasets
+        noise_sigmas: an array of noise_sigmas for each of the datasets
+        mixing_weight (MR_Mixing_Weight): an object that will combine the predictions from each of the local experts
+        parent_mixtures: an array of parent mixture models
         """
 
         # setup gpflow model first
@@ -118,7 +118,7 @@ class MR_Mixture(Model):
 
     def get_dataset_sizes(self):
         """
-            Store the number of observations in the passed datasets
+        Store the number of observations in the passed datasets
         """
 
         for data in self.datasets:
@@ -126,13 +126,13 @@ class MR_Mixture(Model):
 
     def setup(self):
         """
-            Setup model 
+        Setup model
         """
         self.setup_base_gps()
 
     def setup_base_gps(self):
         """
-            Setup all latent GPs in the mixture. Each GP is an instance of an SVGP. 
+        Setup all latent GPs in the mixture. Each GP is an instance of an SVGP.
         """
 
         for i in range(self.num_datasets):
@@ -168,8 +168,8 @@ class MR_Mixture(Model):
     @params_as_tensors
     def sample_condition(self, x, samples, gp, predict_y):
         """
-            Samples from the SxS  block diagional prior. In the expected log likelihood we need the variance between 
-                discretisation points.
+        Samples from the SxS  block diagional prior. In the expected log likelihood we need the variance between
+            discretisation points.
         """
         num_samples = tf.shape(samples)[0]
 
@@ -202,7 +202,7 @@ class MR_Mixture(Model):
     @params_as_tensors
     def propogate(self, num_samples=1, X=None, predict_y=False):
         """
-            Propogates the samples from the first layer base GPs through the mixture.
+        Propogates the samples from the first layer base GPs through the mixture.
         """
         # each mixture has a set of base GPs trained on each of the datasets
         base_mu_arr = []
@@ -279,7 +279,7 @@ class MR_Mixture(Model):
     @params_as_tensors
     def sampled_ell(self, y, mu, sig, gp, mask):
         """
-            Evaluate the expected log likelihood for each sample
+        Evaluate the expected log likelihood for each sample
         """
         if mask is not None:
             mask.set_shape([None])
@@ -313,7 +313,7 @@ class MR_Mixture(Model):
     @params_as_tensors
     def _build_likelihood(self):
         """
-            Build the computational graph of the expected log likelihood for each latent GP
+        Build the computational graph of the expected log likelihood for each latent GP
         """
         base_kl_arr = []
         base_ell_arr = []
@@ -369,7 +369,9 @@ class MR_Mixture(Model):
                 )  # trained onto the first dataset
                 ell = scale * _ell
 
-                ell = tf.Print(ell, [tf.reduce_sum(ell)], "dgp ell: ".format(i=i))
+                ell = tf.Print(
+                    ell, [tf.reduce_sum(ell)], "dgp ell: ".format(i=i)  # noqa
+                )
 
                 dgp_ell_arr.append(ell)
 
@@ -424,7 +426,7 @@ class MR_Mixture(Model):
 
     def set_gp_hyperparam_trainable(self, gp, flag):
         """
-            Toggle hyper parameters in gp to be trainable or not
+        Toggle hyper parameters in gp to be trainable or not
         """
 
         # hyperparameters
@@ -435,14 +437,14 @@ class MR_Mixture(Model):
 
     def set_gp_noise_trainable(self, gp, flag):
         """
-            Toggle on the trainability of the likelihood noise
+        Toggle on the trainability of the likelihood noise
         """
         for param in gp.likelihood.parameters:
             param.trainable = flag
 
     def set_gp_trainable(self, gp, flag):
         """
-            Toggle the trainability of the GP variational parameters
+        Toggle the trainability of the GP variational parameters
         """
         # variational parameters
         gp.q_mu.trainable = flag
@@ -451,35 +453,35 @@ class MR_Mixture(Model):
 
     def set_base_gp_noise(self, flag):
         """
-            Toggle the trainability of the base GP likelihood noises
+        Toggle the trainability of the base GP likelihood noises
         """
         for i in range(self.num_datasets):
             self.set_gp_noise_trainable(self.base_gps[i], flag)
 
     def set_dgp_gp_noise(self, flag):
         """
-            Toggle the trainability of the DGP likelihood noises
+        Toggle the trainability of the DGP likelihood noises
         """
         for i in range(self.num_datasets - 1):
             self.set_gp_noise_trainable(self.deep_gps[i], flag)
 
     def enable_base_hyperparameters(self):
         """
-            Set the base hyperparameters to be untrainable
+        Set the base hyperparameters to be untrainable
         """
         for i in range(self.num_datasets):
             self.set_gp_hyperparam_trainable(self.base_gps[i], True)
 
     def disable_base_hyperparameters(self):
         """
-            Set the base hyperparameters to be trainable
+        Set the base hyperparameters to be trainable
         """
         for i in range(self.num_datasets):
             self.set_gp_hyperparam_trainable(self.base_gps[i], False)
 
     def enable_base_elbo(self):
         """
-            Set the variational and hyperparameters of the base GP to be trainable
+        Set the variational and hyperparameters of the base GP to be trainable
         """
         for i in range(self.num_datasets):
             self.set_gp_trainable(self.base_gps[i], True)
@@ -487,7 +489,7 @@ class MR_Mixture(Model):
 
     def disable_base_elbo(self):
         """
-            Set the variational and hyperparameters of the base GP to be untrainable
+        Set the variational and hyperparameters of the base GP to be untrainable
         """
         for i in range(self.num_datasets):
             self.set_gp_trainable(self.base_gps[i], False)
@@ -495,35 +497,35 @@ class MR_Mixture(Model):
 
     def enable_dgp_hyperparameters(self):
         """
-            Set the DGP hyperparameters to be trainable
+        Set the DGP hyperparameters to be trainable
         """
         for i in range(self.num_datasets - 1):
             self.set_gp_hyperparam_trainable(self.deep_gps[i], True)
 
     def disable_dgp_hyperparameters(self):
         """
-            Set the DGP hyperparameters to be untrainable
+        Set the DGP hyperparameters to be untrainable
         """
         for i in range(self.num_datasets - 1):
             self.set_gp_hyperparam_trainable(self.deep_gps[i], False)
 
     def enable_parent_hyperparameters(self):
         """
-            Set the parent hyperparameters to be trainable
+        Set the parent hyperparameters to be trainable
         """
         for i in range(len(self.parent_mixtures)):
             self.set_gp_hyperparam_trainable(self.parent_gps[i], True)
 
     def disable_parent_hyperparameters(self):
         """
-            Set the parent hyperparameters to be untrainable
+        Set the parent hyperparameters to be untrainable
         """
         for i in range(len(self.parent_mixtures)):
             self.set_gp_hyperparam_trainable(self.parent_gps[i], False)
 
     def disable_dgp_elbo(self):
         """
-            Set the variational and hyperparameters of the DGPs to be untrainable
+        Set the variational and hyperparameters of the DGPs to be untrainable
         """
         for i in range(self.num_datasets - 1):
             self.set_gp_trainable(self.deep_gps[i], False)
@@ -531,7 +533,7 @@ class MR_Mixture(Model):
 
     def enable_dgp_elbo(self):
         """
-            Set the variational and hyperparameters of the DGPs to be trainable
+        Set the variational and hyperparameters of the DGPs to be trainable
         """
         for i in range(self.num_datasets - 1):
             self.set_gp_trainable(self.deep_gps[i], True)
@@ -540,7 +542,7 @@ class MR_Mixture(Model):
     @autoflow()
     def get_inducing_points(self):
         """
-            Return the stacked inducing points of the base and DGP latent SVGPs
+        Return the stacked inducing points of the base and DGP latent SVGPs
         """
         z_base = []
         z_dgp = []
@@ -552,20 +554,20 @@ class MR_Mixture(Model):
 
     def train_dgp_elbo(self):
         """
-            Return the DGP specific ELBO
+        Return the DGP specific ELBO
         """
         self.objective = self.base_elbo
 
     def train_full_elbo(self):
         """
-            Return the full ELBO
+        Return the full ELBO
         """
         self.objective = self.elbo
 
     @autoflow((settings.float_type, [None, None]), (tf.int32, []))
     def predict_all_gps(self, XS, num_samples):
         """
-            Return samples of predictive distribution of f for every latent function
+        Return samples of predictive distribution of f for every latent function
         """
         XS = tf.expand_dims(XS, 1)
         base_mu, base_sig, dgp_mu, dgp_sig, parent_mu, parent_sig = self.propogate(
@@ -584,7 +586,7 @@ class MR_Mixture(Model):
     @autoflow((settings.float_type, [None, None]), (tf.int32, []))
     def predict_y_all_gps(self, XS, num_samples):
         """
-            Return samples of predictive distribution of y for every latent function
+        Return samples of predictive distribution of y for every latent function
         """
         XS = tf.expand_dims(XS, 1)
         base_mu, base_sig, dgp_mu, dgp_sig, parent_mu, parent_sig = self.propogate(
@@ -603,7 +605,7 @@ class MR_Mixture(Model):
     @autoflow((settings.float_type, [None, None]), (tf.int32, []))
     def predict_experts(self, XS, num_samples):
         """
-            Return samples of the predictive distribution of the Mixture of Gaussians over f     
+        Return samples of the predictive distribution of the Mixture of Gaussians over f
         """
         XS = tf.expand_dims(XS, 1)
         base_mu, base_sig, dgp_mu, dgp_sig, parent_mu, parent_sig = self.propogate(
@@ -620,7 +622,7 @@ class MR_Mixture(Model):
     @autoflow((settings.float_type, [None, None]), (tf.int32, []))
     def predict_y_experts(self, XS, num_samples):
         """
-            Return samples of the predictive distribution of the Mixture of Gaussians over y     
+        Return samples of the predictive distribution of the Mixture of Gaussians over y
         """
         XS = tf.expand_dims(XS, 1)
         base_mu, base_sig, dgp_mu, dgp_sig, parent_mu, parent_sig = self.propogate(
@@ -638,7 +640,7 @@ class MR_Mixture(Model):
 
     def sample_experts(self, XS, num_samples):
         """
-            Used internally. Return samples of the mixture of Gaussians.     
+        Used internally. Return samples of the mixture of Gaussians.
         """
         base_mu, base_sig, dgp_mu, dgp_sig, parent_mu, parent_sig = self.propogate(
             X=XS, num_samples=num_samples

@@ -6,9 +6,12 @@ from pathlib import Path
 import typer
 from ..shared_args import InputDir
 from ..shared_args.model_options import Refresh
-from ....models import SVGP, MRDGP, ModelDataExtractor
+from ....models.svgp import SVGP
+from ....models.mr_dgp_model import MRDGP
+from ....models import ModelDataExtractor
 from ....types import ModelName, Source
-from ....utils import FileManager, tf1
+from ....utils import tf1
+from ....utils.file_manager import FileManager
 
 if TYPE_CHECKING:
     from ....models import ModelMixin
@@ -17,7 +20,10 @@ app = typer.Typer(help="SVGP model fitting")
 
 
 @app.command()
-def svgp(input_dir: Path = InputDir, refresh: int = Refresh,) -> None:
+def svgp(
+    input_dir: Path = InputDir,
+    refresh: int = Refresh,
+) -> None:
     """Fit a Sparse Variational Gaussian Process."""
     file_manager = FileManager(input_dir)
     model_params = file_manager.load_model_params(ModelName.svgp)
@@ -27,7 +33,10 @@ def svgp(input_dir: Path = InputDir, refresh: int = Refresh,) -> None:
 
 
 @app.command()
-def mrdgp(input_dir: Path = InputDir, refresh: int = Refresh,) -> None:
+def mrdgp(
+    input_dir: Path = InputDir,
+    refresh: int = Refresh,
+) -> None:
     """Fit a Multi-resolution Deep Gaussian Process."""
     # Load the model parameters from a json file
     file_manager = FileManager(input_dir)
@@ -42,7 +51,10 @@ def mrdgp(input_dir: Path = InputDir, refresh: int = Refresh,) -> None:
     # )
 
 
-def fit_model(model: ModelMixin, file_manager: FileManager,) -> ModelMixin:
+def fit_model(
+    model: ModelMixin,
+    file_manager: FileManager,
+) -> ModelMixin:
     """Train a model."""
 
     # Load configuration file
@@ -52,12 +64,16 @@ def fit_model(model: ModelMixin, file_manager: FileManager,) -> ModelMixin:
     # load training data
     training_data_df_norm = file_manager.load_training_data()
     X_train, Y_train, _ = model_data.get_data_arrays(
-        full_config, training_data_df_norm, prediction=False,
+        full_config,
+        training_data_df_norm,
+        prediction=False,
     )
     # load prediction data
     prediction_data_df_norm = file_manager.load_test_data()
     X_test, _, _ = model_data.get_data_arrays(
-        full_config, prediction_data_df_norm, prediction=True,
+        full_config,
+        prediction_data_df_norm,
+        prediction=True,
     )
 
     # Fit model
@@ -69,7 +85,8 @@ def fit_model(model: ModelMixin, file_manager: FileManager,) -> ModelMixin:
         X_train.pop(Source.satellite)
     y_training_result = model.predict(X_train)
 
-    # save forecast to file
+    # Save predictions and model stats to file
     file_manager.save_forecast_to_pickle(y_forecast)
     file_manager.save_pred_training_to_pickle(y_training_result)
+    file_manager.save_elbo(model.elbo)
     return model

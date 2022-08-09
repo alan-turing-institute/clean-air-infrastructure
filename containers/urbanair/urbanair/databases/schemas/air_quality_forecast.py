@@ -1,9 +1,10 @@
 """Return schemas for air quality forecast routes"""
-from typing import List, Dict
+from typing import List, Dict, Optional, Union
 import json
 from pydantic import BaseModel
 from geojson import Feature
 import shapely.wkt
+from shapely.geometry import Polygon, MultiPolygon
 from urbanair.types import JSONType
 from .jamcam import UTCTime
 
@@ -29,7 +30,7 @@ class BaseGeoJson(BaseModel):
                 "features": [
                     {
                         "type": "Feature",
-                        "id": "00015c34-2c2d-4a55-889f-a458ee780b90",
+                        "hex_id": "11481250",
                         "geometry": {
                             "type": "Polygon",
                             "coordinates": [
@@ -55,13 +56,25 @@ class BaseGeoJson(BaseModel):
 class ForecastResultGeoJson(BaseGeoJson):
     """Forecast results as GeoJSON feature collection"""
 
+    run_datetime: str
+
+    @staticmethod
+    def build_run_datetime(run_datetime: str) -> str:
+        "Add run_datetime to GeoJSON endpoint - ! not true geojson"
+        return run_datetime
+
+    @staticmethod
+    def build_instance_id(instance_id: str) -> str:
+        """Add instance_id to the GeoJSON endpoint - ! not true geojson"""
+        return instance_id
+
     @staticmethod
     def build_features(rows: List[Dict]) -> List[Feature]:
         """Construct GeoJSON Features from a list of dictionaries"""
         return [
             Feature(
-                geometry=list(shapely.wkt.loads(row["geom"]))[0],  # convert to polygon
-                id=row["point_id"],
+                geometry=try_get_polygon(row["geom"]),  # convert to polygon
+                hex_id=row["hex_id"],
                 properties={
                     "NO2_mean": row["NO2_mean"],
                     "NO2_var": row["NO2_var"],
@@ -91,14 +104,42 @@ class ForecastResultJson(UTCTime):
     """Forecast results as JSON"""
 
     # Schema attributes
-    point_id: str
-    NO2_mean: float
-    NO2_var: float
+    hex_id: str
+    NO2_mean: Optional[float]
+    NO2_var: Optional[float]
 
     class Config:
         """Pydantic configuration"""
 
         orm_mode = True
+
+
+class ForecastDatasetJson(BaseModel):
+    """A set of forecast results with forecast metadata"""
+
+    run_datetime: str
+    data: List[ForecastResultJson]
+
+    class Config:
+        """Pydantic configuration"""
+
+        orm_mode = True
+
+
+def try_get_polygon(polygon: Union[Polygon, MultiPolygon]) -> Polygon:
+    """Return the first polygon from a multi-polygon
+
+    Args:
+        polygon: Can be a polygon or a multi-polygon
+
+    Returns:
+        The first polygon in the multi-polygon, or returns the argument
+    """
+    shape = shapely.wkt.loads(polygon)
+    try:
+        return list(shape)[0]
+    except TypeError:
+        return shape
 
 
 class GeometryGeoJson(BaseGeoJson):
@@ -109,8 +150,8 @@ class GeometryGeoJson(BaseGeoJson):
         """Construct GeoJSON Features from a list of dictionaries"""
         return [
             Feature(
-                geometry=list(shapely.wkt.loads(row["geom"]))[0],  # convert to polygon
-                id=row["point_id"],
+                geometry=try_get_polygon(row["geom"]),  # convert to polygon
+                hex_id=row["hex_id"],
             )
             for row in rows
         ]

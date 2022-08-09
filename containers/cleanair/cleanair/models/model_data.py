@@ -7,11 +7,12 @@ from itertools import groupby
 from typing import Dict, List, Tuple, overload, Callable
 
 import numpy as np
+import numpy.typing as npt
 import pandas as pd
-from nptyping import NDArray, Float64
 from pydantic import ValidationError
-from sqlalchemy import func, text, column, String, cast, and_
+from sqlalchemy import func, text, column, String, cast, and_, values, literal
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import aliased
 from sqlalchemy.sql.expression import Alias
 from cleanair.types.enum_types import DynamicFeatureNames
 
@@ -22,7 +23,6 @@ from .schemas import (
     StaticFeaturesWithSensors,
 )
 from ..databases import DBReader
-from ..databases.base import Values
 from ..databases.tables import (
     StaticFeature,
     DynamicFeature,
@@ -115,7 +115,18 @@ class ModelDataExtractor:
     ) -> Dict[str, pd.DateFrame]:
         """Normalise the x columns"""
 
-        norm_mean, norm_std = self.__norm_stats(full_config, data_frames)
+        # Normlize data_frames w.r.t to itself
+        return self.normalize_data_wrt(full_config, data_frames, data_frames)
+
+    def normalize_data_wrt(
+        self,
+        full_config: FullDataConfig,
+        data_frames: Dict[str, pd.DateFrame],
+        wrt_data_frames: Dict[str, pd.DateFrame],
+    ) -> Dict[str, pd.DateFrame]:
+        """Normalise the x columns wrt wrt_data_frames"""
+
+        norm_mean, norm_std = self.__norm_stats(full_config, wrt_data_frames)
 
         x_names_norm = self.__x_names_norm(full_config.x_names)
 
@@ -136,13 +147,15 @@ class ModelDataExtractor:
     @overload
     def get_array(
         self, data_df: pd.DataFrame, x_names, species: None
-    ) -> Tuple[pd.Index, NDArray[Float64]]:
+    ) -> Tuple[pd.Index, npt.NDArray[np.float64]]:
         ...
 
     @overload
     def get_array(
         self, data_df: pd.DataFrame, x_names, species: List[Species]
-    ) -> Tuple[pd.Index, NDArray[Float64], Dict[Species, NDArray[Float64]]]:
+    ) -> Tuple[
+        pd.Index, npt.NDArray[np.float64], Dict[Species, npt.NDArray[np.float64]]
+    ]:
         ...
 
     def get_array(self, data_df, x_names, species=None):
@@ -151,7 +164,7 @@ class ModelDataExtractor:
         X = data_df[x_names].to_numpy()
 
         if species:
-            Y: Dict[Species, NDArray[Float64]] = {
+            Y: Dict[Species, npt.NDArray[np.float64]] = {
                 spec: np.expand_dims(data_df[spec.value].to_numpy(), axis=1)
                 for spec in species
             }
@@ -162,7 +175,9 @@ class ModelDataExtractor:
 
     def get_array_satellite(
         self, data_df: pd.DataFrame, x_names, species: List[Species]
-    ) -> Tuple[pd.Index, NDArray[Float64], Dict[Species, NDArray[Float64]]]:
+    ) -> Tuple[
+        pd.Index, npt.NDArray[np.float64], Dict[Species, npt.NDArray[np.float64]]
+    ]:
         """Always returns an index, X and Y"""
 
         data_df_sorted = data_df.sort_values(
@@ -190,7 +205,7 @@ class ModelDataExtractor:
         # Get X_array
         sat_df = data_df_sorted[x_names]
         X = sat_df.to_numpy().reshape((n_boxes * n_hours, n_interest_points, n_x_names))
-        Y: Dict[Species, NDArray[Float64]] = {}
+        Y: Dict[Species, npt.NDArray[np.float64]] = {}
 
         # Get Y_array
         for spec in species:
@@ -309,7 +324,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
                 green(source),
                 green(training_data),
             )
-            # Satellite data is only a training option  and gets all data from training to prediction
+            # Satellite data is only a training option and gets all data from training to prediction
             _end_date = (
                 end_date if source != Source.satellite else full_config.pred_end_date
             )
@@ -326,6 +341,22 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
             )
         return data_output
 
+    def download_forecast_source_data(
+        self, full_config: FullDataConfig, source: Source
+    ) -> pd.DataFrame:
+        """Download the readings in a forecast period for a specific source."""
+        data_output = self.__download_config_data(
+            with_sensor_readings=True,
+            start_date=full_config.pred_start_date,
+            end_date=full_config.pred_end_date,
+            species=full_config.species,
+            point_ids=full_config.pred_interest_points[source],
+            static_features=full_config.static_features,
+            dynamic_features=full_config.dynamic_features,
+            source=source,
+        )
+        return data_output
+
     def download_forecast_data(
         self, full_config: FullDataConfig
     ) -> Dict[Source, pd.DateFrame]:
@@ -333,15 +364,8 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
         data_output: Dict[Source, pd.DataFrame] = {}
         for source in full_config.pred_sources:
             self.logger.info("Downloading source %s forecast data.", source.value)
-            data_output[source] = self.__download_config_data(
-                with_sensor_readings=True,
-                start_date=full_config.pred_start_date,
-                end_date=full_config.pred_end_date,
-                species=full_config.species,
-                point_ids=full_config.pred_interest_points[source],
-                static_features=full_config.static_features,
-                dynamic_features=full_config.dynamic_features,
-                source=source,
+            data_output[source] = self.download_forecast_source_data(
+                full_config, source
             )
         return data_output
 
@@ -428,18 +452,14 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
 
             # Get a row with all the point ids requested
             point_id_sq = session.query(
-                Values(
-                    [column("point_id", String),],
-                    *[(point_id,) for point_id in point_ids],
-                    alias_name="point_ids",
+                values(column("point_id", String), name="point_ids").data(
+                    [(point_id,) for point_id in point_ids]
                 )
             ).subquery()
 
             feature_sq = session.query(
-                Values(
-                    [column("feature_name", String),],
-                    *[(feature.value,) for feature in features],
-                    alias_name="features",
+                values(column("feature_name", String), name="features").data(
+                    [(feature.value,) for feature in features]
                 )
             ).subquery()
 
@@ -525,7 +545,10 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
 
     @db_query(StaticFeatureLocSchema)
     def select_static_features(
-        self, point_ids: List[str], features: List[StaticFeatureNames], source: Source,
+        self,
+        point_ids: List[str],
+        features: List[StaticFeatureNames],
+        source: Source,
     ):
         """
         Return static features from the database for a list of point ids
@@ -543,24 +566,24 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
 
             # Get a row with all the point ids requested
             point_id_sq = session.query(
-                Values(
-                    [column("point_id", String),],
-                    *[(point_id,) for point_id in point_ids],
-                    alias_name="point_ids",
+                values(column("point_id", String), name="point_ids").data(
+                    [(point_id,) for point_id in point_ids]
                 )
             ).subquery()
 
+            # Get a column with all the features
             feature_sq = session.query(
-                Values(
-                    [column("feature_name", String),],
-                    *[(feature.value,) for feature in features],
-                    alias_name="features",
+                values(column("feature_name", String), name="features").data(
+                    [(feature.value,) for feature in features]
                 )
             ).subquery()
 
-            point_id_feature_cross_join_sq = session.query(
-                point_id_sq, feature_sq
-            ).subquery()
+            # the Cartesian product (cross join) of point ids and features
+            point_id_feature_cross_join_sq = (
+                session.query(point_id_sq, feature_sq)
+                .join(feature_sq, literal(True))
+                .subquery()
+            )
 
             london_boundary = self.query_london_boundary(output_type="subquery")
 
@@ -580,7 +603,11 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
                         "in_london"
                     ),
                 )
-                .join(MetaPoint, MetaPoint.id == StaticFeature.point_id, isouter=True,)
+                .join(
+                    MetaPoint,
+                    MetaPoint.id == StaticFeature.point_id,
+                    isouter=True,
+                )
                 .filter(
                     MetaPoint.id.in_(point_ids),
                     StaticFeature.feature_name.in_(features),
@@ -640,10 +667,8 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
             ]
 
             cols.append(
-                Values(
-                    [column("species_code", String),],
-                    *[(polutant.value,) for polutant in species],
-                    alias_name="t2",
+                values(column("species_code", String), name="t2").data(
+                    [(polutant.value,) for polutant in species]
                 )
             )
 
@@ -689,11 +714,18 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
                 f"Source must be one of {[Source.laqn, Source.aqe, Source.satellite]}"
             )
 
-        return self.join_features_to_sensors(static_features, sensor_readings, source,)
+        return self.join_features_to_sensors(
+            static_features,
+            sensor_readings,
+            source,
+        )
 
     @db_query(StaticFeaturesWithSensors)
     def join_features_to_sensors(
-        self, static_features: Alias, sensor_readings: Alias, source: Source,
+        self,
+        static_features: Alias,
+        sensor_readings: Alias,
+        source: Source,
     ):
         """Join sensor readings and static features"""
         columns = [

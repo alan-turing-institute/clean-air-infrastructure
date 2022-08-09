@@ -3,7 +3,12 @@ import setuptools
 
 setuptools.setup(
     name="urbanair",
-    version="0.0.1",
+    setup_requires=["setuptools_scm"],
+    use_scm_version={
+        "root": "../..",
+        "relative_to": __file__,
+        "fallback_version": "0.2.7",
+    },
     author="Oscar Giles, James Robinson, Patrick O'Hara, Ollie Hamelijnck",
     author_email="ogiles@turing.ac.uk, jrobinson@turing.ac.uk, pohara@turing.ac.uk, ohamelijnck@turing.ac.uk",
     description="CleanAir",
@@ -16,11 +21,10 @@ setuptools.setup(
     ],
     install_requires=[
         "cleanair",
-        "fastapi[all]==0.60.1",
-        "aiofiles",
-        "cachetools",
-        "geojson",
-        "sentry_sdk",
+        "fastapi[all]==0.78.0 ",
+        "cachetools==5.2.0",
+        "geojson==2.5.0",
+        "sentry_sdk==1.5.12",
     ],
-    python_requires=">=3.7",
+    python_requires=">=3.8",
 )

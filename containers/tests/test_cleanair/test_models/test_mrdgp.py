@@ -19,14 +19,41 @@ class TestMRDGP:
     def test_setup(self, fake_cleanair_dataset):
         """Create the fake dataset for this class."""
 
+    # pylint: disable=unused-argument
     def test_mrdgp_training(
-        self, mrdgp_model_params, sat_training_data, sat_full_config,
+        self,
+        tf_session,
+        mrdgp_model_params,
+        sat_training_data,
+        sat_full_config,
     ) -> None:
         """Test the MRDGP trains."""
         model_data = ModelDataExtractor()
         model = MRDGP(mrdgp_model_params)
-        X_train, Y_train, index_train = model_data.get_data_arrays(
-            sat_full_config, sat_training_data, prediction=False,
+        X_train, Y_train, _ = model_data.get_data_arrays(
+            sat_full_config,
+            sat_training_data,
+            prediction=False,
         )
         model.fit(X_train, Y_train)
         # assert model.epoch == mrdgp_model_params
+
+    # pylint: disable=unused-argument
+    def test_mrdgp_params(
+        self,
+        tf_session,
+        mrdgp_model_params,
+        sat_training_data,
+        sat_full_config,
+    ) -> None:
+        """Test the MRDGP trains."""
+        model_data = ModelDataExtractor()
+        model = MRDGP(mrdgp_model_params)
+        X_train, Y_train, _ = model_data.get_data_arrays(
+            sat_full_config,
+            sat_training_data,
+            prediction=False,
+        )
+        model.fit(X_train, Y_train)
+        params = model.params()
+        assert params

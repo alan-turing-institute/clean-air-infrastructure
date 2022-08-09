@@ -29,27 +29,36 @@
     <!-- SETTINGS -->
     <div id="controls" class="panel">
         <div class="controls-options">Options</div>
-        <div class="controls-container">
-            <label for="controls">Detection Classs</label><br>
-            <select id="select-detection-class" onchange="changeDetectionClass()">
-                <option value="person">People</option>
-                <option value="car">Cars</option>
-                <option value="bus">Buses</option>
-                <option value="motorbike">Motorbikes</option>
-                <option value="truck">Trucks</option>
-                <option value="all">All</option>
-            </select>
-            <br>
-            <label for="date">Date</label><br>
-            <input type="date" id="date" min="2020-05-29" onchange="updateDate()">
-            <br>
-            <label for="controls">Lock colour scale range</label><br>
-            <input type="checkbox" id="lock-colour-scale" onchange="updateMapMarkers()">
-            <input type="range" id="colour-scale-limit" min="0" max="100" onchange="updateMapMarkers()">
-            <br>
-            <label for="display-tomtom">Show Tomtom data</label>
-            <input type="checkbox" id="display-tomtom" onchange="toggleTomtom()">
-        </div><br>
+        <div class="controls-container" style="height: 84px;">
+            <div>
+                <div style="float:left; width: 50%;">
+                    <label for="controls">Detection Class</label><br>
+                    <select id="select-detection-class" onchange="changeDetectionClass()">
+                        <option value="person">People</option>
+                        <option value="car">Cars</option>
+                        <option value="bus">Buses</option>
+                        <option value="motorbike">Motorbikes</option>
+                        <option value="truck">Trucks</option>
+                        <option value="all">All</option>
+                    </select>
+                </div>
+                <div style="float:left; width: 50%;">
+                    <label for="date">Date</label><br>
+                    <input type="date" id="date" min="2020-05-29" onchange="updateDate()">
+                </div>
+            </div>
+            <div>
+                <div style="float:left; width: 50%;">
+                    <label for="controls">Lock colour scale range</label><br>
+                    <input type="checkbox" id="lock-colour-scale" onchange="updateMapMarkers()">
+                    <input type="range" id="colour-scale-limit" min="0" max="100" onchange="updateMapMarkers()">
+                </div>
+                <div style="float:left; width: 50%;">
+                    <label for="display-tomtom">Show Tomtom data</label><br>
+                    <input type="checkbox" id="display-tomtom" onchange="toggleTomtom()">
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- HISTOGRAM -->
@@ -59,24 +68,25 @@
 
     <!-- CAMERA DETAILS -->
     <div id="detailsPanel" class="panel mono" style="visibility: hidden;">
-        <div style="text-align: right;"><a class="close" onclick="hideDetailsPanel()" >X</a></div>
+        <div style="position: absolute; right: 10px;"><a class="close" onclick="hideDetailsPanel()" >X</a></div>
         <div>
-            <strong id="panel-camera-id">CAMERA:</strong>
+            <strong id="panel-camera-id">Camera:</strong>
             <span style="text-align: right;"><img id='img-warn' width='20px' height='20px' src="{{ url_for('static', path='img/warn.svg') }}" alt="Camera is not currently being used by Odysseus"/></span>
+            <span id="camera-stability" style="text-align: right;"></span>
             <br>
-            <p id="camera-count">Average count</p>
+            <!-- <p id="camera-count">Average count</p> -->
             <br>
-            <img id='img-ground-estimate' class='annotation image' src='' visibility="show">
+            <!-- <img id='img-ground-estimate' class='annotation image' src='' visibility="show"> -->
             <img id='img-camera-view' class='image' src='' alr='" + camera.id}' width='281' height='230'>
             <br>
-            <label for="checkbox-ground-estimate">Show ground estimate</label>
-            <input type="checkbox" id="checkbox-ground-estimate" onchange="changeGroundEstimates()" checked>
-            <br>
-            <span style='color: red'>Parameter estimation export in queue</span><br>
-            h &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Height (metres): <br>
-            phi &nbsp;&nbsp;&nbsp; | Heading (degrees): <br>
-            u_0,v_0 | Vanishing point (pixels):  <br>
-            S &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Scale factor (NA):
+            <!-- <label for="checkbox-ground-estimate">Show ground estimate</label> -->
+            <!-- <input type="checkbox" style="display: None;" id="checkbox-ground-estimate" onchange="changeGroundEstimates()" unchecked> -->
+            <!-- <br> -->
+            <!-- <span style='color: red'>Parameter estimation export in queue</span><br> -->
+            <!-- h &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Height (metres): <br> -->
+            <!-- phi &nbsp;&nbsp;&nbsp; | Heading (degrees): <br> -->
+            <!-- u_0,v_0 | Vanishing point (pixels):  <br> -->
+            <!-- S &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Scale factor (NA): -->
         </div>
         <canvas id="chart" width="400" height="250"></canvas>
     </div>
@@ -194,6 +204,19 @@
         });
     }
 
+    function fetchStabilityScore(){
+        let camera_id = selectedCam;
+        fetch("{{ url_for('stability_score') }}" + "?camera_id=" + camera_id).then(function(response){
+            response.json().then(function(result){
+                if(result){
+                    var bgcol = result[0].score <= 1 ? 'green' : result[0].score <= 3 ? 'orange' : 'red';
+                    var stabtext =  result[0].score <= 1 ? 'stable' : result[0].score <= 3 ? 'low stablity' : 'unstable';
+                    document.getElementById('camera-stability').innerHTML = "<span style='padding: 1px 10px; background-color: "+bgcol+"; border-radius: 2px;'>"+stabtext+"</span>";
+                }
+            })
+        });
+    }
+
 
     map.on('load', () => {
 
@@ -268,6 +291,7 @@
             map.setFilter('jamcams-highlighted', ['==', ['string', ['get', 'id']], selectedCam]);
             updateGraph();
             updatePanel(camera);
+            fetchStabilityScore();
             showDetailsPanel();
         })
 
@@ -411,11 +435,11 @@
     }
 
     function updatePanel(camera) {
-        document.getElementById('panel-camera-id').innerText = `CAMERA: ${camera.id}`;
-        document.getElementById('img-ground-estimate').src = `/static/img/annotations/${camera.id.replace("0000", "")}_annotated_image.png`
+        document.getElementById('panel-camera-id').innerText = `Camera: ${camera.id}`;
+        // document.getElementById('img-ground-estimate').src = `/static/img/annotations/${camera.id.replace("0000", "")}_annotated_image.png`
         document.getElementById('img-camera-view').src = `https://s3-eu-west-1.amazonaws.com/jamcams.tfl.gov.uk/${camera.id}.jpg`;
         document.getElementById('img-warn').style.display = (camera.flag === 1) ? "inline" : "none";
-        changeDetectionClassCount();
+        // changeDetectionClassCount();
     }
 
     function setDetectionClassFilter(){
@@ -436,7 +460,7 @@
 
     function changeDetectionClass() {
         markerType = document.getElementById("select-detection-class").value;
-        changeDetectionClassCount();
+        // changeDetectionClassCount();
         setDetectionClassFilter();
         setHistogramDetectionClass();
     }
@@ -494,7 +518,8 @@
             responsive: true,
             title: {
                 display: true,
-                text: 'Click on a camera to see counts within last 12 hrs'
+                text: 'Click on a camera to see counts within last 12 hrs',
+                fontColor: 'white'
             },
             tooltips: {
                 mode: 'x',
@@ -506,12 +531,18 @@
                 mode: 'nearest',
                 intersect: true
             },
+            legend: {
+                labels: {
+                    fontColor: "white",
+                }
+            },
             scales: {
                 xAxes: [{
                     display: true,
                     scaleLabel: {
                         display: true,
-                        labelString: 'Time'
+                        labelString: 'Time',
+                        fontColor: 'white'
                     },
                     type: 'time',
                     // distribution: 'linear',
@@ -523,18 +554,23 @@
                         displayFormats: {
                             'hour': 'HH:mm'
                         }
+                    },
+                    ticks: {
+                        fontColor: 'white'
                     }
                 }],
                 yAxes: [{
                     display: true,
                     scaleLabel: {
                         display: true,
-                        labelString: 'Counts'
+                        labelString: 'Counts',
+                        fontColor: 'white'
                     },
                     ticks: {
                         min: 0,
                         beginAtZero: true,
                         stepSize: 1,
+                        fontColor: 'white'
                     }
                 }]
             }
@@ -542,6 +578,7 @@
     };
     var detailsChartContext = document.getElementById('chart').getContext('2d');
     window.detailsChart = new Chart(detailsChartContext, detailsChartConfig);
+    // window.detailsChart.defaults.color = "#ffffff"; //default text colour to white
 
     var histogramChartConfig = {
         type: 'bar',
@@ -552,7 +589,8 @@
         options: {
             title: {
                 display: true,
-                text: 'Average activity by Type (all cameras)'
+                text: 'Average activity by Type (all cameras)',
+                fontColor: 'white'
             },
             tooltips: {
                 mode: 'x',
@@ -564,11 +602,40 @@
                 mode: 'nearest',
                 intersect: true
             },
-            
+            legend: {
+                labels: {
+                    fontColor: "white",
+                }
+            },
+            scales: {
+                xAxes: [{
+                    display: true,
+                    scaleLabel: {
+                        display: true,
+                        labelString: 'Bucket',
+                        fontColor: 'white'
+                    },
+                    ticks: {
+                        fontColor: 'white'
+                    }
+                }],
+                yAxes: [{
+                    display: true,
+                    scaleLabel: {
+                        display: true,
+                        labelString: 'Counts',
+                        fontColor: 'white'
+                    },
+                    ticks: {
+                        fontColor: 'white'
+                    }
+                }]
+            }
         }
     };
     var histogramContext = document.getElementById('histogram').getContext('2d');
     var histogram = new Chart(histogramContext, histogramChartConfig);
+    // histogram.defaults.color = "#ffffff"; //default text colour to white
 
 </script>
 <!--</section>-->

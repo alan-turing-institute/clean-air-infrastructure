@@ -94,6 +94,8 @@ class RectGridWriter(DBWriter):
             if grid_cell["point_id"]
         ]
         self.logger.info(
-            "Adding %i new cells to %s table...", len(grid_records), green("rectgrid"),
+            "Adding %i new cells to %s table...",
+            len(grid_records),
+            green("rectgrid"),
         )
         self.commit_records(grid_records, on_conflict="overwrite")

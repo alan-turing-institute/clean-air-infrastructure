@@ -19,8 +19,6 @@ class TestDataConfig:
     def test_setup(self, fake_cleanair_dataset):
         """Insert test data"""
 
-        pass
-
     def test_generate_config(self, model_config):
 
         try:
@@ -105,14 +103,11 @@ class TestDataConfig:
         )
 
         # Check feature availability doesn't raise an error
-        try:
-            model_config.check_static_features_available(
-                valid_config.static_features,
-                valid_config.train_start_date,
-                valid_config.pred_end_date,
-            )
-        except Exception:
-            pytest.fail("Unexpected error")
+        model_config.check_static_features_available(
+            valid_config.static_features,
+            valid_config.train_start_date,
+            valid_config.pred_end_date,
+        )
 
         class FakeFeature(str, Enum):
 
@@ -136,14 +131,8 @@ class TestDataConfig:
         )
 
         # Check source availability doesn't raise an error
-        try:
-            model_config.check_sources_available(valid_config.train_sources)
-        except Exception:
-            pytest.fail("Unexpected error")
-        try:
-            model_config.check_sources_available(valid_config.pred_sources)
-        except Exception:
-            pytest.fail("Unexpected error")
+        model_config.check_sources_available(valid_config.train_sources)
+        model_config.check_sources_available(valid_config.pred_sources)
 
         class FakeSource(str, Enum):
             fake_source = "fake_source"
@@ -154,15 +143,9 @@ class TestDataConfig:
 
     def test_validate_config(self, valid_config, model_config):
         "Check all validations pass"
+        model_config.validate_config(valid_config)
 
-        try:
-            model_config.validate_config(valid_config)
-        except Exception:
-            pytest.raises("Unexpected error")
-
-    def test_get_interest_point_ids_open_laqn(
-        self, valid_config, model_config, laqn_sites_open
-    ):
+    def test_get_interest_point_ids_open_laqn(self, model_config, laqn_sites_open):
         "Check we get all interest points"
 
         # Check we get all open sites and not any closed sites
@@ -175,7 +158,7 @@ class TestDataConfig:
         }
 
     def test_get_interest_point_ids_open_laqn_within_london(
-        self, valid_config, model_config, meta_within_london
+        self, model_config, meta_within_london
     ):
         "Check we get all interest points"
 
@@ -193,7 +176,7 @@ class TestDataConfig:
 
     def test_get_box_ids_within_london(self, model_config, satellite_box_records):
         """Check we only get box ids which intersect with the London Boundary
-        
+
         We know two are outside the London boundary in the test set"""
 
         n_outside_london = 2
@@ -204,12 +187,14 @@ class TestDataConfig:
 
     def test_get_satellite_point_ids(self, model_config):
 
-        satellite_interest_points = model_config.get_satellite_interest_points_in_boundary(
-            output_type="list"
+        satellite_interest_points = (
+            model_config.get_satellite_interest_points_in_boundary(output_type="list")
         )
 
-        satellite_interest_points_available = model_config.get_available_interest_points(
-            Source.satellite, within_london_only=False, output_type="list"
+        satellite_interest_points_available = (
+            model_config.get_available_interest_points(
+                Source.satellite, within_london_only=False, output_type="list"
+            )
         )
 
         assert {str(i) for i in satellite_interest_points} == set(
@@ -217,8 +202,10 @@ class TestDataConfig:
         )
 
         # Check we filter correctly
-        satellite_interest_points_available_in_london = model_config.get_available_interest_points(
-            Source.satellite, within_london_only=True, output_type="list"
+        satellite_interest_points_available_in_london = (
+            model_config.get_available_interest_points(
+                Source.satellite, within_london_only=True, output_type="list"
+            )
         )
 
         # ToDo: Come up with a better test than this!
@@ -227,11 +214,11 @@ class TestDataConfig:
         )
 
         # Now use the function that calls the get_available_interest_points
-        satellite_interest_points_available_in_london2 = model_config.get_interest_point_ids(
-            {Source.satellite: "all"}
-        )[
-            Source.satellite
-        ]
+        satellite_interest_points_available_in_london2 = (
+            model_config.get_interest_point_ids({Source.satellite: "all"})[
+                Source.satellite
+            ]
+        )
 
         assert set(satellite_interest_points_available_in_london2) == set(
             satellite_interest_points_available
@@ -244,9 +231,14 @@ class TestDataConfig:
             full_config = model_config.generate_full_config(valid_config)
 
             for source in [Source.laqn, Source.aqe]:
-                full_config.train_interest_points[source] == [
-                    i for i in meta_within_london if i.source == source.value
+                point_id_in_london = [
+                    str(i.id) for i in meta_within_london if i.source == source.value
                 ]
+                assert isinstance(full_config.train_interest_points[source][0], str)
+                assert isinstance(point_id_in_london[0], str)
+                assert set(full_config.train_interest_points[source]) == set(
+                    point_id_in_london
+                )
 
         except ValidationError:
             pytest.raises("Full config failed")

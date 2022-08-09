@@ -73,7 +73,7 @@ class SetViewOwner(DDLElement):
 
 @compiler.compiles(SetViewOwner)
 def compile_set_view_owner(element, compiler, **kw):
-    return "ALTER {} VIEW {} OWNER TO {}".format(
+    return "ALTER {} VIEW {} OWNER TO {}".format(  # noqa
         "MATERIALIZED " if element.materialized else "",
         element.name,
         element.owner,
@@ -94,19 +94,21 @@ def create_table_from_selectable(
         sa.Column(
             c.name, c.type, key=aliases.get(c.name, c.name), primary_key=c.primary_key
         )
-        for c in selectable.c
+        for c in selectable.subquery().columns
     ] + indexes
     table = sa.Table(name, metadata, *args, schema=schema)
 
-    if not any([c.primary_key for c in selectable.c]):
-        table.append_constraint(PrimaryKeyConstraint(*[c.name for c in selectable.c]))
+    if not any([c.primary_key for c in selectable.subquery().columns]):
+        table.append_constraint(
+            PrimaryKeyConstraint(*[c.name for c in selectable.subquery().columns])
+        )
     return table
 
 
 def create_materialized_view(
     name, selectable, metadata, indexes=None, aliases=None, schema="public", owner=None
 ):
-    """ Create a view on a given metadata
+    """Create a view on a given metadata
 
     :param name: The name of the view to create.
     :param selectable: An SQLAlchemy selectable e.g. a select() statement.
@@ -152,7 +154,7 @@ def create_materialized_view(
 
 
 def create_view(name, selectable, metadata, cascade_on_drop=True):
-    """ Create a view on a given metadata
+    """Create a view on a given metadata
 
     :param name: The name of the view to create.
     :param selectable: An SQLAlchemy selectable e.g. a select() statement.
@@ -193,12 +195,14 @@ def create_view(name, selectable, metadata, cascade_on_drop=True):
         for idx in table.indexes:
             idx.create(connection)
 
-    sa.event.listen(metadata, "before_drop", DropView(name, cascade=cascade_on_drop))
+    sa.event.listen(
+        metadata, "before_drop", DropView(name, cascade=cascade_on_drop)  # noqa
+    )
     return table
 
 
 def refresh_materialized_view(session, name, concurrently=False):
-    """ Refreshes an already existing materialized view
+    """Refreshes an already existing materialized view
 
     :param session: An SQLAlchemy Session instance.
     :param name: The name of the materialized view to refresh.

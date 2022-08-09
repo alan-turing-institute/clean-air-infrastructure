@@ -3,9 +3,8 @@
 from datetime import timedelta
 from typing import Dict, List, Optional
 import pandas as pd
-import sklearn
-from sqlalchemy import inspect
-from ..databases import DBWriter, Base
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score as r2s
+from ..databases import DBReader, DBWriter, get_columns_of_table
 from ..databases.tables import (
     AirQualityDataTable,
     AirQualityInstanceTable,
@@ -16,7 +15,11 @@ from ..databases.tables import (
 )
 from ..loggers import get_logger
 from ..models import ModelData
-from ..mixins import InstanceQueryMixin, ResultQueryMixin
+from ..mixins import (
+    InstanceQueryMixin,
+    ResultQueryMixin,
+    SpatioTemporalMetricsQueryMixin,
+)
 from ..types import FullDataConfig, Source, Species
 
 
@@ -115,7 +118,10 @@ class AirQualityMetrics(DBWriter, InstanceQueryMixin, ResultQueryMixin):
         """Load the results for the instance."""
         self.logger.info("Reading results for LAQN for instance %s.", self.instance_id)
         result_df = self.query_results(
-            self.instance_id, Source.laqn, output_type="df", with_location=False,
+            self.instance_id,
+            Source.laqn,
+            output_type="df",
+            with_location=False,
         )
         result_df = preprocess_dataframe_types(result_df)
         return result_df
@@ -131,15 +137,15 @@ class AirQualityMetrics(DBWriter, InstanceQueryMixin, ResultQueryMixin):
             pollutant=pollutant.value,
         )
         if self.mae:
-            group_metrics["mae"] = sklearn.metrics.mean_absolute_error(
+            group_metrics["mae"] = mean_absolute_error(
                 group_df[pollutant.value], group_df[pollutant.value + "_mean"]
             )
         if self.mse:
-            group_metrics["mse"] = sklearn.metrics.mean_squared_error(
+            group_metrics["mse"] = mean_squared_error(
                 group_df[pollutant.value], group_df[pollutant.value + "_mean"]
             )
         if self.r2_score:
-            group_metrics["r2_score"] = sklearn.metrics.r2_score(
+            group_metrics["r2_score"] = r2s(
                 group_df[pollutant.value], group_df[pollutant.value + "_mean"]
             )
         return group_metrics
@@ -156,7 +162,7 @@ class AirQualityMetrics(DBWriter, InstanceQueryMixin, ResultQueryMixin):
             "Evaluating metrics temporally - group by datetime and calculate metrics across each time slice."
         )
         groups = joined_df.groupby(["measurement_start_utc", "forecast"])
-        metrics_records = list()
+        metrics_records = []
         for (timestamp, forecast), group_df in groups:
             for pollutant in self.data_config.species:
                 if len(group_df) == 0:
@@ -176,14 +182,16 @@ class AirQualityMetrics(DBWriter, InstanceQueryMixin, ResultQueryMixin):
     ) -> None:
         """Evaluate metrics by grouping by point id."""
         joined_df = observation_df.merge(
-            result_df, on=["point_id", "measurement_start_utc"], how="inner",
+            result_df,
+            on=["point_id", "measurement_start_utc"],
+            how="inner",
         )
         joined_df = remove_rows_with_nans(joined_df, self.data_config.species)
         self.logger.info(
             "Evaluating metrics spatially - group by point_id and calculate metrics for each sensor."
         )
         groups = joined_df.groupby(["point_id", "forecast"])
-        metrics_records = list()
+        metrics_records = []
         for (point_id, forecast), group_df in groups:
             for pollutant in self.data_config.species:
                 if len(group_df) == 0:
@@ -218,10 +226,38 @@ class AirQualityMetrics(DBWriter, InstanceQueryMixin, ResultQueryMixin):
         )
 
 
-def get_columns_of_table(table: Base) -> List[str]:
-    """Get the column names of a table."""
-    table_inst = inspect(table)
-    return [c_attr.key for c_attr in table_inst.mapper.column_attrs]
+class AirQualityMetricsQuery(DBReader, SpatioTemporalMetricsQueryMixin):
+    """Query spatial and temporal metrics for air quality models"""
+
+    @property
+    def result_table(self) -> AirQualityResultTable:
+        """The air quality result table."""
+        return AirQualityResultTable
+
+    @property
+    def model_table(self) -> AirQualityModelTable:
+        """The air quality model parameters table."""
+        return AirQualityModelTable
+
+    @property
+    def data_table(self) -> AirQualityDataTable:
+        """The air quality data config table."""
+        return AirQualityDataTable
+
+    @property
+    def instance_table(self) -> AirQualityInstanceTable:
+        """The air quality instance table."""
+        return AirQualityInstanceTable
+
+    @property
+    def spatial_metrics_table(self) -> AirQualitySpatialMetricsTable:
+        """Spatial metrics table"""
+        return AirQualitySpatialMetricsTable
+
+    @property
+    def temporal_metrics_table(self) -> AirQualityTemporalMetricsTable:
+        """Temporal metrics table"""
+        return AirQualityTemporalMetricsTable
 
 
 def remove_rows_with_nans(joined_df: pd.DataFrame, species: List[Species]):

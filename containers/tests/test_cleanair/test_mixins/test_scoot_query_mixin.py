@@ -39,7 +39,10 @@ def test_scoot_detectors(scoot_query: ScootQueryMixin) -> None:
 
     # finally check that we can filter by borough
     borough_df = scoot_query.scoot_detectors(
-        borough=Borough.westminster, limit=limit, offset=offset, output_type="df",
+        borough=Borough.westminster,
+        limit=limit,
+        offset=offset,
+        output_type="df",
     )
     assert len(borough_df) == limit
 
@@ -94,7 +97,9 @@ def test_dow_scoot_readings(
 
 
 def test_readings_with_location(
-    scoot_generator: ScootQueryMixin, dataset_start_date, dataset_end_date,
+    scoot_generator: ScootQueryMixin,
+    dataset_start_date,
+    dataset_end_date,
 ) -> None:
     """Test scoot query returns locations of detectors when specified."""
     scoot_generator.update_remote_tables()

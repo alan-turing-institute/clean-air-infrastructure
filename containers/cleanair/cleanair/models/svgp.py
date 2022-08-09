@@ -3,12 +3,14 @@ Sparse Variational Gaussian Process (LAQN ONLY)
 """
 
 import os
+
+from copy import deepcopy
 import numpy as np
 from scipy.cluster.vq import kmeans2
 import tensorflow as tf
-from nptyping import Float64, NDArray
+import numpy.typing as npt
 from .model import ModelMixin
-from ..types import FeaturesDict, KernelType, Source, Species, TargetDict
+from ..types import FeaturesDict, KernelType, Source, Species, TargetDict, SVGPParams
 
 # turn off tensorflow warnings for gpflow
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
@@ -32,8 +34,7 @@ class SVGP(ModelMixin):
         self,
         x_array: FeaturesDict,
         y_array: TargetDict,
-        inducing_locations: NDArray[Float64],
-        num_input_dimensions: int,
+        inducing_locations: npt.NDArray[np.float64],
     ) -> None:
         """
         Create GPFlow sparse variational Gaussian Processes
@@ -42,7 +43,6 @@ class SVGP(ModelMixin):
             x_array: N x D numpy array - observations input.
             y_array: N x 1 numpy array - observations output.
             inducing_locations: M x D numpy array - inducing locations.
-            num_input_dimensions: Number of input dimensions.
         """
         custom_config = gpflow.settings.get_settings()
         # jitter is added for numerically stability in cholesky operations.
@@ -52,7 +52,7 @@ class SVGP(ModelMixin):
         ), gpflow.session_manager.get_session().as_default():
             kernel_dict = self.model_params.kernel.dict()
             kernel_type = kernel_dict.pop("type")
-            kernel_dict["input_dim"] = num_input_dimensions
+
             kernel = SVGP.KERNELS[kernel_type](**kernel_dict)
 
             self.model = gpflow.models.SVGP(
@@ -96,7 +96,7 @@ class SVGP(ModelMixin):
         z_r = kmeans2(x_array, self.model_params.num_inducing_points, minit="points")[0]
 
         # setup SVGP model
-        self.setup_model(x_array, y_array, z_r, x_array.shape[1])
+        self.setup_model(x_array, y_array, z_r)
         self.model.compile()
 
         # optimize and setup elbo logging
@@ -124,3 +124,11 @@ class SVGP(ModelMixin):
         y_dict = self.predict_srcs(x_test, predict_fn)
 
         return y_dict
+
+    def params(self) -> SVGPParams:
+
+        params = deepcopy(self.model_params)
+        params.kernel.variance = self.model.kern.variance.read_value().tolist()
+        params.kernel.lengthscales = self.model.kern.lengthscales.read_value().tolist()
+
+        return params

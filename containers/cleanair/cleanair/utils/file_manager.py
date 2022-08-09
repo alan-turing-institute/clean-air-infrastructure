@@ -1,12 +1,20 @@
 """Functions for saving and loading models"""
 
 from __future__ import annotations
+from datetime import datetime
 from pathlib import Path
-from typing import Any, Callable, Dict, Optional, Union, TYPE_CHECKING
+from shutil import make_archive, unpack_archive
+from typing import Any, Callable, Dict, List, Optional, Union, TYPE_CHECKING
 import json
 import pickle
 import pandas as pd
+from azure.core.exceptions import ResourceNotFoundError
+from cleanair.environment_settings import get_settings
+from cleanair.utils.azure import blob_storage
+
 from ..loggers import get_logger
+from ..metrics import TrainingMetrics
+from ..mixins import InstanceMixin
 from ..types import (
     DataConfig,
     FullDataConfig,
@@ -15,16 +23,26 @@ from ..types import (
     Source,
     SVGPParams,
     TargetDict,
+    model_params_from_dict,
 )
 
 if TYPE_CHECKING:
-    import gpflow
-    import tensorflow as tf
     from pydantic import BaseModel
+
+
+class ExperimentInstanceNotFoundError(Exception):
+    """Error for when a blob is not found"""
+
+    def __init__(self, instance_id):
+        super().__init__(f"Blob for {instance_id} not found in storage container")
+
 
 # pylint: disable=R0904
 class FileManager:
     """Class for managing files for the urbanair project"""
+
+    # instance filepaths
+    INSTANCE_JSON = Path("instance.json")
 
     # data config / train test data
     DATASET = Path("dataset")
@@ -35,14 +53,43 @@ class FileManager:
 
     # model filepaths
     MODEL = Path("model")
-    MODEL_PARAMS = MODEL / "model_params.json"
+    INITIAL_MODEL_PARAMS = MODEL / "initial_model_params.json"
+    FINAL_MODEL_PARAMS = MODEL / "final_model_params.json"
+    MODEL_ELBO_JSON = MODEL / "elbo.json"
+    MODEL_TRAINING_METRICS_JSON = MODEL / "training_metrics.json"
 
     # forecasts / results / predictions
     RESULT = Path("result")
     PRED_FORECAST_PICKLE = RESULT / "pred_forecast.pkl"
     PRED_TRAINING_PICKLE = RESULT / "pred_training.pkl"
 
-    def __init__(self, input_dir: Path) -> None:
+    def __init__(self, input_dir: Path, blob_id: str = None) -> None:
+
+        # Download a zipped blob from storage if specified
+        if blob_id:
+
+            try:
+                sas_token = blob_storage.generate_sas_token(
+                    resource_group="RG_CLEANAIR_INFRASTRUCTURE",
+                    storage_account_name="cleanairexperiments",
+                    storage_account_key=get_settings().cleanair_experiment_archive_key,
+                    permit_write=True,
+                )
+
+                zipfile_path = input_dir.with_suffix(".zip")
+
+                blob_storage.download_blob(
+                    storage_container_name="instances",
+                    blob_name=blob_id,
+                    account_url="https://cleanairexperiments.blob.core.windows.net/",
+                    target_file=str(zipfile_path),
+                    sas_token=sas_token,
+                )
+            except ResourceNotFoundError as resource_error:
+                raise ExperimentInstanceNotFoundError(blob_id) from resource_error
+
+            unpack_archive(zipfile_path, input_dir)
+
         if not hasattr(self, "logger"):
             self.logger = get_logger("file_manager")
         input_dir.mkdir(parents=False, exist_ok=True)
@@ -78,6 +125,31 @@ class FileManager:
 
         with pickle_path.open("rb") as pickle_f:
             return pickle.load(pickle_f)
+
+    def archive(self):
+        """Zips the managed files"""
+        return Path(make_archive(self.input_dir, "zip", self.input_dir))
+
+    def upload(self):
+        """Zips and uploads the files to blob storage"""
+        sas_token = blob_storage.generate_sas_token(
+            resource_group="RG_CLEANAIR_INFRASTRUCTURE",
+            storage_account_name="cleanairexperiments",
+            storage_account_key=get_settings().cleanair_experiment_archive_key,
+            permit_write=True,
+        )
+
+        zipfile = self.archive()
+
+        blob_storage.upload_blob(
+            storage_container_name="instances",
+            blob_name=self.input_dir.stem,
+            account_url="https://cleanairexperiments.blob.core.windows.net/",
+            source_file=str(zipfile),
+            sas_token=sas_token,
+        )
+
+        zipfile.unlink()
 
     def load_data_config(self, full: bool = False) -> Union[DataConfig, FullDataConfig]:
         """Load an existing configuration file"""
@@ -175,11 +247,11 @@ class FileManager:
 
     def load_model(
         self,
-        load_fn: Callable[[Path, ModelName], gpflow.models.GPModel],
+        load_fn: Callable[[Path, ModelName], Any],
         model_name: ModelName,
         compile_model: bool = True,
-        tf_session: Optional[tf.compat.v1.Session] = None,
-    ) -> gpflow.models.GPModel:
+        tf_session: Optional[Any] = None,
+    ) -> Any:
         """Load a model from the cache.
 
         Args:
@@ -197,14 +269,17 @@ class FileManager:
         # use the load function to get the model from the filepath
         export_dir = self.input_dir / FileManager.MODEL
         model = load_fn(
-            export_dir, model_name, compile_model=compile_model, tf_session=tf_session,
+            export_dir,
+            model_name,
+            compile_model=compile_model,
+            tf_session=tf_session,
         )
         return model
 
     def save_model(
         self,
-        model: gpflow.models.GPModel,
-        save_fn: Callable[[gpflow.models.GPModel, Path, ModelName], None],
+        model: Any,
+        save_fn: Callable[[Any, Path, ModelName], None],
         model_name: ModelName,
     ) -> None:
         """Save a model to file.
@@ -225,20 +300,24 @@ class FileManager:
         self.logger.debug(
             "Loading model parameters from a json file for %s", model_name
         )
-        params_fp = self.input_dir / FileManager.MODEL_PARAMS
-        with open(params_fp, "r") as params_file:
+        params_fp = self.input_dir / FileManager.INITIAL_MODEL_PARAMS
+        with open(params_fp, "r", encoding="utf-8") as params_file:
             params_dict = json.load(params_file)
-        if model_name == ModelName.svgp:
-            return SVGPParams(**params_dict)
-        if model_name == ModelName.mrdgp:
-            return MRDGPParams(**params_dict)
-        raise ValueError("Must pass a valid model name")
+        return model_params_from_dict(model_name, params_dict)
 
-    def save_model_params(self, model_params: BaseModel) -> None:
-        """Load the model params from a json file"""
+    def save_model_initial_params(self, model_params: BaseModel) -> None:
+        """Load the initial model params from a json file"""
+        self.save_model_params(model_params, FileManager.INITIAL_MODEL_PARAMS)
+
+    def save_model_final_params(self, model_params: BaseModel) -> None:
+        """Load the final model params from a json file"""
+        self.save_model_params(model_params, FileManager.FINAL_MODEL_PARAMS)
+
+    def save_model_params(self, model_params: BaseModel, file: Path) -> None:
+        """Save the model params to a json file"""
         self.logger.debug("Saving model params to a json file")
-        params_fp = self.input_dir / FileManager.MODEL_PARAMS
-        with open(params_fp, "w") as params_file:
+        params_fp = self.input_dir / file
+        with open(params_fp, "w", encoding="utf-8") as params_file:
             json.dump(model_params.dict(), params_file, indent=4)
 
     def save_forecast_to_pickle(self, y_pred: TargetDict) -> None:
@@ -312,3 +391,63 @@ class FileManager:
             "Loading the prediction on the training set for %s from csv.", source
         )
         return self.__load_result_from_csv(source, "pred_training")
+
+    def save_elbo(self, elbo: List[float]) -> None:
+        """Save a list of floats that record the ELBO"""
+        self.logger.info("Saving the ELBO to file")
+        elbo_fp = self.input_dir / FileManager.MODEL_ELBO_JSON
+        with open(elbo_fp, "w", encoding="utf-8") as elbo_file:
+            json.dump(elbo, elbo_file)
+
+    def load_elbo(self) -> List[float]:
+        """Load the list of ELBO floats from json file"""
+        self.logger.info("Reading the ELBO from json file")
+        elbo_fp = self.input_dir / FileManager.MODEL_ELBO_JSON
+        with open(elbo_fp, "r", encoding="utf-8") as elbo_file:
+            return json.load(elbo_file)
+
+    def write_instance_to_json(self, instance: InstanceMixin) -> None:
+        """Writes an instance to a json file"""
+        with open(
+            self.input_dir / self.INSTANCE_JSON, "w", encoding="utf-8"
+        ) as json_file:
+            json.dump(instance.dict(), json_file)
+
+    def read_instance_from_json(self) -> InstanceMixin:
+        """Reads a dictionary containing the instance from a json file"""
+        with open(
+            self.input_dir / self.INSTANCE_JSON, "r", encoding="utf-8"
+        ) as json_file:
+            instance_dict: Dict = json.load(json_file)
+            model_name = instance_dict.get("model_name")
+            model_params = model_params_from_dict(
+                model_name, instance_dict.get("model_params")
+            )
+            fit_start_time = datetime.fromisoformat(instance_dict.get("fit_start_time"))
+            data_config_dict = instance_dict.get("data_config")
+            data_config = FullDataConfig(**data_config_dict)
+            instance = InstanceMixin(
+                data_config=data_config,
+                model_name=model_name,
+                model_params=model_params,
+                cluster_id=instance_dict.get("cluster_id"),
+                fit_start_time=fit_start_time,
+                git_hash=instance_dict.get("git_hash"),
+                preprocessing=instance_dict.get("preprocessing"),
+                tag=instance_dict.get("tag"),
+            )
+            return instance
+
+    def write_training_metrics_to_json(self, training_metrics: TrainingMetrics) -> None:
+        """Write the metrics to a json file"""
+        with (self.input_dir / self.MODEL_TRAINING_METRICS_JSON).open(
+            "w", encoding="utf-8"
+        ) as json_file:
+            json_file.write(training_metrics.json(indent=4))
+
+    def read_training_metrics_from_json(self) -> TrainingMetrics:
+        """Read metrics from json"""
+        with open(
+            self.input_dir / self.MODEL_TRAINING_METRICS_JSON, "r", encoding="utf-8"
+        ) as json_file:
+            return TrainingMetrics(**json.load(json_file))

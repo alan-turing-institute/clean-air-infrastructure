@@ -1,6 +1,8 @@
 """Cleanair enum types"""
 from enum import Enum, unique
 
+# pylint: disable=C0103
+
 
 @unique
 class ScootProcessType(str, Enum):
@@ -14,6 +16,7 @@ class ClusterId(str, Enum):
 
     laptop = "laptop"
     pearl = "pearl"
+    aquifer = "aquifer"
     kubernetes = "kubernetes"
     orac = "orac"
     nc6 = "nc6"

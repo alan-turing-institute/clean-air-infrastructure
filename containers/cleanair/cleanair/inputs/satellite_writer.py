@@ -152,7 +152,12 @@ class SatelliteWriter(
                     "time": "00:00",
                     "type": "forecast",
                     "variable": [self.species_to_copernicus[species]],
-                    "area": [59.35, -9.84, 47.27, 5.63,],
+                    "area": [
+                        59.35,
+                        -9.84,
+                        47.27,
+                        5.63,
+                    ],
                     "level": "0",
                 },
                 grib_file_path,
@@ -276,7 +281,9 @@ class SatelliteWriter(
         )
 
         self.commit_records(
-            reading_entries, on_conflict="overwrite", table=SatelliteForecast,
+            reading_entries,
+            on_conflict="overwrite",
+            table=SatelliteForecast,
         )
 
     def update_interest_points(self):
@@ -286,7 +293,8 @@ class SatelliteWriter(
         # Request satellite data from today for an arbitary pollutant and convert to a dataframe
 
         grib_data_df = self.request_satellite_data(
-            datetime.date.today().strftime("%Y-%m-%d"), species=Species.NO2.value,
+            datetime.date.today().strftime("%Y-%m-%d"),
+            species=Species.NO2.value,
         )
 
         # Construct a SatelliteBox for each box, a SatelliteGrid for each
@@ -345,7 +353,7 @@ class SatelliteWriter(
                 "Merging %i satellite discrete sites into SatelliteGrid table",
                 satellite_grid_points_df.shape[0],
             )
-            satellite_discrete_sites = [
+            _ = [
                 session.merge(site)
                 for site in satellite_grid_points_df.apply(
                     lambda site: SatelliteGrid.build_entry(
@@ -375,7 +383,7 @@ class SatelliteWriter(
         )
 
         # pylint: disable=singleton-comparison
-        arg_list = arg_df[arg_df["has_data"] != True][
+        arg_list = arg_df[arg_df["has_data"] is not True][
             ["reference_start_utc", "species"]
         ].to_records(index=False)
 

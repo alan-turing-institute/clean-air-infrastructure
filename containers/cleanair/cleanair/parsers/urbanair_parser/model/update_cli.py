@@ -6,13 +6,13 @@ from pathlib import Path
 import typer
 from ..shared_args import ClusterIdOption, InputDir, TagOption
 from ..state import state
-from ....instance import AirQualityInstance, AirQualityResult
+from ....experiment import AirQualityInstance, AirQualityResult
 from ....loggers import get_logger
 
 from ....metrics import AirQualityMetrics
 from ....models import ModelData, ModelDataExtractor
 from ....types import ClusterId, ModelName, Tag, Source
-from ....utils import FileManager
+from ....utils.file_manager import FileManager
 
 app = typer.Typer(help="Update database with model fit.")
 

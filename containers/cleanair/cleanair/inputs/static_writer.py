@@ -47,16 +47,81 @@ class StaticWriter(DBWriter):
         return "{}.{}".format(self.schema, self.table_name)
 
     def upload_static_files(self):
-        """Upload static data to the inputs database"""
+        """Read static data from shape file then upload to the inputs database using geopandas"""
+        self.logger.info("Reading (shape) file for table %s", green(self.table_name))
+        # Preprocess the UKMap data, keeping only useful columns
+        if self.table_name == "ukmap":
+            self.upload_ukmap()
 
-        # Check whether table exists - excluding reflected tables
-        existing_table_names = self.dbcnxn.engine.table_names(schema=self.schema)
-        if self.table_name in existing_table_names:
+        # NOTE this is the only place geopandas is used
+        # so we import inside function incase somebody hs not installed geopandas
+        # pylint: disable=import-outside-toplevel
+        import geopandas as gpd
+        import pyproj
+
+        # the co-ordinate reference systems
+        crs_4326 = pyproj.CRS(4326)  # lon lat
+        crs_27700 = pyproj.CRS(27700)  # British National Grid
+
+        # read the file that was downloaded from blob storage
+        gdf = gpd.read_file(self.target_file)
+
+        # rename the geometry column
+        gdf = gdf.rename_geometry("geom")
+        # NOTE if inserting rectgrid_100 you will need to assign a primary key to the table
+        if self.table_name == "rectgrid_100":
+            raise NotImplementedError("We no longer support the rectgrid_100 dataset")
+        if self.table_name == "london_boundary":
             self.logger.info(
-                "Skipping upload for %s as the remote table already exists",
+                "GeoDataFrame loaded from shape file %s does not have a CRS. Setting to 27700.",
                 green(self.table_name),
             )
-            return False
+            gdf = gdf.set_crs(crs=crs_27700, allow_override=True)
+        elif gdf.crs not in {crs_4326, crs_27700}:
+            error_message = (
+                f"GeoDataFrame loaded from shape file for table {self.table_name} "
+            )
+            error_message += (
+                f"has the wrong CRS EPSG: {gdf.crs.to_epsg()}. Should be 4326 or 27700."
+            )
+            raise pyproj.exceptions.CRSError(error_message)
+
+        # convert the geometry to 4326
+        gdf = gdf.to_crs(crs=crs_4326)
+        # convert column names to lower case
+        gdf.columns = map(str.lower, gdf.columns)
+        # convert "T" to True and "F" to False (convert to boolean)
+        if "ons_inner" in gdf.columns:
+            gdf["ons_inner"] = gdf["ons_inner"].apply(lambda x: x == "T")
+
+        # drop any duplicates in the scoot detector dataset
+        if self.table_name == "scoot_detector":
+            gdf = gdf.drop_duplicates(subset="detector_n")
+        self.logger.info(
+            "Uploading static data to table %s in %s",
+            green(self.table_name),
+            green(self.dbcnxn.connection_info["db_name"]),
+        )
+        # write to the database table
+        with self.dbcnxn.engine.connect() as connection:
+            gdf.to_postgis(
+                name=self.table_name,
+                con=connection,
+                schema=self.schema,
+                index=False,
+            )
+
+    def upload_ukmap(self):
+        """Upload the UK Map dataset using ogr2ogr"""
+        warning_message = (
+            "Inserting UK Map dataset uses the %s command which requires GDAL. "
+        )
+        warning_message += "For new versions of GDAL, this command may break. "
+        warning_message += "See issue number #791 on the GitHub repo. "
+        warning_message += "Note UK Map requires SQL pre-processing so %s"
+        self.logger.warning(
+            warning_message, green("ogr2ogr"), green("upload will be slow (~1hr)")
+        )
 
         # Get the connection string
         cnxn_string = " ".join(
@@ -70,84 +135,67 @@ class StaticWriter(DBWriter):
             ]
         ).format(**self.dbcnxn.connection_info)
 
+        # this command is the "base" command that works for most datasets
+        # extra args are added for UK Map later
+        command = [
+            "ogr2ogr",
+            "-overwrite",
+            "-progress",
+            "-f",
+            "PostgreSQL",
+            "PG:{}".format(cnxn_string),
+            "{}".format(self.target_file),
+            "--config",
+            "PG_USE_COPY",
+            "YES",
+            "-t_srs",
+            "EPSG:4326",
+            "-lco",
+            "SCHEMA={}".format(self.schema),
+            "-nln",
+            self.table_name,
+        ]
+
         # Add additional arguments if the input data contains shape files
         extra_args = ["-lco", "GEOMETRY_NAME=geom"]
 
         if glob.glob("/{}/*.shp".format(self.target_file)):
             extra_args += ["-nlt", "PROMOTE_TO_MULTI", "-lco", "precision=NO"]
 
-        # Preprocess the UKMap data, keeping only useful columns
-        if self.table_name == "ukmap":
-            extra_args += [
-                "-lco",
-                "FID=geographic_type_number",
-                "-dialect",
-                "OGRSQL",
-                "-dim",
-                "XY",
-                "-sql",
-                "SELECT "
-                + ", ".join(
-                    [
-                        "CAST(geographic_type_number AS integer) AS geographic_type_number",
-                        "CAST(CONCAT('20', SUBSTR(CONCAT('00', date_of_feature_edit), -6, 2), '-',"
-                        + "SUBSTR(date_of_feature_edit, -4, 2), '-',"
-                        + "SUBSTR(date_of_feature_edit, -2)) AS date) AS date_of_feature_edit",
-                        "feature_type",
-                        "landuse",
-                        "postcode",
-                        "CAST(height_of_base_of_building AS float)",
-                        "CAST(calcaulated_height_of_building AS float) AS calculated_height_of_building",
-                        "shape_length AS geom_length",
-                        "shape_area AS geom_area",
-                        "shape AS geom",
-                    ]
-                )
-                + " FROM BASE_HB0_complete_merged",
-            ]
-            self.logger.info(
-                "Please note that this dataset requires SQL pre-processing so upload will be slow (~1hr)"
+        extra_args += [
+            "-lco",
+            "FID=geographic_type_number",
+            "-dialect",
+            "OGRSQL",
+            "-dim",
+            "XY",
+            "-sql",
+            "SELECT "
+            + ", ".join(
+                [
+                    "CAST(geographic_type_number AS integer) AS geographic_type_number",
+                    "CAST(CONCAT('20', SUBSTR(CONCAT('00', date_of_feature_edit), -6, 2), '-',"
+                    + "SUBSTR(date_of_feature_edit, -4, 2), '-',"
+                    + "SUBSTR(date_of_feature_edit, -2)) AS date) AS date_of_feature_edit",
+                    "feature_type",
+                    "landuse",
+                    "postcode",
+                    "CAST(height_of_base_of_building AS float)",
+                    "CAST(calcaulated_height_of_building AS float) AS calculated_height_of_building",
+                    "shape_length AS geom_length",
+                    "shape_area AS geom_area",
+                    "shape AS geom",
+                ]
             )
+            + " FROM BASE_HB0_complete_merged",
+        ]
 
-        # Force scoot detector geometries to POINT
-        elif self.table_name == "scoot_detector":
-            extra_args += ["-nlt", "POINT"]
-
-        elif self.table_name == "rectgrid_100":
-            extra_args += ["-s_srs", "EPSG:27700"]
-        # Run ogr2ogr
-        self.logger.info(
-            "Uploading static data to table %s in %s",
-            green(self.table_name),
-            green(self.dbcnxn.connection_info["db_name"]),
+        command += extra_args
+        self.logger.info(green(" ".join(command)))
+        subprocess.run(
+            command,
+            check=True,
         )
-        try:
-            command = [
-                "ogr2ogr",
-                "-overwrite",
-                "-progress",
-                "-f",
-                "PostgreSQL",
-                "PG:{}".format(cnxn_string),
-                "{}".format(self.target_file),
-                "--config",
-                "PG_USE_COPY",
-                "YES",
-                "-t_srs",
-                "EPSG:4326",
-                "-lco",
-                "SCHEMA={}".format(self.schema),
-                "-nln",
-                self.table_name,
-            ] + extra_args
-
-            subprocess.run(
-                command, check=True,
-            )
-        except subprocess.CalledProcessError:
-            self.logger.error("Running ogr2ogr failed!")
-            raise
-        return True
 
     def configure_tables(self):
         """Tidy up the databases by doing the following:
@@ -170,7 +218,7 @@ class StaticWriter(DBWriter):
                 """ALTER TABLE {}
                        DROP COLUMN centroid_x,
                        DROP COLUMN centroid_y,
-                       DROP COLUMN ogc_fid;""".format(
+                       DROP COLUMN IF EXISTS ogc_fid;""".format(
                     self.schema_table
                 ),
                 """ALTER TABLE {} ADD COLUMN centroid geometry(POINT, 4326);""".format(
@@ -256,16 +304,16 @@ class StaticWriter(DBWriter):
                     self.schema_table
                 ),
                 """ALTER TABLE {}
-                       DROP COLUMN ogc_fid,
-                       DROP COLUMN sub_2006,
-                       DROP COLUMN sub_2009;""".format(
+                       DROP COLUMN IF EXISTS ogc_fid,
+                       DROP COLUMN IF EXISTS sub_2006,
+                       DROP COLUMN IF EXISTS sub_2009;""".format(
                     self.schema_table
                 ),
-                """ALTER TABLE {}
-                       ALTER ons_inner TYPE bool
-                       USING CASE WHEN ons_inner='F' THEN FALSE ELSE TRUE END;""".format(
-                    self.schema_table
-                ),
+                # """ALTER TABLE {}
+                #        ALTER ons_inner TYPE bool
+                #        USING CASE WHEN ons_inner ='F' THEN FALSE ELSE TRUE END;""".format(
+                #     self.schema_table
+                # ),
                 """ALTER TABLE {} RENAME COLUMN nonld_area TO non_ld_area;""".format(
                     self.schema_table
                 ),
@@ -294,7 +342,7 @@ class StaticWriter(DBWriter):
                        DROP COLUMN elevationg,
                        DROP COLUMN identifi_1,
                        DROP COLUMN identifier,
-                       DROP COLUMN ogc_fid,
+                       DROP COLUMN IF EXISTS ogc_fid,
                        DROP COLUMN provenance,
                        DROP COLUMN roadclas_1,
                        DROP COLUMN roadname1_,
@@ -354,10 +402,10 @@ class StaticWriter(DBWriter):
         elif self.table_name == "scoot_detector":
             sql_commands = [
                 # Tidy up scoot_detector table
-                """DELETE FROM {0} WHERE ogc_fid NOT IN
-                       (SELECT DISTINCT ON (detector_n) ogc_fid FROM {0});""".format(
-                    self.schema_table
-                ),
+                # """DELETE FROM {0} WHERE ogc_fid NOT IN
+                #        (SELECT DISTINCT ON (detector_n) ogc_fid FROM {0});""".format(
+                #     self.schema_table
+                # ),
                 """ALTER TABLE {}
                        DROP COLUMN cell,
                        DROP COLUMN dataset,
@@ -368,7 +416,7 @@ class StaticWriter(DBWriter):
                        DROP COLUMN loop_type,
                        DROP COLUMN northing,
                        DROP COLUMN objectid,
-                       DROP COLUMN ogc_fid,
+                       DROP COLUMN IF EXISTS ogc_fid,
                        DROP COLUMN unique_id;""".format(
                     self.schema_table
                 ),
@@ -428,7 +476,7 @@ class StaticWriter(DBWriter):
                        DROP COLUMN objectid_1,
                        DROP COLUMN objectid_2,
                        DROP COLUMN objectid,
-                       DROP COLUMN ogc_fid,
+                       DROP COLUMN IF EXISTS ogc_fid,
                        DROP COLUMN provenance,
                        DROP COLUMN shape_le_1,
                        DROP COLUMN sum_length,
@@ -509,5 +557,5 @@ class StaticWriter(DBWriter):
 
     def update_remote_tables(self):
         """Attempt to upload static files and configure the tables if successful"""
-        if self.upload_static_files():
-            self.configure_tables()
+        self.upload_static_files()
+        self.configure_tables()

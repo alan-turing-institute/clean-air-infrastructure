@@ -3,6 +3,7 @@
 from enum import Enum
 
 
+# pylint: disable=C0201
 class Species(Enum):
     """Valid species for API"""
 

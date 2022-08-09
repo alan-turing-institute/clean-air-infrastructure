@@ -68,7 +68,7 @@ class AQEWriter(DateRangeMixin, APIRequestMixin, AQEAvailabilityMixin, DBWriter)
             # Process CSV data
             csvreader = csv.reader(io.StringIO(raw_data.decode()))
             # Extract species names from the column headers
-            header = csvreader.__next__()
+            header = next(csvreader)
             species = [s.split(": ")[1].split(" ")[0] for s in header[1:]]
             # Process the readings which are in the format: Date, Species1, Species2, ...
             readings = []

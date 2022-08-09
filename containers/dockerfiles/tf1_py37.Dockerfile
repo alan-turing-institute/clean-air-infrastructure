@@ -1,4 +1,6 @@
-FROM python:3.7
+FROM python:3.10
+
+RUN apt-get update && apt-get install -y python3.7-dev
 
 # Install any needed packages - move to top for better caching
 RUN pip install tensorflow==1.15.0

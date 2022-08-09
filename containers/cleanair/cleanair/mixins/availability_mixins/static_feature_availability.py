@@ -1,7 +1,7 @@
 """
 Mixin for checking what satellite data is in database and what is missing
 """
-from sqlalchemy import text, column, String
+from sqlalchemy import text, column, String, values
 
 from ...decorators import db_query
 from ...databases.tables import (
@@ -9,7 +9,6 @@ from ...databases.tables import (
     StaticFeature,
 )
 from ...loggers import get_logger
-from ...databases.base import Values
 
 
 ONE_HOUR_INTERVAL = text("interval '1 hour'")
@@ -51,10 +50,8 @@ class StaticFeatureAvailabilityMixin:
                 session.query(
                     MetaPoint.id,
                     MetaPoint.source,
-                    Values(
-                        [column("feature_name", String),],
-                        *[(feature,) for feature in feature_names],
-                        alias_name="t2",
+                    values(column("feature_name", String), name="t2").data(
+                        [(feature,) for feature in feature_names]
                     ),
                 )
                 .filter(MetaPoint.source.in_(sources))
@@ -62,7 +59,8 @@ class StaticFeatureAvailabilityMixin:
             )
 
             available_data_q = session.query(
-                expected_values, in_data_cte.c.point_id.isnot(None).label("has_data"),
+                expected_values,
+                in_data_cte.c.point_id.isnot(None).label("has_data"),
             ).join(
                 in_data_cte,
                 (in_data_cte.c.point_id == expected_values.c.id)
@@ -77,5 +75,6 @@ class StaticFeatureAvailabilityMixin:
                 )
 
             return available_data_q.order_by(
-                expected_values.c.source, expected_values.c.feature_name,
+                expected_values.c.source,
+                expected_values.c.feature_name,
             )

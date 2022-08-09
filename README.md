@@ -1,4 +1,4 @@
-# UrbanAir API - Repurposed as London Busyness COVID-19
+# UrbanAir API - Including London COVID-19 Busyness (Odysseus)
 [![Build Status](https://dev.azure.com/alan-turing-institute/clean-air-infrastructure/_apis/build/status/alan-turing-institute.clean-air-infrastructure?branchName=master)](https://dev.azure.com/alan-turing-institute/clean-air-infrastructure/_build/latest?definitionId=1&branchName=master)
 [![Build Status](https://travis-ci.com/alan-turing-institute/clean-air-infrastructure.svg?token=zxQwzfsqCyEouTqXAVUn&branch=master)](https://travis-ci.com/alan-turing-institute/clean-air-infrastructure)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -7,8 +7,22 @@ Azure Infrastructure for the [Clean Air project](https://www.turing.ac.uk/resear
 
 Provides 48h high-resolution air pollution forecasts over London via the [UrbanAir-API](https://urbanair.turing.ac.uk/apidocs/).
 
-Currently repurposed to assess `busyness` in London during the COVID-19 pandemic - providing busyness data via the [ip-whitelisted API](https://urbanair.turing.ac.uk/apidocs/).
+Previously repurposed to assess `busyness` in London during the COVID-19 pandemic - providing busyness data via the [ip-whitelisted API](https://urbanair.turing.ac.uk/apidocs/).
 
+## Contents
+
+- [Installation](docs/installation.md)
+- [Developer guide](docs/developer.md)
+- [Docker guide](docs/docker.md)
+- [Azure infrastructure](docs/azure.md)
+- [Datasets](docs/datasets.md)
+- [Secret files](docs/secretfile.md)
+- [SAS token](docs/sas_token.md)
+- [Cheat sheet](docs/cheat.md)
+- [Contributors](docs/contributors.md)
+
+<details>
+  <summary>See the old README file!</summary>
 
 # Contributors :dancers:
 
@@ -16,7 +30,7 @@ A list of key developers on the project. A good place to start if you wish to co
 
 | Name               | GitHub ID                                            | Email                       | Admin  |
 | ------------------ | -----------------------------------------------------| --------------------------- | ------ |
-| James Brandreth    | [@jamesbrandreth](https://github.com/jamesbrandreth) | <jbrandreth@turing.ac.uk>   | |
+| James Brandreth    | [@jamesbrandreth](https://github.com/jamesbrandreth) | <jbrandreth@turing.ac.uk>   | Infrastructure, Odysseus |
 | Oscar Giles        | [@OscartGiles](https://github.com/OscartGiles)       | <ogiles@turing.ac.uk>       | Infrastructure, Prod Database, Kubernetes Cluster |
 | Oliver Hamelijnck  | [@defaultobject](https://github.com/defaultobject)   | <ohamelijnck@turing.ac.uk>  | |
 | Chance Haycock     | [@chancehaycock](https://github.com/chancehaycock)   | <chaycock@turing.ac.uk>     | |
@@ -27,6 +41,7 @@ A list of key developers on the project. A good place to start if you wish to co
 | James Robinson     | [@jemrobinson](https://github.com/jemrobinson)       | <jrobinson@turing.ac.uk>    | Infrastructure, Prod Database, Kubernetes Cluster |
 | Tim Spain          | [@timspainUCL](https://github.com/timspainUCL)       | <t.spain@ucl.ac.uk>         | |
 | Edward Thorpe-Woods | [@TeddyTW](https://github.com/TeddyTW)              | <ethorpe-woods@turing.ac.uk>| |
+| James Walsh | [@dead-water](https://github.com/dead-water)              | <jwalsh@turing.ac.uk>| Infrastructure, Odysseus |
 
 # Contents
 
@@ -247,7 +262,7 @@ All the steps above can be done with:
 
 ```bash
 # Non-infrastructure dependencies
-conda create -n busyness python=3.7
+conda create -n busyness python=3.7.8 --channel conda-forge 
 conda activate busyness
 conda install -c anaconda postgresql
 conda install -c conda-forge gdal postgis uwsgi
@@ -414,7 +429,7 @@ export PGPASSWORD=$(az account get-access-token --resource-type oss-rdbms --quer
 Once your IP has been whitelisted (ask the [database adminstrators](#contributors-:dancers:)), you will be able to
 access the database using psql:
 ```bash
-psql "host=cleanair-inputs-server.postgres.database.azure.com port=5432 dbname=cleanair_inputs_db user=<your-turing-credentials>@cleanair-inputs-server sslmode=require"
+psql "host=cleanair-inputs-2021-server.postgres.database.azure.com port=5432 dbname=cleanair_inputs_db user=<your-turing-credentials>@cleanair-inputs-2021-server sslmode=require"
 ```
 replacing `<your-turing-credentials>` with your turing credentials (e.g. `jblogs@turing.ac.uk`).
 
@@ -424,15 +439,15 @@ To connect to the database using the CleanAir package you will need to create an
 
 ```bash
 echo '{
-    "username": "<your-turing-credentials>@cleanair-inputs-server",
-    "host": "cleanair-inputs-server.postgres.database.azure.com",
+    "username": "<your-turing-credentials>@cleanair-inputs-2021-server",
+    "host": "cleanair-inputs-2021-server.postgres.database.azure.com",
     "port": 5432,
     "db_name": "cleanair_inputs_db",
     "ssl_mode": "require"
 }' >> .secrets/db_secrets_ad.json
 ```
 
-Make sure you then replace `<your-turing-credentials>` with your full Turing username (e.g.`jblogs@turing.ac.uk@cleanair-inputs-server`).
+Make sure you then replace `<your-turing-credentials>` with your full Turing username (e.g.`jblogs@turing.ac.uk@cleanair-inputs-2021-server`).
 
 
 # Running entry points
@@ -516,7 +531,7 @@ export PGPASSWORD=$(az account get-access-token --resource-type oss-rdbms --quer
 
 #### On development server
 ```bash
-DB_SECRET_FILE=$(pwd)/.secrets/.db_secrets_ad.json uvicorn urbanair.main:app --reload
+DB_SECRET_FILE=$(pwd)/.secrets/.db_secrets_ad.json uvicorn urbanair.urbanair:app --reload
 ```
 
 #### In a docker image
@@ -530,7 +545,7 @@ Then run the docker image:
 ```bash
 DB_SECRET_FILE='.db_secrets_ad.json'
 SECRET_DIR=$(pwd)/.secrets
-docker run -i -p 80:80 -e DB_SECRET_FILE -e PGPASSWORD -e APP_MODULE="urbanair.main:app" -v $SECRET_DIR:/secrets fastapi:test
+docker run -i -p 80:80 -e DB_SECRET_FILE -e PGPASSWORD -e APP_MODULE="urbanair.urbanair:app" -v $SECRET_DIR:/secrets fastapi:test
 ```
 
 # Developer guide
@@ -542,7 +557,7 @@ Before being accepted into master all code should have well writen documentation
 
 **Please use [Google Style Python Docstrings](https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html)**
 
-We would like to move towards adding [type hints](https://docs.python.org/3.7/library/typing.html) so you may optionally add types to your code. In which case you do not need to include types in your google style docstrings.
+We would like to move towards adding [type hints](https://docs.python.org/3.8/library/typing.html) so you may optionally add types to your code. In which case you do not need to include types in your google style docstrings.
 
 Adding and updating existing documentation is highly encouraged.
 
@@ -722,12 +737,12 @@ docker pull cleanairdocker.azurecr.io/model_fitting
 To fit and predict using the SVGP you can run:
 
 ```bash
-docker run -it --rm cleanairdocker.azurecr.io/model_fitting:latest sh /app/scripts/svgp.sh
+docker run -it --rm cleanairdocker.azurecr.io/model_fitting:latest sh /app/scripts/svgp_static.sh
 ```
 
 To fit and predict using the MRDGP run:
 ```bash
-docker run -it --rm cleanairdocker.azurecr.io/model_fitting:latest sh /app/scripts/mrdgp.sh
+docker run -it --rm cleanairdocker.azurecr.io/model_fitting:latest sh /app/scripts/mrdgp_static.sh
 ```
 
 If you are running on your local machine you will also need to add `-e PGPASSWORD -e DB_SECRET_FILE -v $SECRET_DIR:/secrets` after the `run` command and set the environment variables (see above in the README).
@@ -915,3 +930,5 @@ terraform destroy
 
 You can check everything was removed on the Azure portal.
 Then login to TravisCI and delete the Azure Container repo environment variables.
+
+</details>

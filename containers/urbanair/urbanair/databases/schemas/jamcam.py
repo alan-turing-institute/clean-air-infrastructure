@@ -1,13 +1,14 @@
 """Return Schemas for JamCam routes"""
 # pylint: disable=C0115
 from typing import List, Tuple
-from datetime import datetime, timezone
+from datetime import datetime, timezone, date
 from pydantic import BaseModel, validator
 from pydantic.dataclasses import dataclass
 from sqlalchemy import text
 
 
 TWELVE_HOUR_INTERVAL = text("interval '12 hour'")
+
 
 # pylint: disable=E0213, R0201
 class UTCTime(BaseModel):
@@ -67,6 +68,30 @@ class JamCamDailyAverage(JamCamAverageCounts):
     camera_id: str
     detection_class: str
     counts: int
+
+
+class JamCamStabilitySummaryData(JamCamBase):
+
+    score: int
+
+
+class JamCamStabilityRawData(JamCamBase):
+
+    mse_diff_n1: float
+    mse_diff_0: float
+    mse_diff_avg0: float
+    ssim_diff_n1: float
+    ssim_diff_0: float
+    ssim_diff_avg0: float
+    date: date
+    is_cp: bool
+
+
+class JamCamConfidentDetections(JamCamBase, UTCTime):
+
+    measurement_start_utc: datetime
+    detection_class: str
+    count: int
 
 
 # GeoJson Types

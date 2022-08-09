@@ -19,16 +19,20 @@ from .dataset_types import (
     FeaturesDict,
     IndexedDatasetDict,
     IndexDict,
+    PredictionDict,
     TargetDict,
     NDArrayTuple,
     FullDataConfig,
     InterestPointDict,
 )
+from .experiment_types import ExperimentConfig, ExperimentName
 from .model_types import (
     BaseModelParams,
     KernelParams,
     MRDGPParams,
+    CompiledMRDGPParams,
     SVGPParams,
+    model_params_from_dict,
 )
 
 
@@ -36,6 +40,8 @@ __all__ = [
     "Borough",
     "BaseModelParams",
     "DataConfig",
+    "ExperimentConfig",
+    "ExperimentName",
     "FullDataConfig",
     "DatasetDict",
     "FeaturesDict",
@@ -45,7 +51,9 @@ __all__ = [
     "InterestPointDict",
     "KernelType",
     "MRDGPParams",
+    "CompiledMRDGPParams",
     "NDArrayTuple",
+    "PredictionDict",
     "SVGPParams",
     "TargetDict",
     "Source",

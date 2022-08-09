@@ -37,7 +37,7 @@ class DBConfig(Connector):
         Returns:
             dict: A dictionary of the required configuration
         """
-        with open(config_file, "r") as open_f:
+        with open(config_file, "r", encoding="utf-8") as open_f:
             return load(open_f, Loader=Loader)
 
     @property
@@ -72,8 +72,7 @@ class DBConfig(Connector):
             return None
 
     def configure_all_roles(self):
-        """Configure roles as defined in the configuration file
-        """
+        """Configure roles as defined in the configuration file"""
 
         # Create Schema
         self.create_schema()

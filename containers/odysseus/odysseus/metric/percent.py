@@ -105,7 +105,8 @@ def percent_of_baseline(
                 and not flag_dict["no_traffic_in_comparison"]
             ):
                 percent_change = percent_of_baseline_counts(
-                    baseline_n_vehicles_in_interval, comparison_n_vehicles_in_interval,
+                    baseline_n_vehicles_in_interval,
+                    comparison_n_vehicles_in_interval,
                 )
 
             if len(groupby_cols) > 1:
@@ -130,7 +131,10 @@ def percent_of_baseline(
     return pd.DataFrame(rows_list)
 
 
-def percent_of_baseline_counts(baseline_count: int, comparison_count: int,) -> float:
+def percent_of_baseline_counts(
+    baseline_count: int,
+    comparison_count: int,
+) -> float:
     """Calculate the percentage change of the comparison count compared to the baseline.
 
     Args:
