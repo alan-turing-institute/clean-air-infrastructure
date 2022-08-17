@@ -52,9 +52,7 @@ def flatten_dict(dict_list: dict) -> Dict:
     return {k: v for d in dict_list for k, v in d.items()}
 
 
-def split_apply_combine(
-    function: Callable, key: Callable, iterable: List[Dict]
-) -> Any:
+def split_apply_combine(function: Callable, key: Callable, iterable: List[Dict]) -> Any:
     """
     Split list_of_dicts by grouping key and then apply function to each group
     and returning a new list of dictionaries
@@ -144,7 +142,7 @@ class ModelDataExtractor:
             data_output[source] = data_df_normed
 
         return data_output
-        
+
     def get_array_with_species(
         self, data_df: pd.DataFrame, x_names: List[str], species: List[Species]
     ) -> Tuple[
@@ -219,16 +217,13 @@ class ModelDataExtractor:
         full_config: FullDataConfig,
         data_frame_dict: Dict[Source, pd.DataFrame],
         prediction: bool = False,
-    ) -> Union[
-        Tuple[pd.Index, npt.NDArray[np.float64]],
-        Tuple[pd.Index, npt.NDArray[np.float64], Dict[Species, npt.NDArray[np.float64]]]
-    ]:
+    ) -> Any:
 
         species = full_config.species
         x_names = self.__x_names_norm(full_config.x_names)
         X_dict: FeaturesDict = {}
         Y_dict: TargetDict = {source: {} for source in data_frame_dict.keys()}
-        index_dict: FeaturesDict = {source: {} for source in data_frame_dict.keys()}
+        index_dict: FeaturesDict
 
         for source in data_frame_dict.keys():
 
@@ -240,9 +235,11 @@ class ModelDataExtractor:
                     )
                 else:
                     # Save the index
-                    index_dict[source], X_dict[source], Y_dict[source] = self.get_array_with_species(
-                        data_df, x_names, species
-                    )
+                    (
+                        index_dict[source],
+                        X_dict[source],
+                        Y_dict[source],
+                    ) = self.get_array_with_species(data_df, x_names, species)
 
             else:
                 (
@@ -255,7 +252,8 @@ class ModelDataExtractor:
 
     @staticmethod
     def join_forecast_on_dataframe(
-        data_df: pd.DataFrame, pred_dict: Dict[Species, Dict[str, npt.NDArray[np.float64]]]
+        data_df: pd.DataFrame,
+        pred_dict: Dict[Species, Dict[str, npt.NDArray[np.float64]]],
     ) -> pd.DataFrame:
         """Return a new dataframe with columns updated from pred_dict."""
         # TODO implement this for multiple sources

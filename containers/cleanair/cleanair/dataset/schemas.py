@@ -129,7 +129,7 @@ class StaticFeatureTimeSpecies(StaticFeatureLocSchema):
     epoch: Optional[int]
 
     @validator("epoch", always=True)
-    def gen_measurement_end_time(cls, v, values):
+    def gen_measurement_end_time(cls: Any, v: Any, values: Any) -> Any:
         "Generate end time one hour after start time"
         if v:
             raise ValidationError(
