@@ -28,7 +28,7 @@ class BaseFeatures(BaseModel):
     class Config:
         orm_mode = True
 
-    def dict_enums(self, *args: str, **kwargs: bool) -> Dict:
+    def dict_enums(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
         """Return a dictionary like self.dict() but converts any enum types return their raw value"""
 
         dict_entries = []
@@ -49,11 +49,11 @@ class DynamicFeatureSchema(BaseFeatures):
     epoch: Optional[int]
 
     @validator("epoch", always=True)
-    def gen_measurement_end_time(cls, v, values):
+    def gen_measurement_end_time(cls: Any, v: Any, values: Any) -> Any:
         "Generate end time one hour after start time"
         if v:
             raise ValidationError(
-                "Dont pass a value for epoch. It is generated automatically"
+                "Dont pass a value for epoch. It is generated automatically", cls
             )
         return values["measurement_start_utc"].timestamp()
 
@@ -133,7 +133,7 @@ class StaticFeatureTimeSpecies(StaticFeatureLocSchema):
         "Generate end time one hour after start time"
         if v:
             raise ValidationError(
-                "Dont pass a value for epoch. It is generated automatically"
+                "Dont pass a value for epoch. It is generated automatically", cls
             )
         return values["measurement_start_utc"].timestamp()
 

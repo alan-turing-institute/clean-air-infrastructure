@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta
 from typing import Dict, List
-from sqlalchemy import func, text, cast, String, and_, Any
+from sqlalchemy import func, text, cast, String, and_
 
 from cleanair.types.enum_types import DynamicFeatureNames
 
