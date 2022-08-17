@@ -3,15 +3,17 @@ PydanticModels for serialising database query results
 """
 from datetime import datetime
 from enum import Enum
-from typing import Optional
+from pickle import DICT
+from typing import Any, Callable, Dict, Optional, List, Tuple
 from uuid import UUID
+from xmlrpc.client import DateTime
+import pandas as pd
+
+# pylint: disable=R0201,C0115,E0213
 
 from pydantic import BaseModel, validator, ValidationError
 
-from ..types import StaticFeatureNames, DynamicFeatureNames, Source, Species
-
-
-# pylint: disable=R0201,C0115,E0213
+from cleanair.types import StaticFeatureNames, DynamicFeatureNames, Source, Species
 
 
 class BaseFeatures(BaseModel):
@@ -26,7 +28,7 @@ class BaseFeatures(BaseModel):
     class Config:
         orm_mode = True
 
-    def dict_enums(self, *args, **kwargs):
+    def dict_enums(self, *args: str, **kwargs: bool) -> Dict:
         """Return a dictionary like self.dict() but converts any enum types return their raw value"""
 
         dict_entries = []
@@ -58,7 +60,7 @@ class DynamicFeatureSchema(BaseFeatures):
     class Config:
         orm_mode = True
 
-    def dict_flatten(self, *args, **kwargs):
+    def dict_flatten(self, *args: str, **kwargs: bool) -> Dict:
         """Same as self.dict_enums except values and feature name
         are replaced with 'value_1000_{feature_name}
         """
@@ -90,7 +92,7 @@ class StaticFeatureSchema(BaseFeatures):
     class Config:
         orm_mode = True
 
-    def dict_flatten(self, *args, **kwargs):
+    def dict_flatten(self, *args: str, **kwargs: bool) -> Dict:
         """Same as self.dict_enums except values and feature name
         are replaced with 'value_1000_{feature_name}
         """
@@ -142,18 +144,17 @@ class StaticFeaturesWithSensors(StaticFeatureTimeSpecies):
     value: Optional[float]
     box_id: Optional[UUID]
 
-    # pylint: disable=E1101
-    def dict_flatten(self, *args, **kwargs):
+    def dict_flatten(self, *args: str, **kwargs: bool) -> Dict:
         """Same as self.dict_enums except values and feature name
         are replaced with 'value_1000_{feature_name}
         """
 
-        def flatten_entries(key, value):
+        def flatten_entries(key: str, value: bool) -> Any:
             "Helper function for flattening values"
             if "value_" in key:
-                return (f"{key}_{self.feature_name.value}", value)
+                return (f"%s_%s", {key}, {self.feature_name.value}, value)
             if key == "species_code":
-                return (f"{self.species_code}", self.value)
+                return (f"%s", {self.species_code}, self.value)
             return (key, value)
 
         item = self.dict_enums(*args, **kwargs)

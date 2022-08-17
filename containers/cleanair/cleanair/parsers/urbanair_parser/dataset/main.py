@@ -1,4 +1,5 @@
 """Exporting dataset from Cleanair database."""
+# pylint: disable=C0411
 
 import typer
 import pandas as pd
@@ -8,6 +9,7 @@ from datetime import datetime
 from cleanair.dataset.model_config import ModelConfig
 from cleanair.dataset.model_data import ModelData
 from ..state import state
+from typing import Dict
 from ....loggers import initialise_logging
 
 from ....types import (
