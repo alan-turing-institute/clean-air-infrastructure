@@ -152,9 +152,9 @@ class StaticFeaturesWithSensors(StaticFeatureTimeSpecies):
         def flatten_entries(key: str, value: bool) -> Any:
             "Helper function for flattening values"
             if "value_" in key:
-                return (f"%s_%s", {key}, {self.feature_name.value}, value)
+                return (f"{key}_{self.feature_name.value}", value)
             if key == "species_code":
-                return (f"%s", {self.species_code}, self.value)
+                return (f"{self.species_code}", self.value)
             return (key, value)
 
         item = self.dict_enums(*args, **kwargs)
