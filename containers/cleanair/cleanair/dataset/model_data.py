@@ -4,7 +4,7 @@ from __future__ import annotations
 import sys
 from datetime import datetime, timedelta
 from itertools import groupby
-from typing import Dict, List, Mapping, Tuple, overload, Callable, Union, Optional, Any
+from typing import Any, Dict, List, Mapping, Tuple, overload, Callable, Union, Optional
 
 import numpy as np
 import numpy.typing as npt
@@ -53,8 +53,8 @@ def flatten_dict(dict_list: dict) -> Dict:
 
 
 def split_apply_combine(
-    function: dict, key: Callable, iterable: List[Dict]
-) -> Mapping[Dict, None]:
+    function: Callable, key: Callable, iterable: List[Dict]
+) -> Any:
     """
     Split list_of_dicts by grouping key and then apply function to each group
     and returning a new list of dictionaries
@@ -144,37 +144,25 @@ class ModelDataExtractor:
             data_output[source] = data_df_normed
 
         return data_output
-
-    # pylint: disable=C0116,R0201
-    @overload
-    def get_array(
-        self, data_df: pd.DataFrame, x_names: str, species: None
-    ) -> Tuple[pd.Index, npt.NDArray[np.float64]]:
-        ...
-
-    @overload
-    def get_array(
-        self, data_df: pd.DataFrame, x_names: str, species: List[Species]
+        
+    def get_array_with_species(
+        self, data_df: pd.DataFrame, x_names: List[str], species: List[Species]
     ) -> Tuple[
         pd.Index, npt.NDArray[np.float64], Dict[Species, npt.NDArray[np.float64]]
     ]:
-        ...
+        index, X = self.get_array(data_df, x_names)
+        Y: Dict[Species, npt.NDArray[np.float64]] = {
+            spec: np.expand_dims(data_df[spec.value].to_numpy(), axis=1)
+            for spec in species
+        }
+        return index, X, Y
 
     def get_array(
-        self, data_df: pd.DataFrame, x_names: str, species: None
+        self, data_df: pd.DataFrame, x_names: List[str]
     ) -> Tuple[pd.Index, npt.NDArray[np.float64]]:
         """Get an array from a pandas dataframe for any Source except satellite"""
         index = data_df.index.to_numpy()
         X = data_df[x_names].to_numpy()
-
-        if species:
-            Y: Dict[Species, npt.NDArray[np.float64]] = {
-                spec: np.expand_dims(data_df[spec.value].to_numpy(), axis=1)
-                for spec in species
-            }
-
-            return index, X, Y
-
         return index, X
 
     def get_array_satellite(
@@ -231,7 +219,10 @@ class ModelDataExtractor:
         full_config: FullDataConfig,
         data_frame_dict: Dict[Source, pd.DataFrame],
         prediction: bool = False,
-    ) -> IndexedDatasetDict:
+    ) -> Union[
+        Tuple[pd.Index, npt.NDArray[np.float64]],
+        Tuple[pd.Index, npt.NDArray[np.float64], Dict[Species, npt.NDArray[np.float64]]]
+    ]:
 
         species = full_config.species
         x_names = self.__x_names_norm(full_config.x_names)
@@ -249,7 +240,7 @@ class ModelDataExtractor:
                     )
                 else:
                     # Save the index
-                    index_dict[source], X_dict[source], Y_dict[source] = self.get_array(
+                    index_dict[source], X_dict[source], Y_dict[source] = self.get_array_with_species(
                         data_df, x_names, species
                     )
 
@@ -264,8 +255,8 @@ class ModelDataExtractor:
 
     @staticmethod
     def join_forecast_on_dataframe(
-        data_df: pd.DataFrame, pred_dict: TargetDict
-    ) -> None:
+        data_df: pd.DataFrame, pred_dict: Dict[Species, Dict[str, npt.NDArray[np.float64]]]
+    ) -> pd.DataFrame:
         """Return a new dataframe with columns updated from pred_dict."""
         # TODO implement this for multiple sources
         # TODO take the index as a parameter and match pred_dict onto data_df using index
