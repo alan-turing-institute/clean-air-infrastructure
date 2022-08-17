@@ -440,7 +440,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
         end_date: datetime,
         features: List[DynamicFeatureNames],
         point_ids: List[str],
-    ) -> None:
+    ) -> Any:
         "Get the selected dynamic features for a specific locatoin and time"
 
         with self.dbcnxn.open_session() as session:
@@ -544,7 +544,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
         point_ids: List[str],
         features: List[StaticFeatureNames],
         source: Source,
-    ) -> None:
+    ) -> Any:
         """
         Return static features from the database for a list of point ids
             for a particular source.
@@ -645,7 +645,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
         start_date: datetime,
         end_date: datetime,
         species: List[Species],
-    ) -> None:
+    ) -> Any:
         """
         Cross product of a date range, a list of species and a subquery
         """
@@ -678,7 +678,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
         point_ids: List[str],
         features: List[StaticFeatureNames],
         source: Source,
-    ) -> None:
+    ) -> Any:
         """Get static features with sensor readings joined"""
 
         # Get sensor readings and summary of available data from start_date (inclusive) to end_date
@@ -721,7 +721,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
         static_features: Alias,
         sensor_readings: Alias,
         source: Source,
-    ) -> None:
+    ) -> Any:
         """Join sensor readings and static features"""
         columns = [
             static_features.c.point_id,
