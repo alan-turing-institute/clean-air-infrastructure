@@ -2,24 +2,24 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any
 from sqlalchemy import func, text, cast, String, and_
 
-from cleanair.types.enum_types import DynamicFeatureNames
+from ..types.enum_types import DynamicFeatureNames
 
-from cleanair.databases import DBReader
-from cleanair.databases.materialised_views import LondonBoundaryView
-from cleanair.databases.tables import StaticFeature, DynamicFeature, MetaPoint
-from cleanair.decorators import db_query
-from cleanair.exceptions import MissingFeatureError, MissingSourceError
-from cleanair.loggers import get_logger, green
-from cleanair.mixins.availability_mixins import (
+from ..databases import DBReader
+from ..databases.materialised_views import LondonBoundaryView
+from ..databases.tables import StaticFeature, DynamicFeature, MetaPoint
+from ..decorators import db_query
+from ..exceptions import MissingFeatureError, MissingSourceError
+from ..loggers import get_logger, green
+from ..mixins.availability_mixins import (
     LAQNAvailabilityMixin,
     AQEAvailabilityMixin,
     SatelliteAvailabilityMixin,
 )
-from cleanair.timestamps import as_datetime
-from cleanair.types import (
+from ..timestamps import as_datetime
+from ..types import (
     Source,
     Species,
     StaticFeatureNames,
@@ -162,6 +162,7 @@ class ModelConfig(
 
         return FullDataConfig(**config_dict)
 
+    #  pylint: disable=W0613
     def check_static_features_available(
         self,
         features: List[StaticFeatureNames],

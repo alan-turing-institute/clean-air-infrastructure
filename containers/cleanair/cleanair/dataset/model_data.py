@@ -4,7 +4,7 @@ from __future__ import annotations
 import sys
 from datetime import datetime, timedelta
 from itertools import groupby
-from typing import Any, Dict, List, Mapping, Tuple, overload, Callable, Union, Optional
+from typing import Any, Dict, List, Tuple, Callable, Union, Optional
 
 import numpy as np
 import numpy.typing as npt
@@ -12,7 +12,6 @@ import pandas as pd
 from pydantic import ValidationError
 from sqlalchemy import func, text, column, String, cast, and_, values, literal
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import aliased
 from sqlalchemy.sql.expression import Alias
 from cleanair.types.enum_types import DynamicFeatureNames
 
@@ -22,22 +21,21 @@ from .schemas import (
     StaticFeatureLocSchema,
     StaticFeaturesWithSensors,
 )
-from cleanair.databases import DBReader
-from cleanair.databases.tables import (
+from ..databases import DBReader
+from ..databases.tables import (
     StaticFeature,
     DynamicFeature,
     MetaPoint,
 )
-from cleanair.decorators import db_query
-from cleanair.loggers import get_logger, green
-from cleanair.mixins import DBQueryMixin
-from cleanair.types import (
+from ..decorators import db_query
+from ..loggers import get_logger, green
+from ..mixins import DBQueryMixin
+from ..types import (
     FullDataConfig,
     Source,
     Species,
     StaticFeatureNames,
     FeaturesDict,
-    IndexedDatasetDict,
     TargetDict,
 )
 
@@ -148,6 +146,9 @@ class ModelDataExtractor:
     ) -> Tuple[
         pd.Index, npt.NDArray[np.float64], Dict[Species, npt.NDArray[np.float64]]
     ]:
+
+        """Get an array from a pandas dataframe for any Source with Species except satellite"""
+
         index, X = self.get_array(data_df, x_names)
         Y: Dict[Species, npt.NDArray[np.float64]] = {
             spec: np.expand_dims(data_df[spec.value].to_numpy(), axis=1)
@@ -212,13 +213,14 @@ class ModelDataExtractor:
 
         return index, X, Y
 
+    #  pylint: disable=E0601
     def get_data_arrays(
         self,
         full_config: FullDataConfig,
         data_frame_dict: Dict[Source, pd.DataFrame],
         prediction: bool = False,
     ) -> Any:
-
+        """Get an data array from a pandas dataframe"""
         species = full_config.species
         x_names = self.__x_names_norm(full_config.x_names)
         X_dict: FeaturesDict = {}

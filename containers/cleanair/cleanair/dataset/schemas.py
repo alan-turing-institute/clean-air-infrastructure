@@ -3,11 +3,8 @@ PydanticModels for serialising database query results
 """
 from datetime import datetime
 from enum import Enum
-from pickle import DICT
-from typing import Any, Callable, Dict, Optional, List, Tuple
+from typing import Any, Dict, Optional
 from uuid import UUID
-from xmlrpc.client import DateTime
-import pandas as pd
 
 # pylint: disable=R0201,C0115,E0213
 

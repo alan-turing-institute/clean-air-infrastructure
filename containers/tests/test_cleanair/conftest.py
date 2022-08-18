@@ -33,7 +33,7 @@ from cleanair.databases.tables.fakes import (
     SatelliteForecastSchema,
 )
 from cleanair.experiment import AirQualityInstance
-from cleanair.models import ModelConfig, ModelData
+from cleanair.dataset import ModelConfig, ModelData
 from cleanair.types import (
     BaseModelParams,
     DataConfig,

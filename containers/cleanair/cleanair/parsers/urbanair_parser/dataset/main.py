@@ -6,8 +6,8 @@ import pandas as pd
 from pathlib import Path
 from datetime import datetime
 
-from cleanair.dataset.model_config import ModelConfig
-from cleanair.dataset.model_data import ModelData
+from ....dataset.model_config import ModelConfig
+from ....dataset.model_data import ModelData
 from ..state import state
 from typing import Dict
 from ....loggers import initialise_logging
