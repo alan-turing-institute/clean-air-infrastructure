@@ -4,7 +4,8 @@ Note: SVGP must be run before testing mrdgp.
 See https://github.com/alan-turing-institute/clean-air-infrastructure/issues/556
 """
 
-from cleanair.models import ModelDataExtractor, MRDGP
+from cleanair.dataset.model_data import ModelDataExtractor
+from cleanair.models.mr_dgp_model import MRDGP
 
 
 def test_mrdgp_init(mrdgp_model_params):
