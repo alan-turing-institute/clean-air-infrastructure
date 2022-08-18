@@ -8,7 +8,7 @@ from ..shared_args import InputDir
 from ..shared_args.model_options import Refresh
 from ....models.svgp import SVGP
 from ....models.mr_dgp_model import MRDGP
-from ....models import ModelDataExtractor
+from ....dataset.model_data import ModelDataExtractor
 from ....types import ModelName, Source
 from ....utils import tf1
 from ....utils.file_manager import FileManager

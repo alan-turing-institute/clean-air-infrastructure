@@ -21,7 +21,7 @@ from .experiment import (
 )
 from ..loggers import get_logger
 from ..metrics import TrainingMetrics
-from ..models import ModelData, ModelDataExtractor
+from ..dataset.model_data import ModelData, ModelDataExtractor
 from ..models.svgp import SVGP
 from ..models.mr_dgp_model import MRDGP
 from ..types import ExperimentName, IndexedDatasetDict, ModelName, Source, TargetDict

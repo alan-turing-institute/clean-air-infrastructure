@@ -11,7 +11,8 @@ from ..shared_args import (
     UpTo_callback,
 )
 
-from ....models import ModelConfig, ModelData
+from ....dataset.model_config import ModelConfig
+from ....dataset.model_data import ModelData
 from ....types import (
     Species,
     Source,

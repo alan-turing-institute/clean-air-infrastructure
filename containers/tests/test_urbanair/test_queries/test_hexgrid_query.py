@@ -2,6 +2,7 @@
 from datetime import datetime, timedelta
 from math import nan
 
+# pylint: disable=E0401
 from cleanair.databases import DBWriter
 from cleanair.databases.tables import (
     AirQualityDataTable,

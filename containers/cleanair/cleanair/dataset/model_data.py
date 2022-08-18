@@ -4,7 +4,7 @@ from __future__ import annotations
 import sys
 from datetime import datetime, timedelta
 from itertools import groupby
-from typing import Dict, List, Tuple, overload, Callable
+from typing import Any, Dict, List, Tuple, Callable, Union, Optional
 
 import numpy as np
 import numpy.typing as npt
@@ -12,7 +12,6 @@ import pandas as pd
 from pydantic import ValidationError
 from sqlalchemy import func, text, column, String, cast, and_, values, literal
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import aliased
 from sqlalchemy.sql.expression import Alias
 from cleanair.types.enum_types import DynamicFeatureNames
 
@@ -37,7 +36,6 @@ from ..types import (
     Species,
     StaticFeatureNames,
     FeaturesDict,
-    IndexedDatasetDict,
     TargetDict,
 )
 
@@ -47,12 +45,12 @@ ONE_HOUR_INTERVAL = text("interval '1 hour'")
 ONE_DAY_INTERVAL = text("interval '1 day'")
 
 
-def flatten_dict(dict_list):
+def flatten_dict(dict_list: dict) -> Dict:
     "Concatenate a list of dictionaries into a single dictionary"
     return {k: v for d in dict_list for k, v in d.items()}
 
 
-def split_apply_combine(function, key: Callable, iterable: List[Dict]):
+def split_apply_combine(function: Callable, key: Callable, iterable: List[Dict]) -> Any:
     """
     Split list_of_dicts by grouping key and then apply function to each group
     and returning a new list of dictionaries
@@ -67,7 +65,7 @@ def split_apply_combine(function, key: Callable, iterable: List[Dict]):
 class ModelDataExtractor:
     """Extract model data"""
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: dict) -> None:
         """
         Initialise the ModelData object with a config file
         args:
@@ -106,7 +104,7 @@ class ModelDataExtractor:
         return norm_mean, norm_std
 
     @staticmethod
-    def __x_names_norm(x_names):
+    def __x_names_norm(x_names: List[str]) -> List[str]:
         """Get the normalised x names"""
         return [x + "_norm" for x in x_names]
 
@@ -143,38 +141,31 @@ class ModelDataExtractor:
 
         return data_output
 
-    # pylint: disable=C0116,R0201
-    @overload
-    def get_array(
-        self, data_df: pd.DataFrame, x_names, species: None
-    ) -> Tuple[pd.Index, npt.NDArray[np.float64]]:
-        ...
-
-    @overload
-    def get_array(
-        self, data_df: pd.DataFrame, x_names, species: List[Species]
+    def get_array_with_species(
+        self, data_df: pd.DataFrame, x_names: List[str], species: List[Species]
     ) -> Tuple[
         pd.Index, npt.NDArray[np.float64], Dict[Species, npt.NDArray[np.float64]]
     ]:
-        ...
 
-    def get_array(self, data_df, x_names, species=None):
+        """Get an array from a pandas dataframe for any Source with Species except satellite"""
+
+        index, X = self.get_array(data_df, x_names)
+        Y: Dict[Species, npt.NDArray[np.float64]] = {
+            spec: np.expand_dims(data_df[spec.value].to_numpy(), axis=1)
+            for spec in species
+        }
+        return index, X, Y
+
+    def get_array(
+        self, data_df: pd.DataFrame, x_names: List[str]
+    ) -> Tuple[pd.Index, npt.NDArray[np.float64]]:
         """Get an array from a pandas dataframe for any Source except satellite"""
         index = data_df.index.to_numpy()
         X = data_df[x_names].to_numpy()
-
-        if species:
-            Y: Dict[Species, npt.NDArray[np.float64]] = {
-                spec: np.expand_dims(data_df[spec.value].to_numpy(), axis=1)
-                for spec in species
-            }
-
-            return index, X, Y
-
         return index, X
 
     def get_array_satellite(
-        self, data_df: pd.DataFrame, x_names, species: List[Species]
+        self, data_df: pd.DataFrame, x_names: List[str], species: List[Species]
     ) -> Tuple[
         pd.Index, npt.NDArray[np.float64], Dict[Species, npt.NDArray[np.float64]]
     ]:
@@ -222,18 +213,19 @@ class ModelDataExtractor:
 
         return index, X, Y
 
+    #  pylint: disable=E0601
     def get_data_arrays(
         self,
         full_config: FullDataConfig,
         data_frame_dict: Dict[Source, pd.DataFrame],
         prediction: bool = False,
-    ) -> IndexedDatasetDict:
-
+    ) -> Any:
+        """Get an data array from a pandas dataframe"""
         species = full_config.species
         x_names = self.__x_names_norm(full_config.x_names)
         X_dict: FeaturesDict = {}
         Y_dict: TargetDict = {source: {} for source in data_frame_dict.keys()}
-        index_dict: FeaturesDict = {source: {} for source in data_frame_dict.keys()}
+        index_dict: FeaturesDict
 
         for source in data_frame_dict.keys():
 
@@ -245,9 +237,11 @@ class ModelDataExtractor:
                     )
                 else:
                     # Save the index
-                    index_dict[source], X_dict[source], Y_dict[source] = self.get_array(
-                        data_df, x_names, species
-                    )
+                    (
+                        index_dict[source],
+                        X_dict[source],
+                        Y_dict[source],
+                    ) = self.get_array_with_species(data_df, x_names, species)
 
             else:
                 (
@@ -259,7 +253,10 @@ class ModelDataExtractor:
         return X_dict, Y_dict, index_dict
 
     @staticmethod
-    def join_forecast_on_dataframe(data_df: pd.DataFrame, pred_dict: TargetDict):
+    def join_forecast_on_dataframe(
+        data_df: pd.DataFrame,
+        pred_dict: Dict[Species, Dict[str, npt.NDArray[np.float64]]],
+    ) -> pd.DataFrame:
         """Return a new dataframe with columns updated from pred_dict."""
         # TODO implement this for multiple sources
         # TODO take the index as a parameter and match pred_dict onto data_df using index
@@ -276,7 +273,7 @@ class ModelDataExtractor:
 class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
     """Read data from multiple database tables in order to get data for model fitting"""
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any) -> None:
         """
         Initialise a ModelData class
         """
@@ -376,9 +373,9 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
         start_date: datetime,
         end_date: datetime,
         species: List[Species],
-        point_ids: List[str],
+        point_ids: Union[str, List[str]],
         static_features: List[StaticFeatureNames],
-        dynamic_features: List[DynamicFeatureNames],
+        dynamic_features: Optional[List[DynamicFeatureNames]],
         source: Source,
     ) -> pd.DataFrame:
         """Download all training data and sensor readings)
@@ -445,7 +442,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
         end_date: datetime,
         features: List[DynamicFeatureNames],
         point_ids: List[str],
-    ):
+    ) -> Any:
         "Get the selected dynamic features for a specific locatoin and time"
 
         with self.dbcnxn.open_session() as session:
@@ -549,7 +546,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
         point_ids: List[str],
         features: List[StaticFeatureNames],
         source: Source,
-    ):
+    ) -> Any:
         """
         Return static features from the database for a list of point ids
             for a particular source.
@@ -650,7 +647,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
         start_date: datetime,
         end_date: datetime,
         species: List[Species],
-    ):
+    ) -> Any:
         """
         Cross product of a date range, a list of species and a subquery
         """
@@ -683,7 +680,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
         point_ids: List[str],
         features: List[StaticFeatureNames],
         source: Source,
-    ):
+    ) -> Any:
         """Get static features with sensor readings joined"""
 
         # Get sensor readings and summary of available data from start_date (inclusive) to end_date
@@ -726,7 +723,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
         static_features: Alias,
         sensor_readings: Alias,
         source: Source,
-    ):
+    ) -> Any:
         """Join sensor readings and static features"""
         columns = [
             static_features.c.point_id,
