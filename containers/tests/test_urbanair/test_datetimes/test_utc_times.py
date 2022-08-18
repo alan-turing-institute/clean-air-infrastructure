@@ -1,8 +1,6 @@
 """Air quality forecast API route tests"""
 import json
 from datetime import datetime
-
-# pylint: disable=E0401
 from urbanair.databases.schemas.jamcam import UTCTime
 
 

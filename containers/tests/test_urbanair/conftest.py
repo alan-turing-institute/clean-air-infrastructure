@@ -1,6 +1,4 @@
 """Confif for urbanair tests"""
-
-# pylint: disable=C0103,W0621,E0401
 from datetime import datetime, timedelta
 from itertools import product
 from fastapi.testclient import TestClient
@@ -15,6 +13,8 @@ from cleanair.params import PRODUCTION_STATIC_FEATURES, PRODUCTION_DYNAMIC_FEATU
 from cleanair.types import ModelName
 from urbanair.types import DetectionClass
 from urbanair import urbanair, odysseus, databases
+
+# pylint: disable=C0103,W0621
 
 
 @pytest.fixture()

@@ -144,7 +144,7 @@ Web = typer.Option(
     show_default=True,
 )
 
-InputDir = typer.Option(
+InputDir = typer.Argument(
     DATA_CACHE,
     dir_okay=True,
     file_okay=False,

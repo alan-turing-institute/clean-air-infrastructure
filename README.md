@@ -28,21 +28,20 @@ Previously repurposed to assess `busyness` in London during the COVID-19 pandemi
 
 A list of key developers on the project. A good place to start if you wish to contribute.
 
-
-| Name                | GitHub ID                                            | Email                       | Admin  |
-|---------------------|------------------------------------------------------|-----------------------------|--------|
-| James Brandreth     | [@jamesbrandreth](https://github.com/jamesbrandreth) | <jbrandreth@turing.ac.uk>   | |
-| Oscar Giles         | [@OscartGiles](https://github.com/OscartGiles)       | <ogiles@turing.ac.uk>       | Infrastructure, Prod Database, Kubernetes Cluster |
-| Oliver Hamelijnck   | [@defaultobject](https://github.com/defaultobject)   | <ohamelijnck@turing.ac.uk>  | |
-| Chance Haycock      | [@chancehaycock](https://github.com/chancehaycock)   | <chaycock@turing.ac.uk>     | |
-| Christy Nakou       | [@ChristyNou](https://github.com/ChristyNou)         | <cnakou@turing.ac.uk>       | |
-| Patrick O'Hara      | [@PatrickOHara](https://github.com/PatrickOHara)     | <pohara@turing.ac.uk>       | |
-| Harry Moss          | [@harryjmoss](https://github.com/harryjmoss)         | <h.moss@ucl.ac.uk>          | |
-| David Perez-Suarez  | [@dpshelio](https://github.com/dpshelio)             | <d.perez-suarez@ucl.ac.uk>  | |
-| James Robinson      | [@jemrobinson](https://github.com/jemrobinson)       | <jrobinson@turing.ac.uk>    | Infrastructure, Prod Database, Kubernetes Cluster |
-| Tim Spain           | [@timspainUCL](https://github.com/timspainUCL)       | <t.spain@ucl.ac.uk>         | |
-| Edward Thorpe-Woods | [@TeddyTW](https://github.com/TeddyTW)               | <ethorpe-woods@turing.ac.uk>| |
-
+| Name               | GitHub ID                                            | Email                       | Admin  |
+| ------------------ | -----------------------------------------------------| --------------------------- | ------ |
+| James Brandreth    | [@jamesbrandreth](https://github.com/jamesbrandreth) | <jbrandreth@turing.ac.uk>   | Infrastructure, Odysseus |
+| Oscar Giles        | [@OscartGiles](https://github.com/OscartGiles)       | <ogiles@turing.ac.uk>       | Infrastructure, Prod Database, Kubernetes Cluster |
+| Oliver Hamelijnck  | [@defaultobject](https://github.com/defaultobject)   | <ohamelijnck@turing.ac.uk>  | |
+| Chance Haycock     | [@chancehaycock](https://github.com/chancehaycock)   | <chaycock@turing.ac.uk>     | |
+| Christy Nakou      | [@ChristyNou](https://github.com/ChristyNou)         | <cnakou@turing.ac.uk>       | |
+| Patrick O'Hara     | [@PatrickOHara](https://github.com/PatrickOHara)     | <pohara@turing.ac.uk>       | |
+| Harry Moss     | [@harryjmoss](https://github.com/harryjmoss)     | <h.moss@ucl.ac.uk>       | |
+| David Perez-Suarez | [@dpshelio](https://github.com/dpshelio)             | <d.perez-suarez@ucl.ac.uk>  | |
+| James Robinson     | [@jemrobinson](https://github.com/jemrobinson)       | <jrobinson@turing.ac.uk>    | Infrastructure, Prod Database, Kubernetes Cluster |
+| Tim Spain          | [@timspainUCL](https://github.com/timspainUCL)       | <t.spain@ucl.ac.uk>         | |
+| Edward Thorpe-Woods | [@TeddyTW](https://github.com/TeddyTW)              | <ethorpe-woods@turing.ac.uk>| |
+| James Walsh | [@dead-water](https://github.com/dead-water)              | <jwalsh@turing.ac.uk>| Infrastructure, Odysseus |
 
 # Contents
 
@@ -68,13 +67,6 @@ A list of key developers on the project. A good place to start if you wish to co
 
 ### Running the UrbanAir API
 - [Running the UrbanAir API](#urbanair-api)
-
-### Processing Scoot Data
-- [Processing Scoot Data](#scoot-data-processing)
-
-### Method
-- [Forecasting](#forecasting-scoot-data)
-
 
 ### Developer guide
 - [Style guide](#style-guide)
@@ -555,8 +547,6 @@ DB_SECRET_FILE='.db_secrets_ad.json'
 SECRET_DIR=$(pwd)/.secrets
 docker run -i -p 80:80 -e DB_SECRET_FILE -e PGPASSWORD -e APP_MODULE="urbanair.urbanair:app" -v $SECRET_DIR:/secrets fastapi:test
 ```
-
-
 
 # Developer guide
 

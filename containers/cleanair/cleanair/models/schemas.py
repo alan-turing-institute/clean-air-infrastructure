@@ -3,17 +3,15 @@ PydanticModels for serialising database query results
 """
 from datetime import datetime
 from enum import Enum
-from pickle import DICT
-from typing import Any, Callable, Dict, Optional, List, Tuple
+from typing import Optional
 from uuid import UUID
-from xmlrpc.client import DateTime
-import pandas as pd
-
-# pylint: disable=R0201,C0115,E0213
 
 from pydantic import BaseModel, validator, ValidationError
 
-from cleanair.types import StaticFeatureNames, DynamicFeatureNames, Source, Species
+from ..types import StaticFeatureNames, DynamicFeatureNames, Source, Species
+
+
+# pylint: disable=R0201,C0115,E0213
 
 
 class BaseFeatures(BaseModel):
@@ -28,7 +26,7 @@ class BaseFeatures(BaseModel):
     class Config:
         orm_mode = True
 
-    def dict_enums(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
+    def dict_enums(self, *args, **kwargs):
         """Return a dictionary like self.dict() but converts any enum types return their raw value"""
 
         dict_entries = []
@@ -49,18 +47,18 @@ class DynamicFeatureSchema(BaseFeatures):
     epoch: Optional[int]
 
     @validator("epoch", always=True)
-    def gen_measurement_end_time(cls: Any, v: Any, values: Any) -> Any:
+    def gen_measurement_end_time(cls, v, values):
         "Generate end time one hour after start time"
         if v:
             raise ValidationError(
-                "Dont pass a value for epoch. It is generated automatically", cls
+                "Dont pass a value for epoch. It is generated automatically"
             )
         return values["measurement_start_utc"].timestamp()
 
     class Config:
         orm_mode = True
 
-    def dict_flatten(self, *args: str, **kwargs: bool) -> Dict:
+    def dict_flatten(self, *args, **kwargs):
         """Same as self.dict_enums except values and feature name
         are replaced with 'value_1000_{feature_name}
         """
@@ -92,7 +90,7 @@ class StaticFeatureSchema(BaseFeatures):
     class Config:
         orm_mode = True
 
-    def dict_flatten(self, *args: str, **kwargs: bool) -> Dict:
+    def dict_flatten(self, *args, **kwargs):
         """Same as self.dict_enums except values and feature name
         are replaced with 'value_1000_{feature_name}
         """
@@ -129,11 +127,11 @@ class StaticFeatureTimeSpecies(StaticFeatureLocSchema):
     epoch: Optional[int]
 
     @validator("epoch", always=True)
-    def gen_measurement_end_time(cls: Any, v: Any, values: Any) -> Any:
+    def gen_measurement_end_time(cls, v, values):
         "Generate end time one hour after start time"
         if v:
             raise ValidationError(
-                "Dont pass a value for epoch. It is generated automatically", cls
+                "Dont pass a value for epoch. It is generated automatically"
             )
         return values["measurement_start_utc"].timestamp()
 
@@ -144,12 +142,13 @@ class StaticFeaturesWithSensors(StaticFeatureTimeSpecies):
     value: Optional[float]
     box_id: Optional[UUID]
 
-    def dict_flatten(self, *args: str, **kwargs: bool) -> Dict:
+    # pylint: disable=E1101
+    def dict_flatten(self, *args, **kwargs):
         """Same as self.dict_enums except values and feature name
         are replaced with 'value_1000_{feature_name}
         """
 
-        def flatten_entries(key: str, value: bool) -> Any:
+        def flatten_entries(key, value):
             "Helper function for flattening values"
             if "value_" in key:
                 return (f"{key}_{self.feature_name.value}", value)

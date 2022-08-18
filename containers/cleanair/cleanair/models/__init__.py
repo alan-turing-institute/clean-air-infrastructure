@@ -1,12 +1,12 @@
 """Model fitting classes"""
 from .model import ModelMixin
-from ..dataset.model_data import ModelData, ModelDataExtractor
-from ..dataset.model_config import ModelConfig
+from .model_data import ModelData, ModelDataExtractor
+from .model_config import ModelConfig
 
 # from .svgp import SVGP
 # from .mr_dgp_model import MRDGP
 
-from ..dataset.schemas import (
+from .schemas import (
     StaticFeatureSchema,
     DynamicFeatureSchema,
     StaticFeatureLocSchema,

@@ -5,7 +5,6 @@ import shutil
 import typer
 from ..state import state, DATA_CACHE
 from ..shared_args import (
-    InputDir,
     NDays_callback,
     ValidSources,
     UpTo_callback,
@@ -57,7 +56,6 @@ def delete_model_cache(overwrite: bool):
 # pylint: disable=too-many-arguments
 @app.command()
 def generate_config(
-    input_dir: Path = InputDir,
     trainupto: str = typer.Option(
         "today",
         callback=UpTo_callback,
@@ -133,30 +131,29 @@ def generate_config(
         dynamic_features=dynamic_features,
         buffer_sizes=feature_buffer,
     )
-    file_manager = FileManager(input_dir)
+    file_manager = FileManager(DATA_CACHE)
     file_manager.save_data_config(data_config, full=False)
 
 
 @app.command()
 def echo_config(
-    input_dir: Path = InputDir,
-    full: bool = typer.Option(False, help="Full version of config"),
+    full: bool = typer.Option(False, help="Full version of config")
 ) -> None:
     """Echo the cached config file"""
 
-    file_manager = FileManager(input_dir)
+    file_manager = FileManager(DATA_CACHE)
     config = file_manager.load_data_config(full)
     print(config.json(indent=4))
 
 
 @app.command()
-def generate_full_config(input_dir: Path = InputDir) -> None:
+def generate_full_config() -> None:
     """Perform validation checks on a config file and generates a full configuration file.
 
     Overwrites any existing full configuration file"""
 
     state["logger"].info("Validate the cached config file")
-    file_manager = FileManager(input_dir)
+    file_manager = FileManager(DATA_CACHE)
     config = file_manager.load_data_config()
     model_config = ModelConfig(secretfile=state["secretfile"])
     model_config.validate_config(config)
@@ -169,7 +166,6 @@ def generate_full_config(input_dir: Path = InputDir) -> None:
 
 @app.command()
 def download(
-    input_dir: Path = InputDir,
     training_data: bool = typer.Option(
         False,
         "--training-data",
@@ -193,7 +189,7 @@ def download(
         )
         raise typer.Abort()
 
-    file_manager = FileManager(input_dir)
+    file_manager = FileManager(DATA_CACHE)
     full_config = file_manager.load_data_config(full=True)
     model_data = ModelData(secretfile=state["secretfile"])
 
