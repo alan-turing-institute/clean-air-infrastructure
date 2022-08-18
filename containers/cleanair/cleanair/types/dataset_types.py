@@ -1,6 +1,6 @@
 """Types for datasets."""
 
-from typing import Dict, List, Tuple, Union, Optional
+from typing import Dict, List, Tuple, Union
 from datetime import datetime
 import numpy as np
 import numpy.typing as npt
@@ -40,7 +40,7 @@ class DataConfig(BaseModel):
     }
     species: List[Species]
     static_features: List[StaticFeatureNames]
-    dynamic_features: Optional[List[DynamicFeatureNames]]
+    dynamic_features: List[DynamicFeatureNames]
     buffer_sizes: List[FeatureBufferSize]
     norm_by: Source = Source.laqn
 

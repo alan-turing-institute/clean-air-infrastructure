@@ -24,7 +24,6 @@ Now simply login using your Azure account:
 az login
 ```
 
-
 > If no subscriptions appear and the Azure CLI complains about 2-factor authentication, then visit the [Azure portal](https://portal.azure.com/) and ensure 2-factor authentication is enabled on your Azure account.
 
 ### Infrastructure developers
@@ -34,7 +33,7 @@ Infrastructure developers should additionally check which Azure subscriptions yo
 az account list --output table --refresh
 ```
 
-Then set your default subscription to the Clean Air project (if you cannot see it in the output generated from the last line you do not have access):
+Then set your default subscription to the UrbanAir project (if you cannot see it in the output generated from the last line you do not have access):
 ```bash
 az account set --subscription "UrbanAir"
 ```
