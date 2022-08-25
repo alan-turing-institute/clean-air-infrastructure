@@ -50,7 +50,13 @@ def download(
         pred_sources=[Source.laqn],
         pred_interest_points={Source.laqn: "all"},
         species=[Species.NO2],
-        static_features=[StaticFeatureNames.park],
+        static_features=[
+            StaticFeatureNames.park,
+            StaticFeatureNames.water,
+            StaticFeatureNames.flat,
+            StaticFeatureNames.max_canyon_ratio,
+            StaticFeatureNames.grass,
+        ],
         buffer_sizes=[FeatureBufferSize.two_hundred],
         dynamic_features=[],
     )
