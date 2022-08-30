@@ -9,7 +9,7 @@ from datetime import datetime
 from ....dataset.model_config import ModelConfig
 from ....dataset.model_data import ModelData
 from ..state import state
-from typing import Dict
+from typing import Dict, List
 from ....loggers import initialise_logging
 
 from ....types import (
@@ -18,6 +18,7 @@ from ....types import (
     StaticFeatureNames,
     DataConfig,
     FeatureBufferSize,
+    FullDataConfig,
 )
 
 
@@ -28,11 +29,6 @@ app = typer.Typer(help="Experiment CLI")
 def download(
     download_root: Path,
     verbose: bool = False,
-    training_data: bool = typer.Option(
-        False,
-        "--training-data",
-        help="Download training data",
-    ),
 ) -> None:
     """Setup load data"""
     secretfile: str = state["secretfile"]
@@ -59,13 +55,16 @@ def download(
         ],
         buffer_sizes=[FeatureBufferSize.two_hundred],
         dynamic_features=[],
+        norm_by=Source.laqn,
     )
+
     model_config = ModelConfig(secretfile=secretfile)
     model_data = ModelData(secretfile=secretfile)
     full_config = model_config.generate_full_config(data_config)
-
     training_data: Dict[Source, pd.DateFrame] = model_data.download_config_data(  # noqa
         full_config, training_data=True
     )
-
-    training_data[Source.laqn].to_csv(download_root / "training_data.csv")
+    normalized_training_data = model_data.normalize_data_wrt(
+        full_config, training_data, training_data
+    )
+    normalized_training_data[Source.laqn].to_csv(download_root / "training_data.csv")
