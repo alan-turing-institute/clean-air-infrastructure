@@ -4,8 +4,8 @@
 
 ## Create a secrets file
 
-Create a JSON secret file that will connect azure database.
-[Follow this guide to creating a secret file for a docker database](secretfile.md#azure-database).
+Create a JSON secret file that will connect to azure database.
+[Follow this guide to creating a secret file for a azure database](secretfile.md#azure-database).
 
 ## Export laqn data
 

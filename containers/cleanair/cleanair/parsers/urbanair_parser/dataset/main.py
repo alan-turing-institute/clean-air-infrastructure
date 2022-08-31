@@ -9,7 +9,7 @@ from datetime import datetime
 from ....dataset.model_config import ModelConfig
 from ....dataset.model_data import ModelData
 from ..state import state
-from typing import Dict, List
+from typing import Dict
 from ....loggers import initialise_logging
 
 from ....types import (
@@ -18,7 +18,6 @@ from ....types import (
     StaticFeatureNames,
     DataConfig,
     FeatureBufferSize,
-    FullDataConfig,
 )
 
 
@@ -64,7 +63,4 @@ def download(
     training_data: Dict[Source, pd.DateFrame] = model_data.download_config_data(  # noqa
         full_config, training_data=True
     )
-    normalized_training_data = model_data.normalize_data_wrt(
-        full_config, training_data, training_data
-    )
-    normalized_training_data[Source.laqn].to_csv(download_root / "training_data.csv")
+    training_data[Source.laqn].to_csv(download_root / "training_data.csv")
