@@ -9,7 +9,7 @@ Create a JSON secret file that will connect to azure database.
 
 ## Export laqn data
 
-This command saves LAQN data as a CSV file to the specified path.
+This command saves four days of LAQN data as a CSV file to the specified path.
 
 ```
 urbanair dataset download ~/Dataset/urbanair

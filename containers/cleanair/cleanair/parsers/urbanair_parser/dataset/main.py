@@ -47,10 +47,9 @@ def download(
         species=[Species.NO2],
         static_features=[
             StaticFeatureNames.park,
-            StaticFeatureNames.water,
             StaticFeatureNames.flat,
+            StaticFeatureNames.total_road_length,
             StaticFeatureNames.max_canyon_ratio,
-            StaticFeatureNames.grass,
         ],
         buffer_sizes=[FeatureBufferSize.two_hundred],
         dynamic_features=[],
