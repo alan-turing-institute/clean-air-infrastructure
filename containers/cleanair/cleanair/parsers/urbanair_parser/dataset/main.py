@@ -45,15 +45,16 @@ def download(
         pred_sources=[Source.laqn],
         pred_interest_points={Source.laqn: "all"},
         species=[Species.NO2],
+        norm_by=Source.laqn,
         static_features=[
             StaticFeatureNames.park,
             StaticFeatureNames.flat,
             StaticFeatureNames.total_road_length,
             StaticFeatureNames.max_canyon_ratio,
+            StaticFeatureNames.building_height,
         ],
         buffer_sizes=[FeatureBufferSize.two_hundred],
         dynamic_features=[],
-        norm_by=Source.laqn,
     )
 
     model_config = ModelConfig(secretfile=secretfile)
