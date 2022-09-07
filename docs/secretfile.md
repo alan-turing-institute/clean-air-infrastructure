@@ -101,6 +101,7 @@ echo '{
     "ssl_mode": "prefer"
 }' >> $DB_SECRET_FILE
 ```
+
 <<<<<<< HEAD
 
 ***
@@ -121,5 +122,3 @@ docker run -v "${SECRET_DIR}":/secrets ... --secretfile /secrets/.db_secrets_doc
 ```
 
 If you don't use the `--secretfile` option for running the command, you *might* also need to add an environment variable that tells the *docker container* about the name of the secrets file by adding `-e DB_SECRET_FILE=".db_secrets_docker.json"`.
-=======
->>>>>>> master

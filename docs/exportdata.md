@@ -1,11 +1,16 @@
 # Export Data
 
-You can find the datasets from here [Datasets](datasets.md)
+Find here existed [datasets](datasets.md)
 
-*Command used for downloading the dataset*
+## Create a secrets file
 
-- This command saves LAQN data as a CSV file to the specified path.
+Create a JSON secret file that will connect to azure database.
+[Follow this guide to creating a secret file for a azure database](secretfile.md#azure-database).
+
+## Export laqn data
+
+This command saves four days of LAQN data as a CSV file to the specified path.
 
 ```
-urbanair dataset download ~Dataset/urbanair
+urbanair dataset download ~/Datasets/urbanair
 ```

@@ -28,11 +28,6 @@ app = typer.Typer(help="Experiment CLI")
 def download(
     download_root: Path,
     verbose: bool = False,
-    training_data: bool = typer.Option(
-        False,
-        "--training-data",
-        help="Download training data",
-    ),
 ) -> None:
     """Setup load data"""
     secretfile: str = state["secretfile"]
@@ -50,16 +45,22 @@ def download(
         pred_sources=[Source.laqn],
         pred_interest_points={Source.laqn: "all"},
         species=[Species.NO2],
-        static_features=[StaticFeatureNames.park],
+        norm_by=Source.laqn,
+        static_features=[
+            StaticFeatureNames.park,
+            StaticFeatureNames.flat,
+            StaticFeatureNames.total_road_length,
+            StaticFeatureNames.max_canyon_ratio,
+            StaticFeatureNames.building_height,
+        ],
         buffer_sizes=[FeatureBufferSize.two_hundred],
         dynamic_features=[],
     )
+
     model_config = ModelConfig(secretfile=secretfile)
     model_data = ModelData(secretfile=secretfile)
     full_config = model_config.generate_full_config(data_config)
-
     training_data: Dict[Source, pd.DateFrame] = model_data.download_config_data(  # noqa
         full_config, training_data=True
     )
-
     training_data[Source.laqn].to_csv(download_root / "training_data.csv")
