@@ -2,9 +2,9 @@
 
 This guide walks you through how to build, pull, run and push our docker images.
 Before starting this guide:
+
 - [Install docker!](https://docs.docker.com/get-docker/)
 - Please make sure you are familiar with the [basic docker principles](https://docs.docker.com/get-started/) before starting this guide.
-
 
 ## Contents
 
@@ -37,7 +37,6 @@ export URBANAIR_VERSION="$(git tag --sort=creatordate | tail -1 | sed 's/^.//')"
 ***
 
 ## Pulling
-
 
 Our docker images can be downloaded (pulled) from our Azure container registry.
 You will need to be a member of the "UrbanAir" subscription on the Turing Institute's Azure subscription first.
@@ -77,8 +76,6 @@ If you are building `cleanair`, `urbanair` or `process_static_dataset` you will 
 ```bash
 docker build --build-arg urbanair_version=$URBANAIR_VERSION -t $ACR/$NAME:$TAG -f containers/dockerfiles/$NAME.Dockerfile containers
 ```
-
-
 
 ***
 
@@ -129,7 +126,7 @@ docker push $ACR/$NAME:$TAG
 A network of docker containers [lets the containers communicate](https://docs.docker.com/get-started/07_multi_container/).
 We give the example of inserting static datasets into a PostgreSQL database as described in [the developer guide for setting up a docker PostgreSQL database](developer.md#insert-static-datasets).
 Other examples include testing the containerized urbanair API by querying the containerized PostgreSQL database.
- 
+
 First, make sure the PostgreSQL `database` container is shut down. Now create a network called `urbanair`:
 
 ```bash
@@ -150,13 +147,14 @@ You can check the status of the network and **find the `IPv4Address` of the data
 docker network inspect $NETWORK
 ```
 
-Update your secrets file by changing the value of `"host"` to be the IP address above. 
+Update your secrets file by changing the value of `"host"` to be the IP address above.
 You may like to create a new secret file, in which case you should update the `DB_SECRET_FILE` variable.
 Also *check that the port number is correct* and the `SECRET_DIR` variable is set to the `.secrets` directory.
 
 We download the static data and insert into the database using a container called `process_static_datasets`.
 Remember you will need to:
-1. [Build](#building) or [pull](#pulling) the `process_static_datasets` container 
+
+1. [Build](#building) or [pull](#pulling) the `process_static_datasets` container
 2. [Mount your secrets file](secretfile.md#mounting-a-secrets-file)
 3. [Store a SAS token](sas_token.md) inside a `SAS_TOKEN` variable
 

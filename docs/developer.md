@@ -11,8 +11,8 @@ Make sure you have the development dependencies installed:
 pip install -r containers/requirements.txt
 ```
 
-
 ## Contents
+
 - [Setting up a test database with docker](#setting-up-a-test-database-with-dockersetting-up)
 - [Testing](#testing)
 - [Linting](#linting)
@@ -84,6 +84,7 @@ Our tests assume you have setup the docker database from the previous section.
 > You will need to pass the `DB_SECRET_FILE` variable that points to the [Docker JSON secrets file](#create-a-secrets-file).
 
 Check the docker test database is configured correctly by running:
+
 ```bash
 pytest containers/tests/test_database_init --secretfile $DB_SECRET_FILE
 ```
@@ -126,10 +127,10 @@ mypy --config-file .mypy.ini containers/cleanair
 
 See the `.travis.yml` file for all linting commands that we run during CI.
 
-
 ***
 
 ## Documentation
+
 Before being accepted into master all code should have well written documentation.
 
 **Please use [Google Style Python Docstrings](https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html)**
@@ -140,7 +141,7 @@ We would like to move towards adding [type hints](https://docs.python.org/3.7/li
 
 Adding and updating existing documentation is highly encouraged.
 
-*** 
+***
 
 ## Developer tools
 
@@ -149,9 +150,13 @@ Here are some useful non-python tools that may be useful for working with the da
 - [PG Admin](https://www.pgadmin.org/download/) for viewing and querying PostgreSQL databases.
 - [Lens](https://k8slens.dev/) for interacting with the Kubernetes cluster.
 - [Visual Studio Code](https://code.visualstudio.com/) is an IDE with lots of extensions for Docker, python, GitHub, etc.
+- [pgAdmin](https://www.pgadmin.org/) for GUI tool used to interact with the Postgres database sessions.
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) for working with local and remote container images.
 
 ***
+
 ## Working on an issue
+
 The general workflow for contributing to the project is to first choose and issue (or create one) to work on and assign yourself to the issues.
 
 You can find issues that need work on by searching by the `Needs assignment` label. If you decide to move onto something else or wonder what you've got yourself into please unassign yourself, leave a comment about why you dropped the issue (e.g. got bored, blocked by something etc) and re-add the `Needs assignment` label.

@@ -1,7 +1,9 @@
 # High performance computing
+
 ## Aquifer login
+
 Aquifer contains a NVIDIA Titan GPU useful for prototyping and experimenting with models.
-If you need to models for many days or weeks at a time, perhaps one of Warwick's scientific clusters would be more suitable.
+If you need to run models for many days or weeks at a time, perhaps one of Warwick's scientific clusters would be more suitable.
 
 ### How to connect
 
@@ -17,7 +19,7 @@ ssh USERNAME@aquifer.dcs.warwick.ac.uk
 sudo lshw -C display
 ```
 
-### I need help!
+### I need help
 
 Ask one of our admins:
 
@@ -34,7 +36,7 @@ After cloning the repository to run docker on aquifer you will need sudo access 
 Prefix any docker commands you run with the **sudo** keyword, e.g.
 
 ```
-sudo docker pull python:3.9
+sudo docker pull python:3.10
 ```
 
 For login to Azure container registry (London Air Quality Project) please find the instruction [here](docker.md)
