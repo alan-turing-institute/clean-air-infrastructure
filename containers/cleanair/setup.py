@@ -29,9 +29,7 @@ setuptools.setup(
         "nptyping==1.2.0",
         "numpy==1.18.5",
         "packaging>=20.5",
-        "pathos==0.2.5",
         "pandas==1.0.5",
-        "pathos==0.2.5",
         "pydantic==1.6.1",
         "pyeccodes==0.1.1",
         "python-dateutil==2.8.1",
@@ -52,7 +50,7 @@ setuptools.setup(
         "orjson==3.6.0",
     ],
     extras_require={
-        "traffic": ["pystan==2.19.1.1", "fbprophet==0.6",],
+        "traffic": ["pathos==0.2.5", "pystan==2.19.1.1", "fbprophet==0.6",],
         "models": ["gpflow==1.5.1", "tensorflow==1.15.0"],
     },
     setup_requires=["setuptools_scm"],

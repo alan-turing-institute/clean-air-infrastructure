@@ -5,9 +5,9 @@ An experiment runs multiple models on multiple datasets.
 TL;DR:
 
 ```bash
-urbanair experiment setup NAME
-urbanair experiment run NAME    # no DB connection required
-urbanair experiment update NAME
+urbanair experiment setup NAME  # DB connection required
+urbanair experiment run NAME    # no DB connection required!
+urbanair experiment update NAME # DB connection required
 ```
 
 To see the names of experiments you can use the `--help` option.
