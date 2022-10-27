@@ -32,7 +32,7 @@ class ModelMixin:
         tasks: Optional[List] = None,
         **kwargs
     ) -> None:
-        """Initialise a model with parameters and settings.
+        """Initialise a model with parameters and settings to use.
 
         Keyword args:
             batch_size: Size of batch for prediction.
@@ -59,10 +59,10 @@ class ModelMixin:
     @abstractmethod
     def fit(self, x_train: FeaturesDict, y_train: TargetDict) -> None:
         """
-        Fit the model to some training data.
+        Fits the model to some training data.
 
         Args:
-            x_train: Keys are sources. Values are numpy arrays.
+            x_train: Dictinary Keys are sources. Values are numpy arrays.
             y_train: Keys are sources. Values are a dict of pollutants and numpys.
 
         Examples:
@@ -229,7 +229,7 @@ class ModelMixin:
         """Split up prediction into indepedent batches.
 
         Args:
-            x_array: N x D numpy array of locations to predict at.
+            x_array: N x D numpy array of "locations" to predict at.
             predict_fn: Model specific function to predict at.
 
         Returns:

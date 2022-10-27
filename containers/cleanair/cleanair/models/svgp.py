@@ -6,17 +6,26 @@ import os
 
 from copy import deepcopy
 import numpy as np
-from scipy.cluster.vq import kmeans2
-import tensorflow as tf
 import numpy.typing as npt
+from scipy.cluster.vq import kmeans2
+import stgp 
+import objax
+import jax
+from jax.config import config as jax_config
+jax_config.update("jax_enable_x64", True)
+jax_config.update('jax_disable_jit', False)
+
+#TODO put stgp to setup.py
+
+import jax.numpy as jnp
+from stgp.kernels import ScaleKernel, RBF    !PUT THIS IN KERNEL TYPES
+from stgp.kernels.deep_kernels import DeepRBF, DeepLinear
+from stgp.models import GP
+from stgp.data import AggregatedData, Data, TransformedData
+
+
 from .model import ModelMixin
 from ..types import FeaturesDict, KernelType, Source, Species, TargetDict, SVGPParams
-
-# turn off tensorflow warnings for gpflow
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
-tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
-import gpflow  # pylint: disable=wrong-import-position,wrong-import-order
-
 
 class SVGP(ModelMixin):
     """
@@ -24,51 +33,69 @@ class SVGP(ModelMixin):
     """
 
     KERNELS = {
-        KernelType.matern12: gpflow.kernels.Matern12,
-        KernelType.matern32: gpflow.kernels.Matern32,
-        KernelType.matern52: gpflow.kernels.Matern52,
-        KernelType.rbf: gpflow.kernels.RBF,
+        KernelType.matern12: stgp.kernels.Matern12, #TODO put stgp KernelType
+        KernelType.matern32: stgp.kernels.Matern32,
+        KernelType.matern52: stgp.kernels.Matern52,
+        KernelType.rbf: stgp.kernels.RBF,
     }
 
+    # def setup_model(
+    #     self,
+    #     x_array: FeaturesDict,
+    #     y_array: TargetDict,
+    #     inducing_locations: npt.NDArray[np.float64],(DO WE NEED THIS_)
+    # ) -> None:
+    #     """
+    #     Create GPFlow sparse variational Gaussian Processes
+
+    #     Args:
+    #         x_array: N x D numpy array - observations input.
+    #         y_array: N x 1 numpy array - observations output.
+    #         inducing_locations: M x D numpy array - inducing locations.
+    #     """
+    #     custom_config = gpflow.settings.get_settings()
+    #     # jitter is added for numerically stability in cholesky operations.
+    #     custom_config.jitter = self.model_params.jitter
+    #     with gpflow.settings.temp_settings(
+    #         custom_config
+    #     ), gpflow.session_manager.get_session().as_default():
+    #         kernel_dict = self.model_params.kernel.dict()
+    #         kernel_type = kernel_dict.pop("type")
+
+    #         kernel = SVGP.KERNELS[kernel_type](**kernel_dict)
+
+    #         self.model = gpflow.models.SVGP(
+    #             x_array,
+    #             y_array,
+    #             kernel,
+    #             gpflow.likelihoods.Gaussian(
+    #                 variance=self.model_params.likelihood_variance,
+    #             ),
+    #             inducing_locations,
+    #             minibatch_size=self.model_params.minibatch_size,
+    #             mean_function=gpflow.mean_functions.Linear(
+    #                 A=np.ones((x_array.shape[1], 1)), b=np.ones((1,))
+    #             ),
+    #         )
     def setup_model(
-        self,
+        config,
         x_array: FeaturesDict,
         y_array: TargetDict,
-        inducing_locations: npt.NDArray[np.float64],
-    ) -> None:
-        """
-        Create GPFlow sparse variational Gaussian Processes
+    ):
+        N, D = x_array.shape
 
-        Args:
-            x_array: N x D numpy array - observations input.
-            y_array: N x 1 numpy array - observations output.
-            inducing_locations: M x D numpy array - inducing locations.
-        """
-        custom_config = gpflow.settings.get_settings()
-        # jitter is added for numerically stability in cholesky operations.
-        custom_config.jitter = self.model_params.jitter
-        with gpflow.settings.temp_settings(
-            custom_config
-        ), gpflow.session_manager.get_session().as_default():
-            kernel_dict = self.model_params.kernel.dict()
-            kernel_type = kernel_dict.pop("type")
+        data = Data(x_array, y_array)
+    
 
-            kernel = SVGP.KERNELS[kernel_type](**kernel_dict)
-
-            self.model = gpflow.models.SVGP(
-                x_array,
-                y_array,
-                kernel,
-                gpflow.likelihoods.Gaussian(
-                    variance=self.model_params.likelihood_variance,
-                ),
-                inducing_locations,
-                minibatch_size=self.model_params.minibatch_size,
-                mean_function=gpflow.mean_functions.Linear(
-                    A=np.ones((x_array.shape[1], 1)), b=np.ones((1,))
-                ),
-            )
-
+        Z = stgp.sparsity.FullSparsity(Z = kmeans2(x_array, 200, minit="points")[0])
+        latent_gp = GP(
+        sparsity = Z, 
+        # TODO define from the KernelType 
+        kernel = ScaleKernel(RBF(input_dim=D, lengthscales=[0.1, 1.0, 1.0, 0.1]), variance=np.nanstd(Y_laqn))
+        )
+    
+    
+    # TODO after create new setup_model function update belove
     def fit(self, x_train: FeaturesDict, y_train: TargetDict) -> None:
         """Train the SVGP.
 
