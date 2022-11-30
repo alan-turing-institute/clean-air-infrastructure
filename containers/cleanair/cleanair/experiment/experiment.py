@@ -77,7 +77,7 @@ class ExperimentMixin:
         )
 
     def get_instance(self, instance_id: str) -> InstanceMixin:
-        """Get an instance from the lookup table"""
+        """Get an instance from the lookup table(WHAT IS LOOK UP TABLE?)"""
         return self._instances[instance_id]
 
     def get_instance_ids(self) -> List[str]:

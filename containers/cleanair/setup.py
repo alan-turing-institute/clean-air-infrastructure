@@ -3,6 +3,7 @@ import setuptools
 
 # sorted by surname
 AUTHORS = {
+    "Sueda Ciftci": "sueda.ciftci@warwick.ac.uk",
     "Oscar Giles": "ogiles@turing.ac.uk",
     "Ollie Hamelijnck": "ohamelijnck@turing.ac.uk",
     "Patrick O'Hara": "patrick.h.o-hara@warwick.ac.uk",
