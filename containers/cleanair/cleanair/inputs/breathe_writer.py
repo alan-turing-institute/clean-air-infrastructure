@@ -5,3 +5,4 @@ from ..databases import DBWriter
 
 
 class BreatheWrite():
+    pass
