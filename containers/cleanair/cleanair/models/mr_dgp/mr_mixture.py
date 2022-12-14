@@ -2,12 +2,12 @@
     MR_DGP is made up of a mixture of mixtures, as defined in the graphical model of MR_DGP. This class implements
         the mixing of multi-resolution data.
 """
-import tensorflow as tf
+# import tensorflow as tf
 
-from gpflow.params import DataHolder, Minibatch
-from gpflow import autoflow, params_as_tensors, ParamList
-from gpflow.models.model import Model
-from gpflow import settings
+# from gpflow.params import DataHolder, Minibatch
+# from gpflow import autoflow, params_as_tensors, ParamList
+# from gpflow.models.model import Model
+# from gpflow import settings
 
 from .mr_svgp import MR_SVGP
 

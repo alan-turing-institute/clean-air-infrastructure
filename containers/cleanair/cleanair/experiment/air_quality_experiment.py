@@ -23,7 +23,7 @@ from ..loggers import get_logger
 from ..metrics import TrainingMetrics
 from ..dataset.model_data import ModelData, ModelDataExtractor
 from ..models.svgp import SVGP
-from ..models.mr_dgp_model import MRDGP
+# from ..models.mr_dgp_model import MRDGP
 from ..types import ExperimentName, IndexedDatasetDict, ModelName, Source, TargetDict
 from ..utils.file_manager import FileManager
 

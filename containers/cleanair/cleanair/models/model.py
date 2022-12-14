@@ -221,53 +221,53 @@ class ModelMixin:
             )
         self.epoch += 1
 
-    def batch_predict(
-        self,
-        x_array: npt.NDArray[np.float64],
-        predict_fn: Callable[[npt.NDArray[np.float64]], NDArrayTuple],
-    ) -> NDArrayTuple:
-        """Split up prediction into indepedent batches.
+    # def batch_predict(
+    #     self,
+    #     x_array: npt.NDArray[np.float64],
+    #     predict_fn: Callable[[npt.NDArray[np.float64]], NDArrayTuple],
+    # ) -> NDArrayTuple:
+    #     """Split up prediction into indepedent batches.
 
-        Args:
-            x_array: N x D numpy array of locations to predict at.
-            predict_fn: Model specific function to predict at.
+    #     Args:
+    #         x_array: N x D numpy array of locations to predict at.
+    #         predict_fn: Model specific function to predict at.
 
-        Returns:
-            y_mean: N x D numpy array of means.
-            y_var: N x D numpy array of variances.
-        """
-        batch_size = self.batch_size
+    #     Returns:
+    #         y_mean: N x D numpy array of means.
+    #         y_var: N x D numpy array of variances.
+    #     """
+    #     batch_size = self.batch_size
 
-        # Ensure batch is less than the number of test points
-        if x_array.shape[0] < batch_size:
-            batch_size = x_array.shape[0]
+    #     # Ensure batch is less than the number of test points
+    #     if x_array.shape[0] < batch_size:
+    #         batch_size = x_array.shape[0]
 
-        # Split up test points into equal batches
-        num_batches = int(np.ceil(x_array.shape[0] / batch_size))
+    #     # Split up test points into equal batches
+    #     num_batches = int(np.ceil(x_array.shape[0] / batch_size))
 
-        ys_arr = []
-        ys_var_arr = []
-        index = 0
+    #     ys_arr = []
+    #     ys_var_arr = []
+    #     index = 0
 
-        for count in range(num_batches):
-            if count == num_batches - 1:
-                # in last batch just use remaining of test points
-                batch = x_array[index:, :]
-            else:
-                batch = x_array[index : index + batch_size, :]
+    #     for count in range(num_batches):
+    #         if count == num_batches - 1:
+    #             # in last batch just use remaining of test points
+    #             batch = x_array[index:, :]
+    #         else:
+    #             batch = x_array[index : index + batch_size, :]
 
-            index = index + batch_size
+    #         index = index + batch_size
 
-            # predict for current batch
-            y_mean, y_var = predict_fn(batch)
+    #         # predict for current batch
+    #         y_mean, y_var = predict_fn(batch)
 
-            ys_arr.append(y_mean)
-            ys_var_arr.append(y_var)
+    #         ys_arr.append(y_mean)
+    #         ys_var_arr.append(y_var)
 
-        y_mean = np.concatenate(ys_arr, axis=0)
-        y_var = np.concatenate(ys_var_arr, axis=0)
+    #     y_mean = np.concatenate(ys_arr, axis=0)
+    #     y_var = np.concatenate(ys_var_arr, axis=0)
 
-        return y_mean, y_var
+    #     return y_mean, y_var
 
     def predict_srcs(
         self,
@@ -297,30 +297,30 @@ class ModelMixin:
                 y_dict[src] = {pollutant: dict(mean=y_mean, var=y_var)}
         return y_dict
 
-    @staticmethod
-    def clean_data(
-        x_array: npt.NDArray[np.float64], y_array: npt.NDArray[np.float64]
-    ) -> NDArrayTuple:
-        """Remove nans and missing data for use in GPflow
+    #@staticmethod
+    # def clean_data(
+    #     x_array: npt.NDArray[np.float64], y_array: npt.NDArray[np.float64]
+    # ) -> NDArrayTuple:
+    #     """Remove nans and missing data for use in GPflow
 
-        Args:
-            x_array: N x D numpy array,
-            y_array: N x 1 numpy array
+    #     Args:
+    #         x_array: N x D numpy array,
+    #         y_array: N x 1 numpy array
 
-        Returns:
-            x_array: Feature array cleaned of NaNs.
-            y_array: Target array cleaned of NaNs
-        """
-        idx = ~np.isnan(y_array[:, 0])
-        x_array = x_array[idx, :]
-        y_array = y_array[idx, :]
+    #     Returns:
+    #         x_array: Feature array cleaned of NaNs.
+    #         y_array: Target array cleaned of NaNs
+    #     """
+    #     idx = ~np.isnan(y_array[:, 0])
+    #     x_array = x_array[idx, :]
+    #     y_array = y_array[idx, :]
 
-        # TODO Consider removing this nan search in x_array when updating queries that get the data
-        # there should be no nans in here anyway
-        idx = np.isnan(x_array[:, :])
-        idx = [not (True in row) for row in idx]
+    #     # TODO Consider removing this nan search in x_array when updating queries that get the data
+    #     # there should be no nans in here anyway
+    #     idx = np.isnan(x_array[:, :])
+    #     idx = [not (True in row) for row in idx]
 
-        x_array = x_array[idx, :]
-        y_array = y_array[idx, :]
+    #     x_array = x_array[idx, :]
+    #     y_array = y_array[idx, :]
 
-        return x_array, y_array
+    #     return x_array, y_array

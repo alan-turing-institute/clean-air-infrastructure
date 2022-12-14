@@ -27,7 +27,7 @@ from ..types.dataset_types import DataConfig
 from ..types.enum_types import ClusterId
 from ..utils.dimension_calculator import total_num_features
 from ..mixins import InstanceMixin
-from ..models import ModelConfig
+from ..dataset.model_config import ModelConfig
 from ..params import (
     default_svgp_model_params,
     default_mrdgp_model_params,

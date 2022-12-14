@@ -15,7 +15,7 @@ from ....loggers import initialise_logging
 from ....types.enum_types import ClusterId
 from ....metrics import AirQualityMetrics
 from ....mixins import InstanceMixin
-from ....models import ModelData
+from ....dataset.model_data import ModelData
 from ..shared_args import ExperimentDir
 from ..state import state
 from ....types import ExperimentName

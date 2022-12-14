@@ -1,13 +1,13 @@
-import tensorflow as tf
+# import tensorflow as tf
 import numpy as np
 
 from .mr_gaussian import MR_Gaussian
 from . import utils
 
-from gpflow.params import Parameter, Parameterized
-from gpflow import transforms
-from gpflow import settings
-from gpflow import params_as_tensors
+# from gpflow.params import Parameter, Parameterized
+# from gpflow import transforms
+# from gpflow import settings
+# from gpflow import params_as_tensors
 
 # TODO lots of undefined variables, not sure what they are
 

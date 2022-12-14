@@ -5,7 +5,7 @@ from typing import Dict, Optional, List
 import os
 import numpy as np
 import numpy.typing as npt
-import tensorflow as tf
+# import tensorflow as tf
 from scipy.cluster.vq import kmeans2
 
 from .mr_dgp import MR_Mixture
