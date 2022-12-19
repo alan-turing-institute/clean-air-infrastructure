@@ -31,6 +31,7 @@ class LAQNWriter(DateRangeMixin, APIRequestMixin, LAQNAvailabilityMixin, DBWrite
         Remove any that do not have an opening date
         """
         try:
+            # This lists the monitoring sites filtered by 'GroupName'. Currently the Group name would be 'London'. Data returned in JSON format
             endpoint = "http://api.erg.kcl.ac.uk/AirQuality/Information/MonitoringSites/GroupName=London/Json"
             raw_data = self.get_response(endpoint, timeout=5.0).json()["Sites"]["Site"]
             # Remove sites with no opening date
@@ -53,6 +54,7 @@ class LAQNWriter(DateRangeMixin, APIRequestMixin, LAQNAvailabilityMixin, DBWrite
         Remove duplicates and add the site_code
         """
         try:
+            # This returns raw data based on 'SiteCode', 'StartDate', 'EndDate'. Data returned in JSON format with one entry per datetime (wide format).
             endpoint = "http://api.erg.kcl.ac.uk/AirQuality/Data/Site/SiteCode={}/StartDate={}/EndDate={}/Json".format(
                 site_code, str(start_date), str(end_date)
             )
