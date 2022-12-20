@@ -17,29 +17,20 @@ class BreatheSite(Base):
     point_id = Column(
         UUID(as_uuid=True), ForeignKey("interest_points.meta_point.id"), nullable=False
     )
+    site_name = Column(String(), nullable=False)
     site_type = Column(String(20), nullable=False)
     date_opened = Column(TIMESTAMP, nullable=False)
     date_closed = Column(TIMESTAMP)
 
-    # Create BLSite.readings and BLReading.site
+    # Create BreatheSite.readings and BLReading.site
     readings = relationship("BreatheReading", backref="site")
-    # Create BLSite.point with no reverse relationship
+    # Create BreatheSite.point with no reverse relationship
     point = relationship("MetaPoint")
 
     def __repr__(self):
-        return (
-            "<BreatheSite("
-            + ", ".join(
-                [
-                    "site_code='{}'".format(self.site_code),
-                    "point_id='{}'".format(self.point_id),
-                    "site_type='{}'".format(self.site_type),
-                    "date_opened='{}'".format(self.date_opened),
-                    "date_closed='{}'".format(self.date_closed),
-                ]
-            )
-            + ")>"
-        )
+        cols = [c.name for c in self.__table__.columns]
+        vals = ["{}='{}'".format(column, getattr(self, column)) for column in cols]
+        return "<BreatheSite(" + ", ".join(vals) + ")>"
 
     @staticmethod
     def build_entry(site_dict):
@@ -49,12 +40,12 @@ class BreatheSite(Base):
 
         # Construct the record and return it
         return BreatheSite(
-            site_code=site_dict["SiteCode"],
+            site_code=site_dict["@SiteCode"],
             point_id=site_dict["point_id"],
-            site_name=site_dict["SiteName"],
-            site_type=site_dict["SiteClassification"],
-            date_opened=site_dict["StartDate"],
-            date_closed=site_dict["EndDate"],
+            site_name=site_dict["@SiteName"],
+            site_type=site_dict["@SiteClassification"],
+            date_opened=site_dict["@StartDate"],
+            date_closed=site_dict["@EndDate"],
         )
     
 class BreatheReading(Base):
@@ -69,62 +60,54 @@ class BreatheReading(Base):
         primary_key=True,
         nullable=False,
     )
-    species_code = Column(String(4), primary_key=True, nullable=False)
     measurement_start_utc = Column(
         TIMESTAMP, primary_key=True, nullable=False, index=True
     )
     measurement_end_utc = Column(TIMESTAMP, primary_key=True, nullable=False)
-    value = Column(DOUBLE_PRECISION, nullable=True)
+    NO2_value = Column(DOUBLE_PRECISION, nullable=True)
+    PM10_value = Column(DOUBLE_PRECISION, nullable=True)
+    PM25_value = Column(DOUBLE_PRECISION, nullable=True)
 
     def __repr__(self):
-        return (
-            "<BreatheReading("
-            + ", ".join(
-                [
-                    "site_code='{}'".format(self.site_code),
-                    "species_code='{}'".format(self.species_code),
-                    "measurement_start_utc='{}'".format(self.measurement_start_utc),
-                    "measurement_end_utc='{}'".format(self.measurement_end_utc),
-                    "value='{}'".format(self.value),
-                ]
-            )
-            + ")>"
-        )
+        cols = [c.name for c in self.__table__.columns]
+        vals = ["{}='{}'".format(column, getattr(self, column)) for column in cols]
+        return "<BreatheReading(" + ", ".join(vals) + ")>"
     
-    @staticmethod
-    def build_entry(reading_dict, return_dict=False):
-        """
-        Create an BreatheReading entry, replacing empty strings with None
-        If return_dict then return a dictionary rather than and entry, to allow inserting via sqlalchemy core
-        """
-        # Replace empty strings
-        reading_dict = {k: (v if v else None) for k, v in reading_dict.items()}
+    # @staticmethod
+    # def build_entry(reading_dict, return_dict=False):
+    #     """
+    #     Create an BreatheReading entry, replacing empty strings with None
+    #     If return_dict then return a dictionary rather than and entry, to allow inserting via sqlalchemy core
+    #     """
+    #     # Replace empty strings
+    #     reading_dict = {k: (v if v else None) for k, v in reading_dict.items()}
 
-        if return_dict:
-            new_key = [
-                "site_code",
-                "species_code",
-                "measurement_start_utc",
-                "measurement_end_utc",
-                "value",
-            ]
-            old_key = [
-                "SiteCode",
-                "SpeciesCode",
-                "MeasurementStartUTC",
-                "MeasurementEndUTC",
-                "Value",
-            ]
+    #     if return_dict:
+    #         new_key = [
+    #             "site_code",
+    #             "measurement_star_utc",
+    #             "measurement_end_utc",
+    #             "NO2_value",
+    #             "PM10_value",
+    #             "PM25_value",
+    #         ]
+    #         old_key = [
+    #             "SiteCode",
+    #             "SpeciesCode",
+    #             "MeasurementStartUTC",
+    #             "MeasurementEndUTC",
+    #             "Value",
+    #         ]
 
-            for i, key in enumerate(old_key):
-                reading_dict[new_key[i]] = reading_dict.pop(key)
-            return reading_dict
+    #         for i, key in enumerate(old_key):
+    #             reading_dict[new_key[i]] = reading_dict.pop(key)
+    #         return reading_dict
 
-        # Construct the record and return it
-        return BreatheReading(
-            site_code=reading_dict["SiteCode"],
-            species_code=reading_dict["SpeciesCode"],
-            measurement_start_utc=reading_dict["MeasurementStartUTC"],
-            measurement_end_utc=reading_dict["MeasurementEndUTC"],
-            value=reading_dict["Value"],
-        )
+    #     # Construct the record and return it
+    #     return BreatheReading(
+    #         site_code=reading_dict["SiteCode"],
+    #         species_code=reading_dict["SpeciesCode"],
+    #         measurement_start_utc=reading_dict["MeasurementStartUTC"],
+    #         measurement_end_utc=reading_dict["MeasurementEndUTC"],
+    #         value=reading_dict["Value"],
+    #     )
