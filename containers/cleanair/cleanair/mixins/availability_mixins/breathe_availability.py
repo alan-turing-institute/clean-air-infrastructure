@@ -7,7 +7,8 @@ from sqlalchemy import func, text
 from dateutil.parser import isoparse
 
 from ...decorators import db_query
-from ...databases.tables import MetaPoint, AQESite, AQEReading
+from ...databases.tables.breathe_tables import BreatheSite, BreatheReading
+from ...databases.tables import MetaPoint
 from ...loggers import get_logger
 
 
@@ -26,9 +27,6 @@ class BreatheAvailabilityMixin:
             self.logger = get_logger(__name__)
 
     @db_query()
-    def get_laqn_open_sites(self, exclude_closed=True):
-        """Get open LAQN sites
-
-        Some LAQN sites have more than one sitecode but have the same location.
-        Considers these as one site.
-        """
+    def get_bl_open_sites(self, with_location=False):
+        """Get open Breathe London sites"""
+        return

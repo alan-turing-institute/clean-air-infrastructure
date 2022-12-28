@@ -18,7 +18,7 @@ class BreatheSite(Base):
         UUID(as_uuid=True), ForeignKey("interest_points.meta_point.id"), nullable=False
     )
     site_name = Column(String(), nullable=False)
-    site_type = Column(String(20), nullable=False)
+    site_type = Column(String(20), nullable=True)
     date_opened = Column(TIMESTAMP, nullable=False)
     date_closed = Column(TIMESTAMP)
 
