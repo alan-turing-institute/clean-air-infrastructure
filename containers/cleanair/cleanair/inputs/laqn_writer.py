@@ -49,7 +49,7 @@ class LAQNWriter(DateRangeMixin, APIRequestMixin, LAQNAvailabilityMixin, DBWrite
 
     def request_site_readings(self, start_date, end_date, site_code):
         """
-        Request all readings for {site_code} between {start_date} and {end_date}
+        Request all readings for {site_code} between {start_date} and {end_date} eg:StartDate=2022-06-01/
         Remove duplicates and add the site_code
         """
         try:

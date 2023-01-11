@@ -1,5 +1,5 @@
 """
-Satellite
+Satellite more info look 'https://ads.atmosphere.copernicus.eu/api-how-to'
 """
 import datetime
 import os
