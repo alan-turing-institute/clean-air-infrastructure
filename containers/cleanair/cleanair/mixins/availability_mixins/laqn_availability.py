@@ -35,7 +35,8 @@ class LAQNAvailabilityMixin:
         """
 
         with self.dbcnxn.open_session() as session:
-
+            
+            # uses the SQL functions to block doubled site code and gets the max and min time loop of the site
             columns = [
                 LAQNSite.point_id,
                 func.array_agg(LAQNSite.site_code).label("site_codes"),

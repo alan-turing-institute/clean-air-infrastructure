@@ -5,7 +5,7 @@ import requests
 import json
 from ..mixins.api_request_mixin import APIRequestMixin
 from ..mixins.date_range_mixin import DateRangeMixin
-from ..mixins.availability_mixins import LAQNAvailabilityMixin
+from ..mixins.availability_mixins import BreatheAvailabilityMixin
 from ..mixins.availability_mixins.breathe_availability import BreatheAvailabilityMixin
 from ..databases import DBWriter 
 from ..databases.tables.breathe_tables import BreatheSite, BreatheReading
@@ -19,17 +19,19 @@ class BreatheWriter(DateRangeMixin, APIRequestMixin, BreatheAvailabilityMixin, D
     (https://www.breathelondon.org/developers)
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self,**kwargs):
         # Initialise parent classes
         super().__init__(**kwargs)
-
         # Ensure logging is available
         if not hasattr(self, "logger"):
             self.logger = get_logger(__name__)
-    def request_site_entries(self):
+        
+    
+    def request_site_entries(self,):
         """
         Request all Breathe sites
         """
+
         try:
             endpoint = (
                 "https://api.breathelondon.org/api/ListSensors?key=fe47645a-e87a-11eb-9a03-0242ac130003"
@@ -38,6 +40,12 @@ class BreatheWriter(DateRangeMixin, APIRequestMixin, BreatheAvailabilityMixin, D
             breathe_data = self.get_response(endpoint, timeout=5.0).content # request all the data
             breathe = json.load(breathe_data.decode())
             raw_data = breathe[0]
+            merged_data = [(reading["LatestINO2Value"], reading["LatestIPM25Value"], reading["LatestIPM10Value"]) for reading in raw_data]
+            BreatheReading.value = merged_data
+            for reading in raw_data:
+                species = [len(reading["LatestINO2Value"]) * "NO2", len(reading["LatestIPM25Value"]) * "PM25", len(reading["LatestIPM10Value"]) * "PM10"]
+                BreatheReading.species_code = species
+                    
         except json.decoder.JSONDecodeError as e:
             print(f"Error decoding JSON: {e}")
             raw_data = {}
@@ -63,7 +71,7 @@ class BreatheWriter(DateRangeMixin, APIRequestMixin, BreatheAvailabilityMixin, D
             for reading in parsed_data:
                 reading["SiteCode"] = site_code
                 # Use strptime to convert the string to a datetime object
-                start_time = reading["DateTime"]
+                start_time = reading["StartDate"]
                 date_time_obj = datetime.strptime(start_time, "%Y-%m-%dT%H:%M:%S.%fZ")
                 utc_time = pytz.utc.localize(date_time_obj)
                 timestamp_start = utc_time

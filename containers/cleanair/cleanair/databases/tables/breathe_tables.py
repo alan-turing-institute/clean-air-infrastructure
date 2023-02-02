@@ -20,7 +20,7 @@ class BreatheSite(Base):
     site_name = Column(String(), nullable=False)
     site_type = Column(String(20), nullable=True)
     date_opened = Column(TIMESTAMP, nullable=False)
-    date_closed = Column(TIMESTAMP)
+    date_closed = Column(TIMESTAMP, nullable=True)
 
     # Create BreatheSite.readings and BLReading.site
     readings = relationship("BreatheReading", backref="site")
@@ -40,12 +40,12 @@ class BreatheSite(Base):
 
         # Construct the record and return it
         return BreatheSite(
-            site_code=site_dict["@SiteCode"],
+            site_code=site_dict["SiteCode"],
             point_id=site_dict["point_id"],
-            site_name=site_dict["@SiteName"],
-            site_type=site_dict["@SiteClassification"],
-            date_opened=site_dict["@StartDate"],
-            date_closed=site_dict["@EndDate"],
+            site_name=site_dict["SiteName"],
+            site_type=site_dict["SiteClassification"],
+            date_opened=site_dict["StartDate"],
+            date_closed=site_dict["EndDate"],
         )
     
 class BreatheReading(Base):
@@ -64,50 +64,17 @@ class BreatheReading(Base):
         TIMESTAMP, primary_key=True, nullable=False, index=True
     )
     measurement_end_utc = Column(TIMESTAMP, primary_key=True, nullable=False)
-    NO2_value = Column(DOUBLE_PRECISION, nullable=True)
-    PM10_value = Column(DOUBLE_PRECISION, nullable=True)
-    PM25_value = Column(DOUBLE_PRECISION, nullable=True)
+    species_code = Column(String(4), primary_key=True, nullable=False)
+    value = Column(DOUBLE_PRECISION, nullable=True)
 
     def __repr__(self):
         cols = [c.name for c in self.__table__.columns]
         vals = ["{}='{}'".format(column, getattr(self, column)) for column in cols]
         return "<BreatheReading(" + ", ".join(vals) + ")>"
-    
-    # @staticmethod
-    # def build_entry(reading_dict, return_dict=False):
-    #     """
-    #     Create an BreatheReading entry, replacing empty strings with None
-    #     If return_dict then return a dictionary rather than and entry, to allow inserting via sqlalchemy core
-    #     """
-    #     # Replace empty strings
-    #     reading_dict = {k: (v if v else None) for k, v in reading_dict.items()}
 
-    #     if return_dict:
-    #         new_key = [
-    #             "site_code",
-    #             "measurement_star_utc",
-    #             "measurement_end_utc",
-    #             "NO2_value",
-    #             "PM10_value",
-    #             "PM25_value",
-    #         ]
-    #         old_key = [
-    #             "SiteCode",
-    #             "SpeciesCode",
-    #             "MeasurementStartUTC",
-    #             "MeasurementEndUTC",
-    #             "Value",
-    #         ]
-
-    #         for i, key in enumerate(old_key):
-    #             reading_dict[new_key[i]] = reading_dict.pop(key)
-    #         return reading_dict
-
-    #     # Construct the record and return it
-    #     return BreatheReading(
-    #         site_code=reading_dict["SiteCode"],
-    #         species_code=reading_dict["SpeciesCode"],
-    #         measurement_start_utc=reading_dict["MeasurementStartUTC"],
-    #         measurement_end_utc=reading_dict["MeasurementEndUTC"],
-    #         value=reading_dict["Value"],
-    #     )
+    @staticmethod
+    def build_entry(reading_dict, return_dict=False):
+        """
+        Create an BreatheReading entry, replacing empty strings with None
+        If return_dict then return a dictionary rather than and entry, to allow inserting via sqlalchemy core
+        """
