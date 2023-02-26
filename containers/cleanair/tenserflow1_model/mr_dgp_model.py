@@ -21,8 +21,8 @@ from .mr_dgp.mr_mixing_weights import (
 
 from .mr_dgp.utils import set_objective
 
-from .model import ModelMixin
-from ..types import (
+from ..cleanair.models.model import ModelMixin
+from ..cleanair.types import (
     FeaturesDict,
     KernelParams,
     KernelType,
