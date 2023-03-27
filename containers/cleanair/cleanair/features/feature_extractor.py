@@ -545,16 +545,19 @@ class FeatureExtractor(DBWriter, FeatureExtractorMixin, StaticFeatureAvailabilit
                     ),
                 )
             )
+            # Get the value for buffer size 10
             value_10 = agg_func(
                 case(
                     [
                         (
+                            # Check if the source geometry is fully covered by the buffer
                             func.ST_CoveredBy(
                                 sq_source.c.geom, cte_buffers.c.buff_geom_10
                             ),
                             sq_source.c.geom,
                         ),
                     ],
+                    # If the source geometry is not fully covered by the buffer, get the intersection of the two geometries
                     else_=func.ST_Intersection(
                         sq_source.c.geom, cte_buffers.c.buff_geom_10
                     ),
