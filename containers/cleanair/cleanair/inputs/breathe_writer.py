@@ -1,6 +1,7 @@
 
 from datetime import datetime, timedelta
 import pytz
+import io
 import requests
 import json
 from ..mixins.api_request_mixin import APIRequestMixin
@@ -27,33 +28,31 @@ class BreatheWriter(DateRangeMixin, APIRequestMixin, BreatheAvailabilityMixin, D
             self.logger = get_logger(__name__)
         
     
-    def request_site_entries(self,):
+    def request_site_entries(self):
         """
         Request all Breathe sites
         """
 
         try:
-            endpoint = (
-                "https://api.breathelondon.org/api/ListSensors?key=fe47645a-e87a-11eb-9a03-0242ac130003"
-            )
-            
-            breathe_data = self.get_response(endpoint, timeout=5.0).content # request all the data
-            breathe = json.load(breathe_data.decode())
-            raw_data = breathe[0]
-            merged_data = [(reading["LatestINO2Value"], reading["LatestIPM25Value"], reading["LatestIPM10Value"]) for reading in raw_data]
+            endpoint = "https://api.breathelondon.org/api/ListSensors?key=fe47645a-e87a-11eb-9a03-0242ac130003"
+            breathe_data = self.get_response(endpoint, timeout=5.0).content
+            raw_data = json.loads(io.StringIO(breathe_data).getvalue())[0]
+            merged_data = [
+                (reading["LatestINO2Value"], reading["LatestIPM25Value"], reading["LatestIPM10Value"])
+                for reading in raw_data
+                if all(key in reading for key in ["Latitude", "Longitude"])
+            ]
             BreatheReading.value = merged_data
-            for reading in raw_data:
-                species = [len(reading["LatestINO2Value"]) * "NO2", len(reading["LatestIPM25Value"]) * "PM25", len(reading["LatestIPM10Value"]) * "PM10"]
-                BreatheReading.species_code = species
-                    
-        except json.decoder.JSONDecodeError as e:
-            print(f"Error decoding JSON: {e}")
-            raw_data = {}
-        except requests.exceptions.HTTPError as error:
-            self.logger.warning("Request to %s failed: %s", endpoint, error)
-            return None
-        except (TypeError, KeyError):
-            return None
+            species = [
+                [len(reading["LatestINO2Value"]) * "NO2", len(reading["LatestIPM25Value"]) * "PM25", len(reading["LatestIPM10Value"]) * "PM10"]
+                for reading in raw_data
+                if all(key in reading for key in ["Latitude", "Longitude"])
+            ]
+            BreatheReading.species_code = species
+            return merged_data
+        except (json.decoder.JSONDecodeError, requests.exceptions.RequestException, KeyError, TypeError) as e:
+            print(f"Error while requesting site entries: {e}")
+            return []
     def request_site_readings(self, start_date, end_date, site_code, species, averaging):
         """
         Request all readings for {site_code}, {species} between {start_date} and {end_date} {averaging} eg:hourly
@@ -70,6 +69,7 @@ class BreatheWriter(DateRangeMixin, APIRequestMixin, BreatheAvailabilityMixin, D
             # Add the site_code
             for reading in parsed_data:
                 reading["SiteCode"] = site_code
+                species = species
                 # Use strptime to convert the string to a datetime object
                 start_time = reading["StartDate"]
                 date_time_obj = datetime.strptime(start_time, "%Y-%m-%dT%H:%M:%S.%fZ")
@@ -78,6 +78,7 @@ class BreatheWriter(DateRangeMixin, APIRequestMixin, BreatheAvailabilityMixin, D
                 timestamp_end = timestamp_start + timedelta(hours=1)
                 reading["MeasurementStartUTC"] = timestamp_start.strftime("%Y-%m-%d %H:%M:%S")
                 reading["MeasurementEndUTC"] = timestamp_end.strftime("%Y-%m-%d %H:%M:%S")
+                breakpoint()
             return parsed_data
         
         except requests.exceptions.HTTPError as error:
@@ -104,7 +105,7 @@ class BreatheWriter(DateRangeMixin, APIRequestMixin, BreatheAvailabilityMixin, D
                 for s in self.request_site_entries()
                 if s["Latitude"] and s["Longitude"]
             ]
-            for entry in site_entries:
+            for entry in site_entries: 
                 entry["geometry"] = MetaPoint.build_ewkt(
                     entry["Latitude"], entry["Longitude"]
                 )

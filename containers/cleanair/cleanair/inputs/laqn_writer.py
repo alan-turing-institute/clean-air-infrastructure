@@ -58,9 +58,7 @@ class LAQNWriter(DateRangeMixin, APIRequestMixin, LAQNAvailabilityMixin, DBWrite
             endpoint = "http://api.erg.kcl.ac.uk/AirQuality/Data/Site/SiteCode={}/StartDate={}/EndDate={}/Json".format(
                 site_code, str(start_date), str(end_date)
             )
-            raw_data = self.get_response(endpoint, timeout=120.0).json()[
-                "AirQualityData"
-            ]["Data"]
+            raw_data = self.get_response(endpoint, timeout=120.0).json()["AirQualityData"]["Data"]
             # Drop duplicates
             processed_data = [dict(t) for t in {tuple(d.items()) for d in raw_data}]
             # Add the site_code
@@ -157,7 +155,7 @@ class LAQNWriter(DateRangeMixin, APIRequestMixin, LAQNAvailabilityMixin, DBWrite
             LAQNReading.build_entry(site_reading, return_dict=usecore)
             for site_reading in site_readings
         ]
-
+        #  checks for duplicate readings within the list of dictionaries
         delete_indices = []
         for i in range(0, len(site_records) - 1):
             for j in range(i + 1, len(site_records)):

@@ -11,7 +11,7 @@ from .satellite_writer import SatelliteWriter
 
 __all__ = [
     "AQEWriter",
-    "BreatheLondon",
+    "BreatheWriter",
     "LAQNWriter",
     "RectGridWriter",
     "ScootWriter",
