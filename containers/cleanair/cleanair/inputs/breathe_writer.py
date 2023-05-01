@@ -37,22 +37,29 @@ class BreatheWriter(DateRangeMixin, APIRequestMixin, BreatheAvailabilityMixin, D
             endpoint = "https://api.breathelondon.org/api/ListSensors?key=fe47645a-e87a-11eb-9a03-0242ac130003"
             breathe_data = self.get_response(endpoint, timeout=5.0).content
             raw_data = json.loads(io.StringIO(breathe_data).getvalue())[0]
+            # Creates a list of tuples called "merged_data" that contains the latest values for three air quality indicators (INO2, IPM25, IPM10) 
+            # for each reading in "raw_data" that has both "Latitude" and "Longitude" keys.
             merged_data = [
                 (reading["LatestINO2Value"], reading["LatestIPM25Value"], reading["LatestIPM10Value"])
                 for reading in raw_data
                 if all(key in reading for key in ["Latitude", "Longitude"])
             ]
+            #write in the value column 
             BreatheReading.value = merged_data
+            # Creates a list of lists "species" that contains 
+            # the string representation of air quality indicators (NO2, PM25, PM10) for each reading in "raw_data" that has both "Latitude" and "Longitude" keys.
             species = [
                 [len(reading["LatestINO2Value"]) * "NO2", len(reading["LatestIPM25Value"]) * "PM25", len(reading["LatestIPM10Value"]) * "PM10"]
                 for reading in raw_data
                 if all(key in reading for key in ["Latitude", "Longitude"])
             ]
-            BreatheReading.species_code = species
+            BreatheReading.species_code  = species
             return merged_data
+        
         except (json.decoder.JSONDecodeError, requests.exceptions.RequestException, KeyError, TypeError) as e:
             print(f"Error while requesting site entries: {e}")
             return []
+        
     def request_site_readings(self, start_date, end_date, site_code, species, averaging):
         """
         Request all readings for {site_code}, {species} between {start_date} and {end_date} {averaging} eg:hourly
@@ -66,7 +73,11 @@ class BreatheWriter(DateRangeMixin, APIRequestMixin, BreatheAvailabilityMixin, D
             sites = self.get_response(endpoint, timeout=120.0).content
             raw_data =sites.decode()
             parsed_data = json.loads(raw_data)
-            # Add the site_code
+            # Add the site_code with looping through each "reading" in "parsed_data", 
+            # assigns a "SiteCode" and a "species" variable, 
+            # converts the "StartDate" string to a datetime object, 
+            # generates start and end timestamps for each reading, 
+            # and adds the timestamp values to the "MeasurementStartUTC" and "MeasurementEndUTC" keys of the reading dictionary.
             for reading in parsed_data:
                 reading["SiteCode"] = site_code
                 species = species
@@ -78,7 +89,6 @@ class BreatheWriter(DateRangeMixin, APIRequestMixin, BreatheAvailabilityMixin, D
                 timestamp_end = timestamp_start + timedelta(hours=1)
                 reading["MeasurementStartUTC"] = timestamp_start.strftime("%Y-%m-%d %H:%M:%S")
                 reading["MeasurementEndUTC"] = timestamp_end.strftime("%Y-%m-%d %H:%M:%S")
-                breakpoint()
             return parsed_data
         
         except requests.exceptions.HTTPError as error:
@@ -87,7 +97,8 @@ class BreatheWriter(DateRangeMixin, APIRequestMixin, BreatheAvailabilityMixin, D
             return None
         except (TypeError, KeyError):
             return None
-
+    
+    # IS NOT WORKING since cannot inport data yet
     def update_site_list_table(self):
         """
         Update the breathe_site table
