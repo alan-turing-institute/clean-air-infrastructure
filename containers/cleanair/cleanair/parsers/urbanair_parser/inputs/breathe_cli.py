@@ -10,6 +10,7 @@ from ..state import state
 
 app = typer.Typer()
 
+
 @app.command()
 def check(upto: str = UpTo, nhours: int = NHours, ndays: int = NDays) -> None:
     """Check what AQE data is in the database"""

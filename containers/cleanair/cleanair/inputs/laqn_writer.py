@@ -33,7 +33,9 @@ class LAQNWriter(DateRangeMixin, APIRequestMixin, LAQNAvailabilityMixin, DBWrite
         try:
             # This lists the monitoring sites filtered by 'GroupName'. Currently the Group name would be 'London'. Data returned in JSON format
             endpoint = "http://api.erg.kcl.ac.uk/AirQuality/Information/MonitoringSites/GroupName=London/Json"
-            raw_data = self.get_response(endpoint, timeout=5.0).json()["Sites"]["Site"] #list of dict sites
+            raw_data = self.get_response(endpoint, timeout=5.0).json()["Sites"][
+                "Site"
+            ]  # list of dict sites
             # Remove sites with no opening date
             processed_data = [site for site in raw_data if site["@DateOpened"]]
             if len(processed_data) != len(raw_data):
@@ -58,7 +60,9 @@ class LAQNWriter(DateRangeMixin, APIRequestMixin, LAQNAvailabilityMixin, DBWrite
             endpoint = "http://api.erg.kcl.ac.uk/AirQuality/Data/Site/SiteCode={}/StartDate={}/EndDate={}/Json".format(
                 site_code, str(start_date), str(end_date)
             )
-            raw_data = self.get_response(endpoint, timeout=120.0).json()["AirQualityData"]["Data"]
+            raw_data = self.get_response(endpoint, timeout=120.0).json()[
+                "AirQualityData"
+            ]["Data"]
             # Drop duplicates
             processed_data = [dict(t) for t in {tuple(d.items()) for d in raw_data}]
             # Add the site_code
@@ -71,6 +75,7 @@ class LAQNWriter(DateRangeMixin, APIRequestMixin, LAQNAvailabilityMixin, DBWrite
                 reading["MeasurementStartUTC"] = utcstr_from_datetime(timestamp_start)
                 reading["MeasurementEndUTC"] = utcstr_from_datetime(timestamp_end)
             return processed_data
+
         except requests.exceptions.HTTPError as error:
             self.logger.warning("Request to %s failed:", endpoint)
             self.logger.warning(error)

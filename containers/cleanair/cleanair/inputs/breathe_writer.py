@@ -1,4 +1,3 @@
-
 from datetime import datetime, timedelta
 import pytz
 import io
@@ -8,26 +7,28 @@ from ..mixins.api_request_mixin import APIRequestMixin
 from ..mixins.date_range_mixin import DateRangeMixin
 from ..mixins.availability_mixins import BreatheAvailabilityMixin
 from ..mixins.availability_mixins.breathe_availability import BreatheAvailabilityMixin
-from ..databases import DBWriter 
+from ..databases import DBWriter
 from ..databases.tables.breathe_tables import BreatheSite, BreatheReading
-from ..databases.tables import  MetaPoint
+from ..databases.tables import MetaPoint
 from ..loggers import get_logger, green
 from ..timestamps import datetime_from_str, utcstr_from_datetime
 
-class BreatheWriter(DateRangeMixin, APIRequestMixin, BreatheAvailabilityMixin, DBWriter):
+
+class BreatheWriter(
+    DateRangeMixin, APIRequestMixin, BreatheAvailabilityMixin, DBWriter
+):
     """
     Get data from the Breathe London network via the API maintained by Imperial College London:
     (https://www.breathelondon.org/developers)
     """
 
-    def __init__(self,**kwargs):
+    def __init__(self, **kwargs):
         # Initialise parent classes
         super().__init__(**kwargs)
         # Ensure logging is available
         if not hasattr(self, "logger"):
             self.logger = get_logger(__name__)
-        
-    
+
     def request_site_entries(self):
         """
         Request all Breathe sites
@@ -36,68 +37,76 @@ class BreatheWriter(DateRangeMixin, APIRequestMixin, BreatheAvailabilityMixin, D
         try:
             endpoint = "https://api.breathelondon.org/api/ListSensors?key=fe47645a-e87a-11eb-9a03-0242ac130003"
             breathe_data = self.get_response(endpoint, timeout=5.0).content
-            raw_data = json.loads(io.StringIO(breathe_data).getvalue())[0]
-            # Creates a list of tuples called "merged_data" that contains the latest values for three air quality indicators (INO2, IPM25, IPM10) 
+            raw_data = json.loads(breathe_data)
+            # Creates a list of tuples called "merged_data" that contains the latest values for three air quality indicators (INO2, IPM25, IPM10)
             # for each reading in "raw_data" that has both "Latitude" and "Longitude" keys.
-            merged_data = [
-                (reading["LatestINO2Value"], reading["LatestIPM25Value"], reading["LatestIPM10Value"])
-                for reading in raw_data
-                if all(key in reading for key in ["Latitude", "Longitude"])
-            ]
-            #write in the value column 
-            BreatheReading.value = merged_data
-            # Creates a list of lists "species" that contains 
-            # the string representation of air quality indicators (NO2, PM25, PM10) for each reading in "raw_data" that has both "Latitude" and "Longitude" keys.
-            species = [
-                [len(reading["LatestINO2Value"]) * "NO2", len(reading["LatestIPM25Value"]) * "PM25", len(reading["LatestIPM10Value"]) * "PM10"]
-                for reading in raw_data
-                if all(key in reading for key in ["Latitude", "Longitude"])
-            ]
-            BreatheReading.species_code  = species
-            return merged_data
-        
-        except (json.decoder.JSONDecodeError, requests.exceptions.RequestException, KeyError, TypeError) as e:
+            # TODO check what this nessesery\
+            raw_data = [item for sublist in raw_data for item in sublist]
+            return raw_data
+        except (
+            json.decoder.JSONDecodeError,
+            requests.exceptions.RequestException,
+            KeyError,
+            TypeError,
+        ) as e:
             print(f"Error while requesting site entries: {e}")
-            return []
-        
-    def request_site_readings(self, start_date, end_date, site_code, species, averaging):
+            raise e
+
+    def request_site_readings(self, start_date, end_date, site_code):
         """
         Request all readings for {site_code}, {species} between {start_date} and {end_date} {averaging} eg:hourly
         Remove duplicates and add the site_code
         """
-        try:
-            # This call retrieves data from Breathe London nodes as a JSON object.
-            endpoint = "http://api.breathelondon.org/api/api/getClarityData/{}/{}/{}/{}/{}".format(
-                site_code, species, str(start_date), str(end_date), averaging
-            )
-            sites = self.get_response(endpoint, timeout=120.0).content
-            raw_data =sites.decode()
-            parsed_data = json.loads(raw_data)
-            # Add the site_code with looping through each "reading" in "parsed_data", 
-            # assigns a "SiteCode" and a "species" variable, 
-            # converts the "StartDate" string to a datetime object, 
-            # generates start and end timestamps for each reading, 
-            # and adds the timestamp values to the "MeasurementStartUTC" and "MeasurementEndUTC" keys of the reading dictionary.
-            for reading in parsed_data:
-                reading["SiteCode"] = site_code
-                species = species
-                # Use strptime to convert the string to a datetime object
-                start_time = reading["StartDate"]
-                date_time_obj = datetime.strptime(start_time, "%Y-%m-%dT%H:%M:%S.%fZ")
-                utc_time = pytz.utc.localize(date_time_obj)
-                timestamp_start = utc_time
-                timestamp_end = timestamp_start + timedelta(hours=1)
-                reading["MeasurementStartUTC"] = timestamp_start.strftime("%Y-%m-%d %H:%M:%S")
-                reading["MeasurementEndUTC"] = timestamp_end.strftime("%Y-%m-%d %H:%M:%S")
-            return parsed_data
-        
-        except requests.exceptions.HTTPError as error:
-            self.logger.warning("Request to %s failed:", endpoint)
-            self.logger.warning(error)
-            return None
-        except (TypeError, KeyError):
-            return None
-    
+        # TODO add documantation
+        species_list = ["INO2", "IPM25"]
+        for species in species_list:
+            try:
+                # This call retrieves data from Breathe London nodes as a JSON object.
+                endpoint = "https://api.breathelondon.org/api/getClarityData/{}/{}/{}/{}/{}?key=fe47645a-e87a-11eb-9a03-0242ac130003".format(
+                    str(site_code),
+                    str(species),
+                    str(start_date.strftime("%a %d %b %Y %H:%M:%S")),
+                    str(end_date.strftime("%a %d %b %Y %H:%M:%S")),
+                    "Hourly",
+                )
+                sites = self.get_response(endpoint, timeout=120.0).content
+                raw_data = sites.decode()
+                parsed_data = json.loads(raw_data)
+                # print("API")
+                # print(parsed_data)
+                # breakpoint()
+                # Add the site_code with looping through each "reading" in "parsed_data",
+                # assigns a "SiteCode" and a "species" variable,
+                # converts the "StartDate" string to a datetime object,
+                # generates start and end timestamps for each reading,
+                # and adds the timestamp values to the "MeasurementStartUTC" and "MeasurementEndUTC" keys of the reading dictionary.
+                for reading in parsed_data:
+                    reading["SiteCode"] = site_code
+                    species = species
+                    # Use strptime to convert the string to a datetime object
+                    start_time = reading["StartDate"]
+                    date_time_obj = datetime.strptime(
+                        start_time, "%Y-%m-%dT%H:%M:%S.%fZ"
+                    )
+                    utc_time = pytz.utc.localize(date_time_obj)
+                    timestamp_start = utc_time
+                    timestamp_end = timestamp_start + timedelta(hours=1)
+                    reading["MeasurementStartUTC"] = timestamp_start.strftime(
+                        "%Y-%m-%d %H:%M:%S"
+                    )
+                    reading["MeasurementEndUTC"] = timestamp_end.strftime(
+                        "%Y-%m-%d %H:%M:%S"
+                    )
+
+                return parsed_data
+
+            except requests.exceptions.HTTPError as error:
+                self.logger.warning("Request to %s failed:", endpoint)
+                self.logger.warning(error)
+                return None
+            except (TypeError, KeyError):
+                return None
+
     # IS NOT WORKING since cannot inport data yet
     def update_site_list_table(self):
         """
@@ -116,7 +125,7 @@ class BreatheWriter(DateRangeMixin, APIRequestMixin, BreatheAvailabilityMixin, D
                 for s in self.request_site_entries()
                 if s["Latitude"] and s["Longitude"]
             ]
-            for entry in site_entries: 
+            for entry in site_entries:
                 entry["geometry"] = MetaPoint.build_ewkt(
                     entry["Latitude"], entry["Longitude"]
                 )
@@ -162,6 +171,8 @@ class BreatheWriter(DateRangeMixin, APIRequestMixin, BreatheAvailabilityMixin, D
         with self.dbcnxn.open_session() as session:
             # Load readings for all sites and update the database accordingly
             site_info_query = session.query(BreatheSite)
+            # print(site_info_query)
+            # breakpoint()
             self.logger.info(
                 "Requesting readings from %s for %s sites",
                 green("API"),
@@ -172,6 +183,9 @@ class BreatheWriter(DateRangeMixin, APIRequestMixin, BreatheAvailabilityMixin, D
         site_readings = self.get_readings_by_site(
             site_info_query, self.start_date, self.end_date
         )
+        print("SITE READINGS:")
+        print(site_readings)
+        print()
         site_records = [
             BreatheReading.build_entry(site_reading, return_dict=usecore)
             for site_reading in site_readings
@@ -191,5 +205,3 @@ class BreatheWriter(DateRangeMixin, APIRequestMixin, BreatheAvailabilityMixin, D
         """Update all relevant tables on the remote database"""
         self.update_site_list_table()
         self.update_reading_table()
-
-    
