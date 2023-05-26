@@ -54,8 +54,11 @@ class BreatheWriter(
 
     def request_site_readings(self, start_date, end_date, site_code):
         """
-        Request all readings for {site_code}, {species} between {start_date} and {end_date} {averaging} eg:hourly
-        Remove duplicates and add the site_code
+        Request all readings;
+            site_code: The site code of the sensor.
+            start_date: The start time of the data collection period.
+            end_date: The end time of the data collection period.
+            averaging: A string specifying the time averaging, such as "Hourly", "Weekly", or "Yearly".
         """
         # TODO add documantation
         species_list = ["INO2", "IPM25"]
@@ -72,9 +75,7 @@ class BreatheWriter(
                 sites = self.get_response(endpoint, timeout=120.0).content
                 raw_data = sites.decode()
                 parsed_data = json.loads(raw_data)
-                # print("API")
-                # print(parsed_data)
-                # breakpoint()
+
                 # Add the site_code with looping through each "reading" in "parsed_data",
                 # assigns a "SiteCode" and a "species" variable,
                 # converts the "StartDate" string to a datetime object,
@@ -82,9 +83,11 @@ class BreatheWriter(
                 # and adds the timestamp values to the "MeasurementStartUTC" and "MeasurementEndUTC" keys of the reading dictionary.
                 for reading in parsed_data:
                     reading["SiteCode"] = site_code
-                    species = species
+                    # for spacies in
+                    reading["SpeciesCode"] = species
+
                     # Use strptime to convert the string to a datetime object
-                    start_time = reading["StartDate"]
+                    start_time = reading["DateTime"]
                     date_time_obj = datetime.strptime(
                         start_time, "%Y-%m-%dT%H:%M:%S.%fZ"
                     )
@@ -97,9 +100,7 @@ class BreatheWriter(
                     reading["MeasurementEndUTC"] = timestamp_end.strftime(
                         "%Y-%m-%d %H:%M:%S"
                     )
-
                 return parsed_data
-
             except requests.exceptions.HTTPError as error:
                 self.logger.warning("Request to %s failed:", endpoint)
                 self.logger.warning(error)
@@ -107,7 +108,6 @@ class BreatheWriter(
             except (TypeError, KeyError):
                 return None
 
-    # IS NOT WORKING since cannot inport data yet
     def update_site_list_table(self):
         """
         Update the breathe_site table
@@ -171,8 +171,6 @@ class BreatheWriter(
         with self.dbcnxn.open_session() as session:
             # Load readings for all sites and update the database accordingly
             site_info_query = session.query(BreatheSite)
-            # print(site_info_query)
-            # breakpoint()
             self.logger.info(
                 "Requesting readings from %s for %s sites",
                 green("API"),
@@ -183,9 +181,7 @@ class BreatheWriter(
         site_readings = self.get_readings_by_site(
             site_info_query, self.start_date, self.end_date
         )
-        print("SITE READINGS:")
-        print(site_readings)
-        print()
+
         site_records = [
             BreatheReading.build_entry(site_reading, return_dict=usecore)
             for site_reading in site_readings

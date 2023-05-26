@@ -9,7 +9,7 @@ from ..base import Base
 
 class BreatheSite(Base):
     """Table of BL data sites"""
-    
+
     __tablename__ = "breathe_site"
     __table_args__ = {"schema": "interest_points"}
 
@@ -47,7 +47,8 @@ class BreatheSite(Base):
             date_opened=site_dict["StartDate"],
             date_closed=site_dict["EndDate"],
         )
-    
+
+
 class BreatheReading(Base):
     """Table of Breathe London data readings"""
 
@@ -78,3 +79,38 @@ class BreatheReading(Base):
         Create an BreatheReading entry, replacing empty strings with None
         If return_dict then return a dictionary rather than and entry, to allow inserting via sqlalchemy core
         """
+
+        # Replace empty strings
+        reading_dict = {k: (v if v else None) for k, v in reading_dict.items()}
+        keys_to_drop = ["DurationNS", "DateTime"]  # List of column names to drop
+        for key in keys_to_drop:
+            reading_dict.pop(key, None)
+
+        if return_dict:
+            new_key = [
+                "site_code",
+                "species_code",
+                "measurement_start_utc",
+                "measurement_end_utc",
+                "value",
+            ]
+            old_key = [
+                "SiteCode",
+                "SpeciesCode",
+                "MeasurementStartUTC",
+                "MeasurementEndUTC",
+                "ScaledValue",
+            ]
+
+            for i, key in enumerate(old_key):
+                reading_dict[new_key[i]] = reading_dict.pop(key)
+            return reading_dict
+
+        # Construct the record and return it
+        return BreatheReading(
+            site_code=reading_dict.get("SiteCode"),
+            species_code=reading_dict.get("SpeciesCode"),
+            measurement_start_utc=reading_dict.get("MeasurementStartUTC"),
+            measurement_end_utc=reading_dict.get("MeasurementEndUTC"),
+            value=reading_dict.get("ScaledValue"),
+        )
