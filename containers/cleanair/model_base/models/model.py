@@ -4,10 +4,8 @@ The interface for London air quality models.
 
 from typing import Callable, List, Optional, Union
 from abc import abstractmethod
-import numpy as np
-import numpy.typing as npt
-from ..loggers import get_logger
-from ..types import (
+from cleanair_data.loggers import get_logger
+from cleanair_data.types import (
     FeaturesDict,
     NDArrayTuple,
     PredictionDict,
