@@ -13,7 +13,7 @@ from pydantic import ValidationError
 from sqlalchemy import func, text, column, String, cast, and_, values, literal
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql.expression import Alias
-from cleanair.types.enum_types import DynamicFeatureNames
+from cleanair_data.types.enum_types import DynamicFeatureNames
 
 from .schemas import (
     DynamicFeatureSchema,
@@ -130,7 +130,6 @@ class ModelDataExtractor:
 
         data_output: Dict[str, pd.DateFrame] = {}
         for source, data_df in data_frames.items():
-
             data_df_normed = data_df.copy()
 
             data_df_normed[x_names_norm] = (
@@ -146,7 +145,6 @@ class ModelDataExtractor:
     ) -> Tuple[
         pd.Index, npt.NDArray[np.float64], Dict[Species, npt.NDArray[np.float64]]
     ]:
-
         """Get an array from a pandas dataframe for any Source with Species except satellite"""
 
         index, X = self.get_array(data_df, x_names)
@@ -228,7 +226,6 @@ class ModelDataExtractor:
         index_dict: FeaturesDict
 
         for source in data_frame_dict.keys():
-
             data_df = data_frame_dict[source]
             if source != Source.satellite:
                 if prediction:
@@ -446,7 +443,6 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
         "Get the selected dynamic features for a specific locatoin and time"
 
         with self.dbcnxn.open_session() as session:
-
             # Get a row with all the point ids requested
             point_id_sq = session.query(
                 values(column("point_id", String), name="point_ids").data(
@@ -560,7 +556,6 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
         """
 
         with self.dbcnxn.open_session() as session:
-
             # Get a row with all the point ids requested
             point_id_sq = session.query(
                 values(column("point_id", String), name="point_ids").data(
@@ -653,7 +648,6 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
         """
 
         with self.dbcnxn.open_session() as session:
-
             cols = [
                 func.generate_series(
                     start_date.isoformat(),
@@ -746,7 +740,6 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
             columns.append(sensor_readings.c.box_id)
 
         with self.dbcnxn.open_session() as session:
-
             static_with_sensor_readings = (
                 session.query(*columns)
                 .join(

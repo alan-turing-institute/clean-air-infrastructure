@@ -1,7 +1,7 @@
 """Scoot CLI"""
 import typer
-from cleanair.inputs import ScootWriter, ScootReader
-from cleanair.loggers import initialise_logging
+from cleanair_data.inputs import ScootWriter, ScootReader
+from cleanair_data.loggers import initialise_logging
 from ..shared_args import UpTo, NDays, NHours, AWSId, AWSKey, ScootDetectors
 from ..state import state
 

@@ -10,11 +10,10 @@ from uuid import UUID
 
 from pydantic import BaseModel, validator, ValidationError
 
-from cleanair.types import StaticFeatureNames, DynamicFeatureNames, Source, Species
+from cleanair_data.types import StaticFeatureNames, DynamicFeatureNames, Source, Species
 
 
 class BaseFeatures(BaseModel):
-
     point_id: UUID
     value_1000: float
     value_500: float

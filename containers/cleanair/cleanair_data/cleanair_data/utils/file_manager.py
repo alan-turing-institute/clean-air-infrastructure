@@ -9,8 +9,8 @@ import json
 import pickle
 import pandas as pd
 from azure.core.exceptions import ResourceNotFoundError
-from cleanair.environment_settings import get_settings
-from cleanair.utils.azure import blob_storage
+from cleanair_data.environment_settings import get_settings
+from cleanair_data.utils.azure import blob_storage
 
 from ..loggers import get_logger
 from ..metrics import TrainingMetrics
@@ -64,10 +64,8 @@ class FileManager:
     PRED_TRAINING_PICKLE = RESULT / "pred_training.pkl"
 
     def __init__(self, input_dir: Path, blob_id: str = None) -> None:
-
         # Download a zipped blob from storage if specified
         if blob_id:
-
             try:
                 sas_token = blob_storage.generate_sas_token(
                     resource_group="RG_CLEANAIR_INFRASTRUCTURE",

@@ -18,11 +18,11 @@ from azure.storage.blob import (
     AccountSasPermissions,
 )
 from sqlalchemy import create_engine, inspect
-from cleanair.databases import Connector, DBInteractor
-from cleanair.inputs import StaticWriter
-from cleanair.loggers import get_logger
-from cleanair.parsers import DatabaseSetupParser
-from cleanair.utils.azure import get_urbanair_az_subscription_id
+from cleanair_data.databases import Connector, DBInteractor
+from cleanair_data.inputs import StaticWriter
+from cleanair_data.loggers import get_logger
+from cleanair_data.parsers import DatabaseSetupParser
+from cleanair_data.utils.azure import get_urbanair_az_subscription_id
 
 DATASETS = {
     "rectgrid_100": {

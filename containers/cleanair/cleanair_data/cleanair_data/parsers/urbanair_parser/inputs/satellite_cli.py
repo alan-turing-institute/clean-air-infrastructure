@@ -3,8 +3,8 @@ import webbrowser
 import tempfile
 import time
 import typer
-from cleanair.inputs import SatelliteWriter
-from cleanair.loggers import initialise_logging
+from cleanair_data.inputs import SatelliteWriter
+from cleanair_data.loggers import initialise_logging
 from ..shared_args import (
     UpTo,
     NDays,
@@ -52,7 +52,6 @@ def check(
             webbrowser.open("file://" + tmp.name, new=2)
             time.sleep(1)
     else:
-
         available_data = satellite_writer.get_satellite_availability(
             reference_start_date=satellite_writer.start_date.isoformat(),
             reference_end_date=satellite_writer.end_date.isoformat(),

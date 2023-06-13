@@ -1,7 +1,7 @@
 """AQE input CLI"""
 import typer
-from cleanair.inputs import AQEWriter
-from cleanair.loggers import initialise_logging
+from cleanair_data.inputs import AQEWriter
+from cleanair_data.loggers import initialise_logging
 from ..shared_args import UpTo, NDays, NHours
 from ..state import state
 

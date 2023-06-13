@@ -40,6 +40,7 @@ model_params = default_svgp_model_params(num_inducing_points=1500)
 ```
 
 Alternatively, you can create the default parameters first, then edit afterwards:
+
 ```python
 model_params = default_svgp_model_params()
 model_params.num_inducing_points = 1500
@@ -54,7 +55,7 @@ For example, to change the static features for a dataset with only LAQN data:
 
 ```python
 from cleanair.experiment import default_laqn_data_config
-from cleanair.types import FeatureNames
+from cleanair_data.types import FeatureNames
 
 # NOTE this is note a full data config
 data_config = default_laqn_data_config()
@@ -91,6 +92,7 @@ def example_experiment(secretfile: str) -> List[InstanceMixin]:
 ```
 
 2. Add the function name to `ExperimentName`. This lets us call the experiment from the command line interface:
+
 ```python
 # inside cleanair.types.experiment_types.py
 class ExperimentName(BaseModel):    # this class already exists
@@ -136,5 +138,4 @@ EXPERIMENT_ROOT/
             result/
                 pred_forecast.pkl
                 pred_training.pkl
-```            
-
+```

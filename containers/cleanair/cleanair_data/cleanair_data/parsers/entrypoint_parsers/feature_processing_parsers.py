@@ -1,6 +1,6 @@
 """Parsers for feature processing entrypoints"""
 from argparse import ArgumentParser
-from cleanair.parsers import (
+from cleanair_data.parsers import (
     SatelliteArgumentParser,
     SecretFileParser,
     VerbosityParser,

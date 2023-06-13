@@ -6,7 +6,7 @@ from sqlalchemy import func, literal
 from sqlalchemy import select
 from sqlalchemy.sql.functions import current_timestamp
 from sqlalchemy.sql.expression import union
-from cleanair.databases.tables import JamCamVideoStats
+from cleanair_data.databases.tables import JamCamVideoStats
 
 from ..base import Base
 from ..views import create_materialized_view

@@ -5,7 +5,7 @@ import webbrowser
 import tempfile
 import time
 import typer
-from cleanair.features import FeatureExtractor, FEATURE_CONFIG
+from cleanair_data.features import FeatureExtractor, FEATURE_CONFIG
 
 from ..shared_args import (
     Web,
@@ -24,7 +24,6 @@ app = typer.Typer()
 valid_features = list(ValidFeatureSources)
 valid_feature_names = []
 for i in range(len(valid_features)):
-
     feature_source = valid_features[i]
     sub_app = typer.Typer()
     feature_names = list(FEATURE_CONFIG[valid_features[i].value]["features"].keys())

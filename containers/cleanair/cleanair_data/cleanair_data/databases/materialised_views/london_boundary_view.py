@@ -3,9 +3,9 @@ Views of London boundary static data
 """
 
 from sqlalchemy import select, func
-from cleanair.databases.tables import HexGrid
+from cleanair_data.databases.tables import HexGrid
 from ..base import Base
-from ..views import create_materialized_view, RawGeometry
+from ..views import create_materialized_view
 
 
 class LondonBoundaryView(Base):
@@ -18,7 +18,7 @@ class LondonBoundaryView(Base):
         selectable=select(
             [
                 func.ST_MakePolygon(
-                    func.ST_Boundary(func.ST_Union(HexGrid.geom)), type_=RawGeometry
+                    func.ST_Boundary(func.ST_Union(HexGrid.geom))
                 ).label("geom")
             ]
         ),

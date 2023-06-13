@@ -1,16 +1,17 @@
 #! /usr/bin/env python
 """UrbanAir CLI"""
+from curses import echo
 import importlib
 import typer
-from cleanair.parsers.urbanair_parser import (
-    config,
-    echo,
+from cleanair_data.parsers.urbanair_parser import (
+    # config,
+    # echo,
     # experiment,
-    init,
-    inputs,
-    logs,
-    features,
-    metrics,
+    # init,
+    # inputs,
+    # logs,
+    # features,
+    # metrics,
     dataset,
     # model,
     # production,
@@ -21,16 +22,16 @@ from cleanair.parsers.urbanair_parser import (
 has_prophet = importlib.util.find_spec("fbprophet")
 has_pystan = importlib.util.find_spec("pystan")
 
-app = typer.Typer(callback=init.init_callback)
-app.add_typer(config.app, name="config")
+app = typer.Typer()
+# app.add_typer(config.app, name="config")
 app.add_typer(dataset.app, name="dataset")
-app.add_typer(echo.app, name="echo")
-# app.add_typer(experiment.app, name="experiment")
-app.add_typer(init.app, name="init")
-app.add_typer(inputs.app, name="inputs")
-app.add_typer(logs.app, name="logs")
-app.add_typer(features.app, name="features")
-app.add_typer(metrics.app, name="metrics")
+# app.add_typer(echo.app, name="echo")
+# # app.add_typer(experiment.app, name="experiment")
+# app.add_typer(init.app, name="init")
+# app.add_typer(inputs.app, name="inputs")
+# app.add_typer(logs.app, name="logs")
+# app.add_typer(features.app, name="features")
+# app.add_typer(metrics.app, name="metrics")
 # app.add_typer(model.app, name="model")
 # app.add_typer(production.app, name="production")
 
