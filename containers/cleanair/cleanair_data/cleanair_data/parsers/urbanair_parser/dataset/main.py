@@ -33,7 +33,6 @@ def download(
     secretfile: str = state["secretfile"]
     initialise_logging(verbose)  # set logging level
     download_root.mkdir(parents=True, exist_ok=True)
-    breakpoint()
 
     # todo scecify dataConfig uzantilarini
     data_config = DataConfig(
