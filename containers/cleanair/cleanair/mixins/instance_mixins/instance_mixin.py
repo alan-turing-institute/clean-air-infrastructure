@@ -1,4 +1,4 @@
-"""Mixin for the instance class."""
+"""Mixin for the experiments(instance) class."""
 
 from __future__ import annotations
 from abc import abstractmethod

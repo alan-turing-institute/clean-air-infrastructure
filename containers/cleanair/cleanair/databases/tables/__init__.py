@@ -12,6 +12,7 @@ from .air_quality_instance_tables import (
 from .aqe_tables import AQESite, AQEReading
 from .features_tables import StaticFeature, DynamicFeature
 from .hexgrid_table import HexGrid
+from .breathe_tables import BreatheSite, BreatheReading
 from .laqn_tables import LAQNSite, LAQNReading
 from .londonboundary_table import LondonBoundary
 from .meta_point_table import MetaPoint
@@ -62,6 +63,8 @@ __all__ = [
     "AQESite",
     "DynamicFeature",
     "HexGrid",
+    "BreatheReading",
+    "BreatheSite",
     "LAQNReading",
     "LAQNSite",
     "LondonBoundary",

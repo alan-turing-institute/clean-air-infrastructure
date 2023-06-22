@@ -3,6 +3,7 @@ import setuptools
 
 # sorted by surname
 AUTHORS = {
+    "Sueda Ciftci": "sueda.ciftci@warwick.ac.uk",
     "Oscar Giles": "ogiles@turing.ac.uk",
     "Ollie Hamelijnck": "ohamelijnck@turing.ac.uk",
     "Patrick O'Hara": "patrick.h.o-hara@warwick.ac.uk",
@@ -23,10 +24,11 @@ setuptools.setup(
     ],
     install_requires=[
         "gitpython==3.1.27 ",
-        "azure-cli==2.37.0",
+        "azure-cli==2.44.1",
         "azure-identity==1.10.0",
-        "azure-storage-blob==12.12.0",
-        "azure-mgmt-storage==20.0.0",
+        "azure-storage-blob==12.14.1",
+        "azure-keyvault-secrets==4.6.0",
+        "azure-mgmt-storage==21.0.0 ",
         "azure-mgmt-subscription==3.0.0",
         "boto3==1.24.0",
         "cdsapi==0.5.1",
@@ -34,7 +36,7 @@ setuptools.setup(
         "colorlog==6.6.0",
         "geoalchemy2==0.10.2",
         "holidays==0.13",
-        "numpy==1.22.4",
+        "numpy==1.24.1",
         "packaging>=21.3",
         "pathos==0.2.9",
         "pandas==1.4.2",
@@ -49,7 +51,7 @@ setuptools.setup(
         "sqlalchemy==1.4.37",
         "sqlalchemy-utils==0.38.2",
         "scikit-learn==1.1.1",
-        "shapely==1.8.2",
+        "shapely==2.0.1",
         "tabulate==0.8.9",
         "termcolor==1.1.0",
         "typer==0.4.1",

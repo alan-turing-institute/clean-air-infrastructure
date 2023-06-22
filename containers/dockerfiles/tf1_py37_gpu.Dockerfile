@@ -18,7 +18,8 @@ RUN update-alternatives  --set python /usr/bin/python3.7
 
 RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
 
-RUN python get-pip.py
+RUN apt-get install python3-distutils -y
+RUN python3.7 get-pip.py
 
 # Install TF and gpflow
 RUN pip install tensorflow-gpu==1.15.0

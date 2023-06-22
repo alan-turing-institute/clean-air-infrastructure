@@ -22,8 +22,13 @@ def get_database_username() -> str:
         username = json.loads(user_cmd.stdout.decode())["userPrincipalName"]
     except Exception as exc:
         raise DatabaseUserAuthenticationException() from exc
-    return username + "@" + DATABASE_NAME
-
+    #TODO change the length of the username from data base
+    if len(username) >= 65:
+        print("Please write your azure database USERNAME ")
+        username = input()
+        return username + "@" + DATABASE_NAME
+    else: 
+        return username + "@" + DATABASE_NAME
 
 def get_database_access_token() -> str:
     """Get the access token for a user of the Azure database"""

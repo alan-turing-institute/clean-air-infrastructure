@@ -31,8 +31,11 @@ class LAQNWriter(DateRangeMixin, APIRequestMixin, LAQNAvailabilityMixin, DBWrite
         Remove any that do not have an opening date
         """
         try:
+            # This lists the monitoring sites filtered by 'GroupName'. Currently the Group name would be 'London'. Data returned in JSON format
             endpoint = "http://api.erg.kcl.ac.uk/AirQuality/Information/MonitoringSites/GroupName=London/Json"
-            raw_data = self.get_response(endpoint, timeout=5.0).json()["Sites"]["Site"]
+            raw_data = self.get_response(endpoint, timeout=5.0).json()["Sites"][
+                "Site"
+            ]  # list of dict sites
             # Remove sites with no opening date
             processed_data = [site for site in raw_data if site["@DateOpened"]]
             if len(processed_data) != len(raw_data):
@@ -53,6 +56,7 @@ class LAQNWriter(DateRangeMixin, APIRequestMixin, LAQNAvailabilityMixin, DBWrite
         Remove duplicates and add the site_code
         """
         try:
+            # This returns raw data based on 'SiteCode', 'StartDate', 'EndDate'. Data returned in JSON format with one entry per datetime (wide format).
             endpoint = "http://api.erg.kcl.ac.uk/AirQuality/Data/Site/SiteCode={}/StartDate={}/EndDate={}/Json".format(
                 site_code, str(start_date), str(end_date)
             )
@@ -71,6 +75,7 @@ class LAQNWriter(DateRangeMixin, APIRequestMixin, LAQNAvailabilityMixin, DBWrite
                 reading["MeasurementStartUTC"] = utcstr_from_datetime(timestamp_start)
                 reading["MeasurementEndUTC"] = utcstr_from_datetime(timestamp_end)
             return processed_data
+
         except requests.exceptions.HTTPError as error:
             self.logger.warning("Request to %s failed:", endpoint)
             self.logger.warning(error)
@@ -155,7 +160,7 @@ class LAQNWriter(DateRangeMixin, APIRequestMixin, LAQNAvailabilityMixin, DBWrite
             LAQNReading.build_entry(site_reading, return_dict=usecore)
             for site_reading in site_readings
         ]
-
+        #  checks for duplicate readings within the list of dictionaries
         delete_indices = []
         for i in range(0, len(site_records) - 1):
             for j in range(i + 1, len(site_records)):
