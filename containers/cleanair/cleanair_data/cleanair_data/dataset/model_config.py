@@ -36,8 +36,8 @@ ONE_DAY_INTERVAL = text("interval '1 day'")
 class ModelConfig(
     LAQNAvailabilityMixin, AQEAvailabilityMixin, SatelliteAvailabilityMixin, DBReader
 ):
-    """Create and validate cleanair model configurations
-    Runs checks against the database"""
+    """Create and validate configurations for a clean air quality prediction model
+    Runs checks the availability of features in a database"""
 
     def __init__(self, **kwargs: Any) -> None:
 

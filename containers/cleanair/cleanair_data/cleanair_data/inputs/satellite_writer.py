@@ -58,7 +58,7 @@ class SatelliteWriter(
         "lon_max": 0.334015522513336,
     }
     species_to_copernicus = {
-        "NO2": "particulate_matter_2.5um",
+        "NO2": "nitrogen_dioxide",
         "PM25": "particulate_matter_2.5um",
         "PM10": "particulate_matter_10um",
         "O3": "ozone",

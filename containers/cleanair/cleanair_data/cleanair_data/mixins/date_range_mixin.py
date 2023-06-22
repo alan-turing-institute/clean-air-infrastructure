@@ -10,25 +10,23 @@ from ..timestamps import as_datetime
 
 
 class DateRangeMixin:
-    """Manage data ranges"""
+    """Manage date ranges"""
 
     def __init__(self, end, nhours, **kwargs):
         # Pass unused arguments onwards
         super().__init__(**kwargs)
 
         # Ensure logging is available
-        if not hasattr(self, "logger"):
-            self.logger = get_logger(__name__)
+        self.logger = getattr(self, "logger", get_logger(__name__))
 
         # Convert end argument into a datetime
         self.end_datetime = as_datetime(end)
-
-        # Construct the start datetime using nhours
         self.start_datetime = self.end_datetime - timedelta(hours=nhours)
 
-        # Construct start and end dates, which might be useful
-        self.start_date = self.start_datetime.date()
-        self.end_date = self.end_datetime.date()
+        # Construct the start datetime using nhours
+        self.start_date, self.end_date = map(
+            datetime.date, [self.start_datetime, self.end_datetime]
+        )
 
 
 class DateGeneratorMixin:

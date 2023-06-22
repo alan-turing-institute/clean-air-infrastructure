@@ -2,6 +2,7 @@
 Module for input datasources
 """
 from .aqe_writer import AQEWriter
+from .breathe_writer import BreatheWriter
 from .laqn_writer import LAQNWriter
 from .rectgrid_writer import RectGridWriter
 from .scoot_writer import ScootWriter, ScootReader
@@ -10,6 +11,7 @@ from .satellite_writer import SatelliteWriter
 
 __all__ = [
     "AQEWriter",
+    "BreatheWriter",
     "LAQNWriter",
     "RectGridWriter",
     "ScootWriter",

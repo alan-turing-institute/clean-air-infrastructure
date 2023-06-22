@@ -40,6 +40,12 @@ class DBWriter(DBInteractor):
                 (col, getattr(row, col)) for col in row.__table__.columns.keys()
             )
 
+        if not records:
+            raise TypeError(
+                "Records are emphty"
+            )
+            return  # or raise an error, depending on your use case
+
         if isinstance(records, SUBQUERY_TYPE):
             select_stmt = records.select()
             columns = inspect(table).columns

@@ -4,8 +4,10 @@ from . import aqe_cli
 from . import laqn_cli
 from . import satellite_cli
 from . import scoot_cli
+from . import breathe_cli
 
 app = typer.Typer(help="Process urbanair data inputs")
+app.add_typer(breathe_cli.app, name="breathe")
 app.add_typer(aqe_cli.app, name="aqe")
 app.add_typer(laqn_cli.app, name="laqn")
 app.add_typer(satellite_cli.app, name="satellite")
