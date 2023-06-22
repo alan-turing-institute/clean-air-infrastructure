@@ -105,8 +105,12 @@ class BreatheWriter(
                 self.logger.warning("Request to %s failed:", endpoint)
                 self.logger.warning(error)
                 return None
-            except (TypeError, KeyError):
-                return None
+            except (
+                KeyError,
+                TypeError,
+            ) as e:
+                print(f"Error while requesting site readings: {e}")
+                raise e
 
     def update_site_list_table(self):
         """
