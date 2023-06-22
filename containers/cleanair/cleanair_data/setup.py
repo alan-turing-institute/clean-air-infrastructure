@@ -34,7 +34,7 @@ INSTALL_REQUIRES = [
     "cfgrib==0.9.10.4",
     "cryptography==40.0.2",
     "colorlog==6.7.0",
-    "geoalchemy2==0.13.3",
+    "geoalchemy2==0.10.2",
     "gitpython==3.1.31",
     "nptyping==2.5.0",
     "numpy==1.24.3",
