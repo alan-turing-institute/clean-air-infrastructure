@@ -33,10 +33,14 @@ class DataConfig(BaseModel):
     include_prediction_y: bool
     train_sources: List[Source]
     pred_sources: List[Source]
-    train_interest_points: InterestPointDict = {Source.laqn: "all"}
+    train_interest_points: InterestPointDict = {
+        Source.laqn: "all",
+        Source.breathe: "all",
+    }
     pred_interest_points: InterestPointDict = {
         Source.laqn: "all",
         Source.hexgrid: "all",
+        Source.breathe: "all",
     }
     species: List[Species]
     static_features: List[StaticFeatureNames]

@@ -17,6 +17,7 @@ from ..mixins.availability_mixins import (
     LAQNAvailabilityMixin,
     AQEAvailabilityMixin,
     SatelliteAvailabilityMixin,
+    BreatheAvailabilityMixin,
 )
 from ..timestamps import as_datetime
 from ..types import (
@@ -34,13 +35,16 @@ ONE_DAY_INTERVAL = text("interval '1 day'")
 
 
 class ModelConfig(
-    LAQNAvailabilityMixin, AQEAvailabilityMixin, SatelliteAvailabilityMixin, DBReader
+    LAQNAvailabilityMixin,
+    AQEAvailabilityMixin,
+    SatelliteAvailabilityMixin,
+    BreatheAvailabilityMixin,
+    DBReader,
 ):
     """Create and validate configurations for a clean air quality prediction model
     Runs checks the availability of features in a database"""
 
     def __init__(self, **kwargs: Any) -> None:
-
         # Initialise parent classes
         super().__init__(**kwargs)
 
@@ -240,7 +244,6 @@ class ModelConfig(
         output_dict: InterestPointDict = {}
 
         for key in interest_point_dict:
-
             self.logger.info("Getting interest point_ids for %s", key.value)
 
             if (
@@ -263,7 +266,6 @@ class ModelConfig(
         """Return available static features from the CleanAir database"""
 
         with self.dbcnxn.open_session() as session:
-
             feature_types_q = session.query(StaticFeature.feature_name).distinct(
                 StaticFeature.feature_name
             )
@@ -281,7 +283,6 @@ class ModelConfig(
         """
 
         with self.dbcnxn.open_session() as session:
-
             feature_types_q = session.query(DynamicFeature.feature_name).filter(
                 and_(
                     DynamicFeature.measurement_start_utc >= start_datetime,
@@ -296,7 +297,6 @@ class ModelConfig(
         """Return the available interest point sources in a database"""
 
         with self.dbcnxn.open_session() as session:
-
             feature_types_q = session.query(MetaPoint.source).distinct(MetaPoint.source)
 
             return feature_types_q
@@ -306,14 +306,12 @@ class ModelConfig(
         """Query LondonBoundary to obtain the bounding geometry for London.
         Only get the first row as should only be one entry"""
         with self.dbcnxn.open_session() as session:
-
             return session.query(LondonBoundaryView.geom).limit(1)
 
     @db_query()
     def get_meta_point_ids(self, source: Source) -> None:
         """Get metapoint ids"""
         with self.dbcnxn.open_session() as session:
-
             return session.query(MetaPoint.id.label("point_id")).filter(
                 MetaPoint.source == source
             )
@@ -335,28 +333,26 @@ class ModelConfig(
         bounded_geom = self.query_london_boundary(output_type="subquery")
 
         if source == Source.laqn:
-
             point_ids_sq = self.get_laqn_open_sites(output_type="subquery")
 
         elif source == Source.aqe:
-
             point_ids_sq = self.get_aqe_open_sites(output_type="subquery")
 
-        elif source == Source.satellite:
+        elif source == Source.breathe:
+            point_ids_sq = self.get_breathe_open_sites(output_type="subquery")
 
+        elif source == Source.satellite:
             point_ids_sq = self.get_satellite_interest_points_in_boundary(
                 output_type="subquery"
             )
 
         elif source in [Source.hexgrid]:
-
             point_ids_sq = self.get_meta_point_ids(source, output_type="subquery")
 
         else:
             raise NotImplementedError("Cannot get interest points for this source")
 
         with self.dbcnxn.open_session() as session:
-
             point_ids = session.query(cast(point_ids_sq.c.point_id, String)).join(
                 MetaPoint, point_ids_sq.c.point_id == MetaPoint.id
             )

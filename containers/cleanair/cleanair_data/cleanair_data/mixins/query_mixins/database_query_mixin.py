@@ -12,6 +12,8 @@ from ...databases.tables import (
     AQESite,
     LAQNReading,
     LAQNSite,
+    BreatheReading,
+    BreatheSite,
     SatelliteForecast,
     SatelliteGrid,
 )
@@ -90,6 +92,40 @@ class DBQueryMixin:
                 )
             )
             return aqe_reading_q
+
+    @db_query()
+    def query_london_boundary(self):
+        """Query LondonBoundary to obtain the bounding geometry for London.
+        Only get the first row as should only be one entry"""
+        with self.dbcnxn.open_session() as session:
+            # pylint: disable=no-member
+            return session.query(LondonBoundaryView.geom).limit(1)
+
+    @db_query()
+    def get_breathe_readings(
+        self, start_date: datetime, end_date: datetime, species: List[Species]
+    ):
+        """Get Breathe readings from database"""
+
+        species = [spec.value for spec in species]
+
+        with self.dbcnxn.open_session() as session:
+            breathe_reading_q = (
+                session.query(
+                    BreatheSite.point_id,
+                    BreatheReading.measurement_start_utc,
+                    BreatheReading.species_code,
+                    BreatheReading.value,
+                )
+                .join(BreatheSite)
+                .filter(
+                    BreatheReading.measurement_start_utc >= start_date.isoformat(),
+                    BreatheReading.measurement_start_utc < end_date.isoformat(),
+                    BreatheReading.species_code.in_(species),
+                    BreatheReading.value.isnot(None),
+                )
+            )
+            return breathe_reading_q
 
     @db_query()
     def get_satellite_readings(

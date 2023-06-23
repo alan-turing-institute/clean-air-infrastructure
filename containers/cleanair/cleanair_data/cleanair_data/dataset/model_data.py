@@ -326,7 +326,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
             data_output[source] = self.__download_config_data(
                 with_sensor_readings=training_data,
                 start_date=start_date,
-                end_date=_end_date,
+                end_date=end_date,
                 species=full_config.species,
                 point_ids=point_ids[source],
                 static_features=full_config.static_features,
@@ -399,7 +399,6 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
                 "Failed to download static features. This could mean that feature processing needs to be re-ran"
             )
             sys.exit()
-
         # Get dynamic features
         if dynamic_features:
             dynamic_source_data = self.get_dynamic_features(
@@ -430,6 +429,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
                 )
             )
         )
+
         return wide_pd
 
     @db_query(model=DynamicFeatureSchema)
@@ -696,6 +696,12 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
             sensor_readings = self.get_aqe_readings(
                 start_date, end_date, species, output_type="subquery"
             )
+
+        elif source == Source.breathe:
+            sensor_readings = self.get_breathe_readings(
+                start_date, end_date, species, output_type="subquery"
+            )
+
         elif source == Source.satellite:
             sensor_readings = self.get_satellite_readings(
                 start_date, end_date, species, output_type="subquery"
@@ -704,7 +710,6 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
             raise ValueError(
                 f"Source must be one of {[Source.laqn, Source.aqe, Source.satellite]}"
             )
-
         return self.join_features_to_sensors(
             static_features,
             sensor_readings,

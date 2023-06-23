@@ -101,6 +101,7 @@ class Source(str, Enum):
     aqe = "aqe"
     hexgrid = "hexgrid"
     laqn = "laqn"
+    breathe = "breathe"
     grid_100 = "grid_100"
     scoot = "scoot"
     satellite = "satellite"
@@ -111,6 +112,7 @@ class Species(str, Enum):
     """Valid species for API"""
 
     # pylint: disable=invalid-name
+    INO2 = "INO2"
     NO2 = "NO2"
     PM25 = "PM25"
     PM10 = "PM10"

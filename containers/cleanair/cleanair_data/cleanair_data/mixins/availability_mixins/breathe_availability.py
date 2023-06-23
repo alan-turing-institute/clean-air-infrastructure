@@ -15,6 +15,7 @@ from ...loggers import get_logger
 ONE_HOUR_INTERVAL = text("interval '1 hour'")
 ONE_DAY_INTERVAL = text("interval '1 day'")
 
+
 class BreatheAvailabilityMixin:
     """Common database queries. Child classes must also inherit from DBWriter"""
 
@@ -27,6 +28,31 @@ class BreatheAvailabilityMixin:
             self.logger = get_logger(__name__)
 
     @db_query()
-    def get_bl_open_sites(self, with_location=False):
-        """Get open Breathe London sites"""
-        return
+    def get_breathe_open_sites(self, exclude_closed=True):
+        """Get open Breathe sites
+
+        Some BL sites have more than one sitecode but have the same location.
+        Considers these as one site.
+        """
+
+        with self.dbcnxn.open_session() as session:
+            # uses the SQL functions to block doubled site code and gets the max and min time loop of the site
+            columns = [
+                BreatheSite.point_id,
+                func.array_agg(BreatheSite.site_code).label("site_codes"),
+                func.min(BreatheSite.date_opened).label("date_opened"),
+                func.max(BreatheSite.date_closed).label("date_closed"),
+            ]
+
+            breathe_site_q = session.query(*columns).group_by(BreatheSite.point_id)
+
+            breathe_site_sq = breathe_site_q.order_by(BreatheSite.point_id).subquery()
+
+            if exclude_closed:
+                return session.query(breathe_site_sq).filter(
+                    breathe_site_sq.c.date_closed.is_(None)
+                )
+
+            return session.query(breathe_site_sq)
+
+            return breathe_site_q
