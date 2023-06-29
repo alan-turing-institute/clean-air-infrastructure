@@ -3,6 +3,20 @@ from .experiment_options import (
     ClusterIdOption,
     TagOption,
 )
+
+from .model_options import (
+    Ard,
+    Jitter,
+    Lengthscales,
+    LikelihoodVariance,
+    KernelOption,
+    KernelVariance,
+    MaxIter,
+    MinibatchSize,
+    MRDGPNumInducingPoints,
+    SVGPNumInducingPoints,
+    Refresh,
+)
 from .shared_args import (
     AWSId,
     AWSKey,
@@ -28,6 +42,7 @@ from .shared_args import (
 )
 
 __all__ = [
+    "Ard",
     "AWSId",
     "AWSKey",
     "ClusterIdOption",
@@ -36,12 +51,22 @@ __all__ = [
     "From",
     "InputDir",
     "InsertMethod",
+    "Jitter",
+    "KernelOption",
+    "KernelVariance",
+    "Lengthscales",
+    "LikelihoodVariance",
     "NDays_callback",
     "NDays",
     "NHours",
+    "MaxIter",
+    "MinibatchSize",
+    "MRDGPNumInducingPoints",
+    "Refresh",
     "ScootDetectors",
     "Sources",
     "Species",
+    "SVGPNumInducingPoints",
     "UpTo_callback",
     "UpTo",
     "TagOption",

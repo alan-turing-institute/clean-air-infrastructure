@@ -2,6 +2,7 @@
 Table writer
 """
 import time
+import sqlalchemy
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.inspection import inspect
 from sqlalchemy.dialects.postgresql import insert
@@ -36,22 +37,15 @@ class DBWriter(DBInteractor):
 
         def row2dict(row):
             """Convert an sqlalchemy row object to a dictionary"""
-            return dict(
-                (col, getattr(row, col)) for col in row.__table__.columns.keys()
-            )
+            return {col: getattr(row, col) for col in row.__table__.columns}
 
-        if not records:
-            raise TypeError(
-                "Records are emphty"
-            )
-            return  # or raise an error, depending on your use case
-
+        SUBQUERY_TYPE = sqlalchemy.sql.Subquery
         if isinstance(records, SUBQUERY_TYPE):
             select_stmt = records.select()
             columns = inspect(table).columns
             insert_stmt = insert(table).from_select(columns, select_stmt)
         elif isinstance(records, list):
-            if isinstance(records[0], Base):
+            if isinstance(records[0], sqlalchemy.orm.Base):
                 records_insert = [row2dict(rec) for rec in records]
             else:
                 records_insert = records

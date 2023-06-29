@@ -8,9 +8,9 @@ from cleanair_data.parsers.urbanair_parser import (
     # echo,
     # experiment,
     init,
-    # inputs,
+    inputs,
     # logs,
-    # features,
+    features,
     # metrics,
     dataset,
     # model,
@@ -28,9 +28,9 @@ app.add_typer(dataset.app, name="dataset")
 # app.add_typer(echo.app, name="echo")
 # # app.add_typer(experiment.app, name="experiment")
 app.add_typer(init.app, name="init")
-# app.add_typer(inputs.app, name="inputs")
+app.add_typer(inputs.app, name="inputs")
 # app.add_typer(logs.app, name="logs")
-# app.add_typer(features.app, name="features")
+app.add_typer(features.app, name="features")
 # app.add_typer(metrics.app, name="metrics")
 # app.add_typer(model.app, name="model")
 # app.add_typer(production.app, name="production")

@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 from pathlib import Path
 import typer
 from ..shared_args import InputDir
-from ..shared_args.model_options import Refresh
+from ......model_base.shared_args.model_options import Refresh
 from .....tenserflow1_model.svgp import SVGP
 from .....tenserflow1_model.mr_dgp_model import MRDGP
 from ....dataset.model_data import ModelDataExtractor

@@ -103,7 +103,7 @@ def download_bl(
         pred_sources=[Source.breathe],
         pred_interest_points={Source.breathe: "all"},
         species=[Species.INO2],
-        norm_by=Source.breathe,
+        norm_by=Source.laqn,
         static_features=static_features
         or [
             StaticFeatureNames.park,

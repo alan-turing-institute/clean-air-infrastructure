@@ -322,11 +322,10 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
             _end_date = (
                 end_date if source != Source.satellite else full_config.pred_end_date
             )
-
             data_output[source] = self.__download_config_data(
                 with_sensor_readings=training_data,
                 start_date=start_date,
-                end_date=end_date,
+                end_date=_end_date,
                 species=full_config.species,
                 point_ids=point_ids[source],
                 static_features=full_config.static_features,
@@ -381,6 +380,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
 
         if with_sensor_readings:
             f_get_data = self.get_static_with_sensors
+
         else:
             f_get_data = self.get_static_features
 

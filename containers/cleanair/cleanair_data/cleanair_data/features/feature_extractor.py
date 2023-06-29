@@ -33,11 +33,13 @@ from ..databases.tables import (
     ScootReading,
     ScootDetector,
 )
+
 from ..decorators import db_query
 from ..loggers import duration, green, red, get_logger
 from ..mixins import DBQueryMixin, DateRangeMixin
 from ..mixins.availability_mixins import StaticFeatureAvailabilityMixin
 from ..types.enum_types import Source
+
 
 ONE_HOUR_INTERVAL = text("interval '1 hour'")
 
@@ -80,15 +82,15 @@ class ScootFeatureExtractor(DateRangeMixin, DBWriter, FeatureExtractorMixin):
     """Scoot feature extractor"""
 
     def __init__(
-            self,
-            features,
-            sources,
-            batch_size=15,
-            n_workers=1,
-            forecast=True,
-            insert_method="missing",
-            **kwargs
-            ):
+        self,
+        features,
+        sources,
+        batch_size=15,
+        n_workers=1,
+        forecast=True,
+        insert_method="missing",
+        **kwargs,
+    ):
         """Base class for extracting features.
         Args:
             features (list): List of features to extract.
@@ -145,11 +147,11 @@ class ScootFeatureExtractor(DateRangeMixin, DBWriter, FeatureExtractorMixin):
             return session.query(forecast_cte).join(
                 latest_forecast,
                 and_(
-                    latest_forecast.c.measurement_start_utc == forecast_cte.c.measurement_start_utc,
+                    latest_forecast.c.measurement_start_utc
+                    == forecast_cte.c.measurement_start_utc,
                     latest_forecast.c.max_forecast == forecast_cte.c.forecasted_on,
                 ),
             )
-
 
     @db_query()
     def generate_scoot_features(
@@ -157,7 +159,7 @@ class ScootFeatureExtractor(DateRangeMixin, DBWriter, FeatureExtractorMixin):
         point_ids: List[str],
         start_datetime: str,
         end_datetime: str,
-        n_detectors: int
+        n_detectors: int,
     ):
         """Generated scoot features for a set of points (no buffer used)"""
 
@@ -170,23 +172,29 @@ class ScootFeatureExtractor(DateRangeMixin, DBWriter, FeatureExtractorMixin):
                 feature_name = feature.value
                 agg_func = self.feature_map[feature.value]["aggfunc"]
 
-                points = session.query(
-                    MetaPoint.id.label("point_id"),
-                    MetaPoint.location.label("point_location"),
-                ).filter(
-                    MetaPoint.id.in_(point_ids)
-                ).subquery().lateral()
+                points = (
+                    session.query(
+                        MetaPoint.id.label("point_id"),
+                        MetaPoint.location.label("point_location"),
+                    )
+                    .filter(MetaPoint.id.in_(point_ids))
+                    .subquery()
+                    .lateral()
+                )
 
-                nearest_detectors = session.query(
-                    MetaPoint.id.label("detector_id"),
-                    MetaPoint.location.label("detector_location"),
-                ).filter(
-                    MetaPoint.source == "scoot"
-                ).order_by(
-                    func.ST_Distance(points.c.point_location, MetaPoint.location)
-                ).limit(
-                    n_detectors
-                ).subquery().lateral()
+                nearest_detectors = (
+                    session.query(
+                        MetaPoint.id.label("detector_id"),
+                        MetaPoint.location.label("detector_location"),
+                    )
+                    .filter(MetaPoint.source == "scoot")
+                    .order_by(
+                        func.ST_Distance(points.c.point_location, MetaPoint.location)
+                    )
+                    .limit(n_detectors)
+                    .subquery()
+                    .lateral()
+                )
 
                 maps = session.query(
                     points.join(nearest_detectors, literal(True))
@@ -197,37 +205,61 @@ class ScootFeatureExtractor(DateRangeMixin, DBWriter, FeatureExtractorMixin):
                     maps.c.detector_id.label("detector_id"),
                     func.ST_Distance(
                         func.Geography(maps.c.point_location),
-                        func.Geography(maps.c.detector_location)
+                        func.Geography(maps.c.detector_location),
                     ).label("distance"),
                 ).subquery()
 
-                readings = session.query(
-                    distances.c.point_id.label("point_id"),
-                    ScootForecast.measurement_start_utc.label("measurement_start_utc"),
-                    literal(feature_name).label("feature_name"),
-                    func.coalesce(agg_func(ScootForecast.n_vehicles_in_interval), 0.0).label("value_1000").cast(Float),
-                    func.coalesce(agg_func(ScootForecast.n_vehicles_in_interval), 0.0).label("value_500").cast(Float),
-                    func.coalesce(agg_func(ScootForecast.n_vehicles_in_interval), 0.0).label("value_200").cast(Float),
-                    func.coalesce(agg_func(ScootForecast.n_vehicles_in_interval), 0.0).label("value_100").cast(Float),
-                    func.coalesce(agg_func(ScootForecast.n_vehicles_in_interval), 0.0).label("value_10").cast(Float),
-                ).join(
-                    ScootDetector,
-                    ScootDetector.point_id == distances.c.detector_id
-                ).join(
-                    ScootForecast,
-                    ScootForecast.detector_id == ScootDetector.detector_n,
-                ).filter(
-                    ScootForecast.measurement_start_utc >= start_datetime,
-                    ScootForecast.measurement_start_utc < end_datetime
-                ).group_by(
-                    distances.c.point_id, ScootForecast.measurement_start_utc
+                readings = (
+                    session.query(
+                        distances.c.point_id.label("point_id"),
+                        ScootForecast.measurement_start_utc.label(
+                            "measurement_start_utc"
+                        ),
+                        literal(feature_name).label("feature_name"),
+                        func.coalesce(
+                            agg_func(ScootForecast.n_vehicles_in_interval), 0.0
+                        )
+                        .label("value_1000")
+                        .cast(Float),
+                        func.coalesce(
+                            agg_func(ScootForecast.n_vehicles_in_interval), 0.0
+                        )
+                        .label("value_500")
+                        .cast(Float),
+                        func.coalesce(
+                            agg_func(ScootForecast.n_vehicles_in_interval), 0.0
+                        )
+                        .label("value_200")
+                        .cast(Float),
+                        func.coalesce(
+                            agg_func(ScootForecast.n_vehicles_in_interval), 0.0
+                        )
+                        .label("value_100")
+                        .cast(Float),
+                        func.coalesce(
+                            agg_func(ScootForecast.n_vehicles_in_interval), 0.0
+                        )
+                        .label("value_10")
+                        .cast(Float),
+                    )
+                    .join(
+                        ScootDetector, ScootDetector.point_id == distances.c.detector_id
+                    )
+                    .join(
+                        ScootForecast,
+                        ScootForecast.detector_id == ScootDetector.detector_n,
+                    )
+                    .filter(
+                        ScootForecast.measurement_start_utc >= start_datetime,
+                        ScootForecast.measurement_start_utc < end_datetime,
+                    )
+                    .group_by(distances.c.point_id, ScootForecast.measurement_start_utc)
                 )
 
                 all_queries.append(readings)
 
             return all_queries[0].union(*all_queries[1:])
-        
-    
+
     @db_query()
     def get_available_data_for_features(
         self,
@@ -251,7 +283,9 @@ class ScootFeatureExtractor(DateRangeMixin, DBWriter, FeatureExtractorMixin):
             in_data = in_data_query.subquery()
 
             # Query 2: Get all expected datetimes within the time range
-            end_datetime_minus_one_hour = (isoparse(end_datetime) - timedelta(hours=1)).isoformat()
+            end_datetime_minus_one_hour = (
+                isoparse(end_datetime) - timedelta(hours=1)
+            ).isoformat()
             expected_date_times_query = session.query(
                 func.generate_series(
                     start_datetime,
@@ -268,9 +302,7 @@ class ScootFeatureExtractor(DateRangeMixin, DBWriter, FeatureExtractorMixin):
                 values(column("feature_name", String), name="t2").data(
                     [(feature,) for feature in feature_names]
                 ),
-            ).filter(
-                MetaPoint.source.in_(sources)
-            )
+            ).filter(MetaPoint.source.in_(sources))
             expected_values = expected_values_query.subquery()
             expected_data_query = session.query(expected_values, expected_date_times)
             expected_data = expected_data_query.subquery()
@@ -284,17 +316,21 @@ class ScootFeatureExtractor(DateRangeMixin, DBWriter, FeatureExtractorMixin):
             ).join(
                 in_data,
                 (in_data.c.point_id == expected_data.c.point_id)
-                & (in_data.c.measurement_start_utc == expected_data.c.measurement_start_utc)
+                & (
+                    in_data.c.measurement_start_utc
+                    == expected_data.c.measurement_start_utc
+                )
                 & (in_data.c.feature_name == expected_data.c.feature_name),
                 isouter=True,
             )
 
             # Filter the results based on the exclude_has_data parameter
             if exclude_has_data:
-                available_data_query = available_data_query.filter(in_data.c.point_id.is_(None))
+                available_data_query = available_data_query.filter(
+                    in_data.c.point_id.is_(None)
+                )
 
             return available_data_query
-
 
     @db_query()
     def get_scoot_feature_ids(
@@ -304,7 +340,7 @@ class ScootFeatureExtractor(DateRangeMixin, DBWriter, FeatureExtractorMixin):
         start_datetime: str,
         end_datetime: str,
         exclude_has_data: bool,
-    ) -> Query:
+    ):
         """Return the ids of interest points and whether they have been processed between start_datetime and end_datetime."""
         availability_query = self.get_available_data_for_features(
             feature_names,
@@ -320,9 +356,8 @@ class ScootFeatureExtractor(DateRangeMixin, DBWriter, FeatureExtractorMixin):
                 func.distinct(availability_query.c.point_id).label("point_id")
             )
 
-
     @db_query()
-    def check_remote_table(self) -> Query:
+    def check_remote_table(self):
         """Check which scoot features have been processed."""
         return self.get_scoot_feature_ids(
             self.features,
@@ -331,7 +366,6 @@ class ScootFeatureExtractor(DateRangeMixin, DBWriter, FeatureExtractorMixin):
             self.end_datetime.isoformat(),
             exclude_has_data=self.exclude_has_data,
         )
-
 
     def update_remote_tables(self) -> None:
         """Run scoot feature processing and write to database."""
@@ -370,27 +404,28 @@ class ScootFeatureExtractor(DateRangeMixin, DBWriter, FeatureExtractorMixin):
             )
 
             n_detectors += 5
-
         self.logger.info(f"Done in {time.time() - update_start:.2f}s")
 
 
-class FeatureExtractor(DBWriter, FeatureExtractorMixin, StaticFeatureAvailabilityMixin, DBQueryMixin):
+class FeatureExtractor(
+    DBWriter, FeatureExtractorMixin, StaticFeatureAvailabilityMixin, DBQueryMixin
+):
     """Extract features which are near to a given set of MetaPoints and inside London"""
 
     def __init__(
-            self, 
-            feature_source,
-            table,
-            features,
-            dynamic=False,
-            batch_size=10,
-            sources=None,
-            insert_method="missing",
-            **kwargs
-            ):
+        self,
+        feature_source,
+        table,
+        features,
+        dynamic=False,
+        batch_size=10,
+        sources=None,
+        insert_method="missing",
+        **kwargs,
+    ):
         """
         Base class for extracting features.
-        
+
         Parameters:
             feature_source (str): Name of the feature source.
             table (obj): Object representing the table to query from.
@@ -404,7 +439,7 @@ class FeatureExtractor(DBWriter, FeatureExtractorMixin, StaticFeatureAvailabilit
         # Initialise parent classes
         super().__init__(**kwargs)
         # Ensure logging is available
-        #if not hasattr(self, "logger"):
+        # if not hasattr(self, "logger"):
         self.logger = get_logger(__name__)
         self.feature_source = feature_source
         self.table = table
@@ -441,21 +476,28 @@ class FeatureExtractor(DBWriter, FeatureExtractorMixin, StaticFeatureAvailabilit
 
         with self.dbcnxn.open_session() as session:
             # Construct column selector for feature
-            columns = [table.geom] + [getattr(table, feature) for feature in self.features[feature_name]["feature_dict"].keys()]
+            columns = [table.geom] + [
+                getattr(table, feature)
+                for feature in self.features[feature_name]["feature_dict"].keys()
+            ]
             q_source = session.query(*columns)
 
             # Construct filters
             filter_list = []
-            if feature_name == "building_height": # filter out unreasonably tall buildings from UKMap
+            if (
+                feature_name == "building_height"
+            ):  # filter out unreasonably tall buildings from UKMap
                 filter_list.append(UKMap.calculated_height_of_building < 999.9)
                 filter_list.append(UKMap.feature_type == "Building")
-                
+
             for column_, vals in self.features[feature_name]["feature_dict"].items():
                 if len(vals) >= 1 and vals[0] != "*":
-                    filter_list.append(or_(*[getattr(table, column_) == value for value in vals]))
+                    filter_list.append(
+                        or_(*[getattr(table, column_) == value for value in vals])
+                    )
 
             q_source = q_source.filter(*filter_list)
-            
+
         return q_source
 
     @db_query()
@@ -600,7 +642,10 @@ class FeatureExtractor(DBWriter, FeatureExtractorMixin, StaticFeatureAvailabilit
                     value_100.label("value_100"),
                     value_10.label("value_10"),
                 )
-                .join(sq_source, func.ST_Intersects(sq_source.c.geom, cte_buffers.c.buff_geom_1000))
+                .join(
+                    sq_source,
+                    func.ST_Intersects(sq_source.c.geom, cte_buffers.c.buff_geom_1000),
+                )
                 .group_by(*group_by_columns)
                 .subquery()
             )
@@ -618,7 +663,6 @@ class FeatureExtractor(DBWriter, FeatureExtractorMixin, StaticFeatureAvailabilit
             ).join(subq, cte_buffers.c.id == subq.c.id, isouter=True)
 
             return result
-
 
     def update_remote_tables(self):
         """

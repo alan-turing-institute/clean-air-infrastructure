@@ -38,6 +38,7 @@ import sqlalchemy as sa
 from sqlalchemy.ext import compiler
 from sqlalchemy.schema import DDLElement, PrimaryKeyConstraint
 from geoalchemy2.types import Geometry
+from sqlalchemy_utils.functions import get_columns
 
 
 class RawGeometry(Geometry):
@@ -82,7 +83,7 @@ def compile_set_view_owner(element, compiler, **kw):
 
 
 def create_table_from_selectable(
-    name, selectable, schema, indexes=None, metadata=None, aliases=None
+    name, selectable, indexes=None, metadata=None, aliases=None, **kwargs
 ):
     if indexes is None:
         indexes = []
@@ -94,19 +95,25 @@ def create_table_from_selectable(
         sa.Column(
             c.name, c.type, key=aliases.get(c.name, c.name), primary_key=c.primary_key
         )
-        for c in selectable.subquery().columns
+        for c in get_columns(selectable)
     ] + indexes
-    table = sa.Table(name, metadata, *args, schema=schema)
+    table = sa.Table(name, metadata, *args, **kwargs)
 
-    if not any([c.primary_key for c in selectable.subquery().columns]):
+    if not any([c.primary_key for c in get_columns(selectable)]):
         table.append_constraint(
-            PrimaryKeyConstraint(*[c.name for c in selectable.subquery().columns])
+            PrimaryKeyConstraint(*[c.name for c in get_columns(selectable)])
         )
     return table
 
 
 def create_materialized_view(
-    name, selectable, metadata, indexes=None, aliases=None, schema="public", owner=None
+    name,
+    selectable,
+    metadata,
+    indexes=None,
+    aliases=None,
+    schema="public",
+    owner=None,
 ):
     """Create a view on a given metadata
 
@@ -126,11 +133,11 @@ def create_materialized_view(
     """
     table = create_table_from_selectable(
         name=name,
-        schema=schema,
         selectable=selectable,
         indexes=indexes,
         metadata=None,
         aliases=aliases,
+        schema=schema,
     )
 
     sa.event.listen(
