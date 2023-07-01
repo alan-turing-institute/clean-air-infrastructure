@@ -1,8 +1,4 @@
 """Shared arguments"""
-from .experiment_options import (
-    ClusterIdOption,
-    TagOption,
-)
 from .shared_args import (
     AWSId,
     AWSKey,

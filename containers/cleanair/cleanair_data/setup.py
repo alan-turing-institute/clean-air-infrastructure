@@ -78,5 +78,5 @@ setup(
     classifiers=CLASSIFIERS,
     setup_requires=SETUP_REQUIRES,
     extras_require=EXTRAS_REQUIRE,
-    scripts=["cli/urbanair"],
+    scripts=["cli/urbanair_db"],
 )

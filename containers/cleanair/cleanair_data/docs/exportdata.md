@@ -12,5 +12,5 @@ Create a JSON secret file that will connect to azure database.
 This command saves four days of LAQN data as a CSV file to the specified path.
 
 ```
-urbanair dataset download ~/Datasets/urbanair
+urbanair_db dataset download ~/Datasets/urbanair
 ```

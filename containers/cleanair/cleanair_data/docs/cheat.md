@@ -5,14 +5,16 @@ We assume you have [installed cleanair](installation.md) and [logged into Azure 
 
 ## Database connections
 
+`
+
 ```bash
 # connect to the production database
-urbanair init production
+urbanair_db init production
 
 # print your Azure database username & access token
-urbanair echo dbuser
-urbanair echo dbtoken
+urbanair_db echo dbuser
+urbanair_db echo dbtoken
 
 # get the path to the urbanair CLI secrets file
-export DB_SECRET_FILE="$(urbanair config path)/.db_secrets.json"
+export DB_SECRET_FILE="$(urbanair_db config path)/.db_secrets.json"
 ```
