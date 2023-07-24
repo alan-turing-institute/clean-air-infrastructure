@@ -40,7 +40,6 @@ class BreatheWriter(
             raw_data = json.loads(breathe_data)
             # Creates a list of tuples called "merged_data" that contains the latest values for three air quality indicators (INO2, IPM25, IPM10)
             # for each reading in "raw_data" that has both "Latitude" and "Longitude" keys.
-            # TODO check what this nessesery\
             raw_data = [item for sublist in raw_data for item in sublist]
             return raw_data
         except (
@@ -54,14 +53,16 @@ class BreatheWriter(
 
     def request_site_readings(self, start_date, end_date, site_code):
         """
-        Request all readings;
-            site_code: The site code of the sensor.
+        Request all readings from Breathe London API;
+            species :  The species code of the Breathe London data
+            site_code: The site code of the sensors.
             start_date: The start time of the data collection period.
             end_date: The end time of the data collection period.
             averaging: A string specifying the time averaging, such as "Hourly", "Weekly", or "Yearly".
         """
-        # TODO add documantation
         species_list = ["INO2", "IPM25"]
+        parsed_data = []
+
         for species in species_list:
             try:
                 # This call retrieves data from Breathe London nodes as a JSON object.
@@ -74,17 +75,14 @@ class BreatheWriter(
                 )
                 sites = self.get_response(endpoint, timeout=120.0).content
                 raw_data = sites.decode()
-                parsed_data = json.loads(raw_data)
+                parsed_data_species = json.loads(raw_data)
 
-                # Add the site_code with looping through each "reading" in "parsed_data",
-                # assigns a "SiteCode" and a "species" variable,
-                # converts the "StartDate" string to a datetime object,
-                # generates start and end timestamps for each reading,
-                # and adds the timestamp values to the "MeasurementStartUTC" and "MeasurementEndUTC" keys of the reading dictionary.
-                for reading in parsed_data:
+                for reading in parsed_data_species:
                     reading["SiteCode"] = site_code
-                    # for spacies in
-                    reading["SpeciesCode"] = species
+                    if species == "INO2":
+                        reading["SpeciesCode"] = "NO2"
+                    else:
+                        reading["SpeciesCode"] = "PM25"
 
                     # Use strptime to convert the string to a datetime object
                     start_time = reading["DateTime"]
@@ -100,17 +98,20 @@ class BreatheWriter(
                     reading["MeasurementEndUTC"] = timestamp_end.strftime(
                         "%Y-%m-%d %H:%M:%S"
                     )
-                return parsed_data
-            except requests.exceptions.HTTPError as error:
-                self.logger.warning("Request to %s failed:", endpoint)
-                self.logger.warning(error)
-                return None
+                    parsed_data.append(reading)
+
             except (
+                json.decoder.JSONDecodeError,
+                requests.exceptions.RequestException,
                 KeyError,
                 TypeError,
             ) as e:
-                print(f"Error while requesting site readings: {e}")
+                print(
+                    f"Error while requesting site readings for species {species}: {e}"
+                )
                 raise e
+
+        return parsed_data
 
     def update_site_list_table(self):
         """

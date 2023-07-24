@@ -65,7 +65,7 @@ class BreatheReading(Base):
         TIMESTAMP, primary_key=True, nullable=False, index=True
     )
     measurement_end_utc = Column(TIMESTAMP, primary_key=True, nullable=False)
-    species_code = Column(String(4), primary_key=True, nullable=False)
+    species_code = Column(String(6), primary_key=True, nullable=False)
     value = Column(DOUBLE_PRECISION, nullable=True)
 
     def __repr__(self):

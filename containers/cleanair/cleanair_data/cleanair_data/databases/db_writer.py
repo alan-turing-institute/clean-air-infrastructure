@@ -45,7 +45,7 @@ class DBWriter(DBInteractor):
             columns = inspect(table).columns
             insert_stmt = insert(table).from_select(columns, select_stmt)
         elif isinstance(records, list):
-            if isinstance(records[0], sqlalchemy.orm.Base):
+            if isinstance(records[0], Base):
                 records_insert = [row2dict(rec) for rec in records]
             else:
                 records_insert = records
@@ -71,7 +71,6 @@ class DBWriter(DBInteractor):
                 index_elements=inspect(table).primary_key, set_=update_dict
             )
 
-        # Insert records
         with self.dbcnxn.open_session() as session:
             try:
                 session.execute(on_duplicate_key_stmt)
