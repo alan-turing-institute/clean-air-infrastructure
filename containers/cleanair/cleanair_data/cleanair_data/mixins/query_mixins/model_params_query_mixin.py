@@ -5,7 +5,6 @@ from typing import Optional, Any, TYPE_CHECKING
 from abc import abstractmethod
 from ...databases.mixins import ModelTableMixin
 from ...decorators import db_query
-from ...types import KernelType, ModelName
 
 if TYPE_CHECKING:
     from ...databases import Connector

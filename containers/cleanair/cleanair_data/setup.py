@@ -47,7 +47,7 @@ INSTALL_REQUIRES = [
     "pyyaml==6.0",
     "psycopg2-binary==2.9.6",
     "requests==2.31.0",
-    "scipy==1.10.1",
+    "scipy==1.11.1",
     "sqlalchemy>=1.4.0",
     "sqlalchemy-utils>=0.37.8",
     "shapely==2.0.1",

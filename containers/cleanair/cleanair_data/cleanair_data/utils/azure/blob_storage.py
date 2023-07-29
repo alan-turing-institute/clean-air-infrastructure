@@ -32,10 +32,9 @@ def generate_sas_token(
         hours: Number of hours until SAS token expires. Shorter is better
     """
     if not storage_account_key:
-        subscription_id = get_urbanair_az_subscription_id
-        storage_mgmt_client = StorageManagementClient(
-            AzureCliCredential(), subscription_id
-        )
+        credential = AzureCliCredential()
+        subscription_id = get_urbanair_az_subscription_id(credential)
+        storage_mgmt_client = StorageManagementClient(credential, subscription_id)
         storage_key_list = storage_mgmt_client.storage_accounts.list_keys(
             resource_group,
             storage_account_name,
