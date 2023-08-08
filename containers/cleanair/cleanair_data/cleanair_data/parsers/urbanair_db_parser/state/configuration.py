@@ -2,7 +2,7 @@
 from pathlib import Path
 import typer
 
-APP_NAME = "UrbanAir-CLI"
+APP_NAME = "urbanair_db_cli"
 APP_DIR: Path = Path(typer.get_app_dir(APP_NAME))
 DATA_CACHE: Path = APP_DIR / "model_fit_cache"
 EXPERIMENT_CACHE: Path = APP_DIR / "experiment_cache"

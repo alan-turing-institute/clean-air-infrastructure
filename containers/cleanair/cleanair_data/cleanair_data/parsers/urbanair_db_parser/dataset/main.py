@@ -95,7 +95,7 @@ def upload_bl(
     static_features: Optional[List[StaticFeatureNames]] = None,
 ) -> None:
     """Setup and upload data to Blob Storage"""
-    typer.echo("Upload logfile to blob storage")
+    typer.echo("Upload Breathe London Training data to blob storage")
     initialise_logging(verbose)  # set logging level
     filepath.mkdir(parents=True, exist_ok=True)
     # Define data configuration
@@ -149,9 +149,9 @@ def upload_bl(
 
     blob_storage.upload_blob(
         storage_container_name=STORAGE_CONTAINER_NAME,
-        blob_name=filepath.stem,
+        blob_name=file_path.stem,
         account_url=ACCOUNT_URL,
-        source_file=str(filepath),
+        source_file=str(file_path),
         sas_token=sas_token,
     )
 

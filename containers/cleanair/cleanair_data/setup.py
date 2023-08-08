@@ -13,7 +13,7 @@ NAME = "cleanair_data"
 URL = "https://github.com/alan-turing-institute/clean-air-infrastructure"
 VERSION = "0.1.0"
 CLASSIFIERS = [
-    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10.11",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
@@ -48,8 +48,8 @@ INSTALL_REQUIRES = [
     "psycopg2-binary==2.9.6",
     "requests==2.31.0",
     "scipy==1.11.1",
-    "sqlalchemy>=1.4.0",
-    "sqlalchemy-utils>=0.37.8",
+    "sqlalchemy==1.4.23",
+    "sqlalchemy-utils==0.37.8",
     "shapely==2.0.1",
     "tabulate==0.9.0",
     "termcolor==2.3.0",
