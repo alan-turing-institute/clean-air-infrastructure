@@ -14,4 +14,4 @@ RUN pip install /app/cleanair_data
 RUN pip check
 
 # run comand that upload training data in to the blob storage 
-CMD urbanair_db dataset upload-bl .
+CMD urbanair_db init local --secretfile /secrets/.db_secrets.json && urbanair_db dataset upload-bl .

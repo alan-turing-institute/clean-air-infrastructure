@@ -4,6 +4,9 @@ import typer
 
 APP_NAME = "urbanair_db_cli"
 APP_DIR: Path = Path(typer.get_app_dir(APP_NAME))
+if not APP_DIR.exists():
+    APP_DIR.mkdir(exist_ok=True, parents=True)
+    typer.echo("Directory created")
 DATA_CACHE: Path = APP_DIR / "model_fit_cache"
 EXPERIMENT_CACHE: Path = APP_DIR / "experiment_cache"
 CONFIG_SECRETFILE_PATH: Path = APP_DIR / ".db_secrets.json"
