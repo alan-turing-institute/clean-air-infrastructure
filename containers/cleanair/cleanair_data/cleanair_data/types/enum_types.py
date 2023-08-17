@@ -112,7 +112,6 @@ class Species(str, Enum):
     """Valid species for API"""
 
     # pylint: disable=invalid-name
-    INO2 = "INO2"
     NO2 = "NO2"
     PM25 = "PM25"
     PM10 = "PM10"

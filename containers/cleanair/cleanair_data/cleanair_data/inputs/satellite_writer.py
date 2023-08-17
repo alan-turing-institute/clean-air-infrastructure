@@ -215,7 +215,7 @@ class SatelliteWriter(
                 "valid_time": "datetime",
                 "latitude": "lat",
                 "longitude": "lon",
-                "paramId_0": "val",
+                "unknown": "val",
             }
         )
 
@@ -301,7 +301,6 @@ class SatelliteWriter(
         # discretised location inside the box and a MetaPoint for each
         # SatelliteGrid. Merge each of these into the database.
         with self.dbcnxn.open_session() as session:
-
             # Get the lat/lon for each of the box centres
             satellite_boxes_df = grib_data_df[["lat", "lon"]].drop_duplicates()
             if satellite_boxes_df.shape[0] != 32:
@@ -382,8 +381,8 @@ class SatelliteWriter(
             datetime.datetime.isoformat
         )
 
-        # pylint: disable=singleton-comparison
-        arg_list = arg_df[arg_df["has_data"] is not True][
+        # Use != for value comparison instead of is not
+        arg_list = arg_df[arg_df["has_data"] != True][
             ["reference_start_utc", "species"]
         ].to_records(index=False)
 

@@ -108,7 +108,7 @@ def upload_bl(
         train_sources=[Source.breathe],
         pred_sources=[Source.breathe],
         pred_interest_points={Source.breathe: "all"},
-        species=[Species.INO2],
+        species=[Species.NO2],
         norm_by=Source.laqn,
         static_features=static_features
         or [

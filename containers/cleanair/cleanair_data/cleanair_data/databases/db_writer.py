@@ -37,7 +37,7 @@ class DBWriter(DBInteractor):
 
         def row2dict(row):
             """Convert an sqlalchemy row object to a dictionary"""
-            return {col: getattr(row, col) for col in row.__table__.columns}
+            return {col.key: getattr(row, col.key) for col in row.__table__.columns}
 
         SUBQUERY_TYPE = sqlalchemy.sql.Subquery
         if isinstance(records, SUBQUERY_TYPE):
