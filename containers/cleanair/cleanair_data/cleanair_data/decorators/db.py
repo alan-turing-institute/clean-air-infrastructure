@@ -16,29 +16,30 @@ def check_empty_df(data_frame, raise_error=True):
         )
 
 
-# pylint: disable=too-many-return-statements
 def db_query(model=None):
     """
-    Wrapper for functions that return an sqlalchemy query object
+    Wrapper for functions that return an SQLAlchemy query object.
 
     Args:
-        model: A Pydantic model for data serialization to dict or json
+        model: A Pydantic model for data serialization to dict or JSON.
     """
 
     def _db_query(query_f):
         """
-        Wrapper for functions that return an sqlalchemy query object.
+        Wrapper for functions that return an SQLAlchemy query object.
+
         Args:
-            output_type (str): Either 'query', 'subquery', 'df' or 'list'. list returns the first column of the query
+            query_f: The function that returns an SQLAlchemy query object.
         """
 
         @functools.wraps(query_f)
         def db_query_output(
             *args, output_type="query", limit=None, error_empty=False, **kwargs
         ):
-
+            # Get the SQLAlchemy query object from the wrapped function
             output_q = query_f(*args, **kwargs)
 
+            # Apply limit if specified
             if limit:
                 output_q = output_q.limit(limit)
 
@@ -80,7 +81,7 @@ def db_query(model=None):
                     return [model.from_orm(i) for i in output_q]
                 return output_q.all()
 
-            raise ValueError("output_type {} is not valid".format(output_type))
+            raise ValueError(f"output_type '{output_type}' is not valid")
 
         return db_query_output
 

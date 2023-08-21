@@ -85,14 +85,13 @@ def download_laqn(
 
 
 @app.command()
-def upload_bl(
+def upload_aq_data(
     filepath: Path,
     verbose: bool = False,
     train_start_date: Optional[datetime] = datetime(2021, 3, 1),
     train_end_date: Optional[datetime] = datetime(2021, 3, 15),
     pred_start_date: Optional[datetime] = datetime(2021, 3, 16),
     pred_end_date: Optional[datetime] = datetime(2021, 3, 17),
-    static_features: Optional[List[StaticFeatureNames]] = None,
 ) -> None:
     """Setup and upload data to Blob Storage"""
     typer.echo("Upload Breathe London Training data to blob storage")
@@ -105,19 +104,12 @@ def upload_bl(
         pred_start_date=pred_start_date,
         pred_end_date=pred_end_date,
         include_prediction_y=False,
-        train_sources=[Source.breathe],
-        pred_sources=[Source.breathe],
-        pred_interest_points={Source.breathe: "all"},
+        train_sources=[Source.laqn, Source.breathe],
+        pred_sources=[Source.laqn],
+        pred_interest_points={Source.laqn: "all"},
         species=[Species.NO2],
         norm_by=Source.laqn,
-        static_features=static_features
-        or [
-            StaticFeatureNames.park,
-            StaticFeatureNames.flat,
-            StaticFeatureNames.total_road_length,
-            StaticFeatureNames.max_canyon_ratio,
-            StaticFeatureNames.building_height,
-        ],
+        static_features=[StaticFeatureNames.park],
         buffer_sizes=[FeatureBufferSize.two_hundred],
         dynamic_features=[],
     )
@@ -129,11 +121,17 @@ def upload_bl(
     full_config = model_config.generate_full_config(data_config)
     # Download and save training data
     training_data = model_data.download_config_data(full_config, training_data=True)
+    training_data_laqn = training_data[Source.laqn]
+    training_data_breathe = training_data[Source.breathe]
 
+    # Concatenate or merge the dataframes
+    combined_training_data = pd.concat(
+        [training_data_laqn, training_data_breathe], axis=0
+    )
     # Save training data as a pickle file
-    file_path = filepath / "breathe_training_data.pkl"
+    file_path = filepath / "aq_data.pkl"
     with open(file_path, "wb") as file:
-        pickle.dump(training_data[Source.breathe], file)
+        pickle.dump(combined_training_data, file)
 
     # Upload the pickle file to Blob Storage
     typer.echo("Uploading to Blob Storage")
@@ -167,7 +165,6 @@ def download_bl(
     train_end_date: Optional[datetime] = datetime(2021, 3, 15),
     pred_start_date: Optional[datetime] = datetime(2021, 3, 16),
     pred_end_date: Optional[datetime] = datetime(2021, 3, 17),
-    static_features: Optional[List[StaticFeatureNames]] = None,
 ) -> None:
     """Setup load data"""
     initialise_logging(verbose)  # set logging level
@@ -187,14 +184,7 @@ def download_bl(
         pred_interest_points={Source.breathe: "all"},
         species=[Species.NO2],
         norm_by=Source.laqn,
-        static_features=static_features
-        or [
-            StaticFeatureNames.park,
-            StaticFeatureNames.flat,
-            StaticFeatureNames.total_road_length,
-            StaticFeatureNames.max_canyon_ratio,
-            StaticFeatureNames.building_height,
-        ],
+        static_features=[StaticFeatureNames.park],
         buffer_sizes=[FeatureBufferSize.two_hundred],
         dynamic_features=[],
     )
