@@ -1,0 +1,12 @@
+#! /usr/bin/env python
+"""Thenserflow 2 GPflow Models CLI"""
+from curses import echo
+import importlib
+import typer
+from gpflow2_models.parser import dataset
+
+app = typer.Typer()
+app.add_typer(dataset.app, name="dataset")
+
+if __name__ == "__main__":
+    app()
