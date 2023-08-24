@@ -3,10 +3,10 @@
 from curses import echo
 import importlib
 import typer
-from gpflow2_models.parser import dataset
+from gpflow2_models.parser import dataset, model
 
 app = typer.Typer()
 app.add_typer(dataset.app, name="dataset")
-
+app.add_typer(model.app, name="model")
 if __name__ == "__main__":
     app()

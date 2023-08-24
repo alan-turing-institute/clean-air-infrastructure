@@ -6,89 +6,117 @@ import tensorflow as tf
 import pandas as pd
 import numpy as np
 from scipy.cluster.vq import kmeans2
+from typing import Dict
+
+from ..data.setup_data import generate_data
 
 
-# Replace the path with the actual path to your pickle file
-file_path_X = "./breathe_training_data.pkl"
-file_path_Y = "./breathe_training_NO2.pkl"
+class SVGP_GPF2:
+    def __init__(
+        self,
+        train_file_path: str,
+        M: int = 100,
+        batch_size: int = 100,
+        num_epochs: int = 10,
+    ):
+        """
+        Initialize the Air Quality Gaussian Process Model.
 
-X = pd.DataFrame(
-    pd.read_pickle(
-        "/Users/suedaciftci/projects/clean-air/clean-air-infrastructure/breathe_training_data.pkl"
-    )
-)
-Y = pd.DataFrame(
-    pd.read_pickle(
-        "/Users/suedaciftci/projects/clean-air/clean-air-infrastructure/breathe_training_NO2.pkl"
-    )
-)
-input_dim = X.shape[1]
-output_dim = Y.shape[1]
-kernel = gpflow.kernels.Matern32(input_dim, lengthscales=1.0)
-M = 100
-N = 1069
-batch_size = 100
+        Args:
+            train_file_path (str): Path to the training data pickle file.
+            M (int): Number of inducing variables.
+            batch_size (int): Batch size for training.
+            num_epochs (int): Number of training epochs.
+        """
+        self.train_file_path = train_file_path
+        self.M = M
+        self.batch_size = batch_size
+        self.num_epochs = num_epochs
 
-# Convert X and inducing_variable to numeric arrays
-inducing_variable = X[:M]
+    def fit(self, x_train: np.ndarray, y_train: np.ndarray) -> None:
+        """
+        Fit the model to training data.
 
-likelihood = gpflow.likelihoods.Gaussian(variance=1.0)
+        Args:
+            x_train (np.ndarray): Training features.
+            y_train (np.ndarray): Training targets.
+        """
+        input_dim = x_train.shape[1]
+        output_dim = y_train.shape[1]
 
-# Now you can use kmeans2 safely after converting X and inducing_variable to numeric arrays
-z_r = kmeans2(X, inducing_variable, minit="points")[0]
-dataset = tf.data.Dataset.from_tensor_slices((X, Y))
-dataset = dataset.shuffle(buffer_size=X.shape[0]).batch(batch_size)
+        # Define the kernel
+        kernel = gpflow.kernels.Matern32(input_dim, lengthscales=1.0)
 
-# Create the mean function using lists instead of numpy arrays
-A = [[1.0] for _ in range(input_dim)]
-b = [1.0]
-mean_function = gpflow.mean_functions.Linear(A=A, b=b)
+        N = x_train.shape[0]
 
-model = gpflow.models.SVGP(
-    kernel=kernel,
-    likelihood=likelihood,
-    inducing_variable=z_r,
-    num_data=N,
-    mean_function=mean_function,
-)
-start_time = time.time()
-optimizer = tf.optimizers.Adam()
+        # Create the inducing variables
+        inducing_variable = x_train[: self.M]
+        z_r = kmeans2(x_train, inducing_variable, minit="points")[0]
 
-# Training loop
-num_epochs = 10
-Elbo = []
-for epoch in range(num_epochs):
-    for batch in dataset:
-        X_batch, Y_batch = batch
+        # Create the mean function
+        A = [[1.0] for _ in range(input_dim)]
+        b = [1.0]
+        mean_function = gpflow.mean_functions.Linear(A=A, b=b)
 
-        with tf.GradientTape() as tape:
-            # Compute the loss for the mini-batch
-            loss = -model.elbo((X_batch, Y_batch))
-        # Compute the gradients
-        gradients = tape.gradient(loss, model.trainable_variables)
+        # Create the likelihood
+        likelihood = gpflow.likelihoods.Gaussian(variance=1.0)
 
-        # Update the model parameters
-        optimizer.apply_gradients(zip(gradients, model.trainable_variables))
-    # Make predictions on the data points
-    predictions = model.predict_f(X_batch)[0]  # Get the mean predictions
+        # Create the SVGP model
+        model = gpflow.models.SVGP(
+            kernel=kernel,
+            likelihood=likelihood,
+            inducing_variable=z_r,
+            num_data=N,
+            mean_function=mean_function,
+        )
 
-    # Print the predictions and data points
-    # for i in range(len(predictions)):
-    #     print(f"Data Point {i}: Prediction = {predictions[i]}, Actual = {Y_batch[i]}")
+        # Initialize the optimizer
+        optimizer = tf.optimizers.Adam()
 
-    if epoch % 1 == 0:
-        Elbo.append(
-            loss.numpy().item()
-        )  # Convert tensor to Python float and append to Elbo
-        print(f"Epoch {epoch}: ELBO = {loss:.2f}")
+        self.model = model
+        self.optimizer = optimizer
 
+        # Create a dataset from the training data
+        dataset = tf.data.Dataset.from_tensor_slices((x_train, y_train))
+        dataset = dataset.shuffle(buffer_size=x_train.shape[0]).batch(self.batch_size)
 
-# After training, you can make predictions with the trained model
-filename = (
-    f"elbo_{num_epochs}_epochs_bl.json"  # Construct the file name with num_epochs
-)
-with open(filename, "w", encoding="utf-8") as elbo_file:
-    json.dump(Elbo, elbo_file)
-end_time = time.time()
-elapsed_time = end_time - start_time
-print("Training time: {:.2f} seconds".format(elapsed_time))
+        Elbo = []
+        for epoch in range(self.num_epochs):
+            for batch in dataset:
+                X_batch, Y_batch = batch
+
+                with tf.GradientTape() as tape:
+                    # Compute the loss for the mini-batch
+                    loss = -self.model.elbo((X_batch, Y_batch))
+                # Compute the gradients
+                gradients = tape.gradient(loss, self.model.trainable_variables)
+
+                # Update the model parameters
+                self.optimizer.apply_gradients(
+                    zip(gradients, self.model.trainable_variables)
+                )
+
+            if epoch % 1 == 0:
+                Elbo.append(
+                    loss.numpy().item()
+                )  # Convert tensor to Python float and append to Elbo
+                print(f"Epoch {epoch}: ELBO = {loss:.2f}")
+
+        filename = f"elbo_{self.num_epochs}_epochs.json"  # Construct the file name with num_epochs
+        with open(filename, "w", encoding="utf-8") as elbo_file:
+            json.dump(Elbo, elbo_file)
+
+    # def predict(
+    #     self, x_test: np.ndarray
+    # ) -> Dict[str, Dict[str, Dict[str, np.ndarray]]]:
+    #     """
+    #     Predict using the model.
+
+    #     Args:
+    #         x_test (np.ndarray): Testing features.
+
+    #     Returns:
+    #         Dictionary of predictions.
+    #     """
+    #     predictions = self.predict_srcs({"laqn": x_test}, self.model.predict_f)
+    #     return predictions
