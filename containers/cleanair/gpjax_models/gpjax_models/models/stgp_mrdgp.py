@@ -1,24 +1,20 @@
-import jax
-import objax
 import jax.numpy as jnp
-import numpy as np
-import optax
-from jax.example_libraries import stax
-from jax import random
 from scipy.cluster.vq import kmeans2
-import stgp
+import objax
+import numpy as np
+from tqdm import trange
+from stgp.data import Data, AggregatedData
+from stgp.models.wrappers import MultiObjectiveModel, LatentPredictor
 from stgp.models import GP
 from stgp.kernels import ScaleKernel, RBF
 from stgp.kernels.deep_kernels import DeepRBF
-from stgp.transforms import Independent
-from stgp.data import Data, AggregatedData
+from stgp.likelihood import Gaussian
+from stgp.sparsity import FullSparsity
+from stgp.trainers import NatGradTrainer, GradDescentTrainer
 from stgp.transforms import Aggregate, Independent
-from stgp.trainers import GradDescentTrainer, NatGradTrainer
-from stgp.models.wrappers import MultiObjectiveModel, LatentPredictor
-from tqdm import tqdm, trange
 
 
-class MRDGP_JAX:
+class STGP_MRDGP:
     def __init__(
         self,
         M: int = 100,
@@ -40,15 +36,20 @@ class MRDGP_JAX:
         self.pretrain_epochs = pretrain_epochs
 
     def fit(
-        self, y_sat: np.ndarray, x_train: np.ndarray, y_train: np.ndarray
+        self,
+        x_sat: np.array,
+        y_sat: np.ndarray,
+        x_laqn: np.ndarray,
+        y_laqn: np.ndarray,
     ) -> list[float]:
         """
         Fit the model to training data.
 
         Args:
-            x_train (np.ndarray): Training features.
-            y_train (np.ndarray): Training targets.
-            y_sat (np.ndarray): Sat Training targets.
+            x_sat (jnp.array): Sat training features.
+            y_sat (jnp.ndarray): Sat training targets.
+            x_laqn (jnp.ndarray): Laqn training features.
+            y_laqn (jnp.ndarray): Laqn training targets.
         Returns:
             list[float]: List of loss values during training.
         """
@@ -58,11 +59,9 @@ class MRDGP_JAX:
 
             data = AggregatedData(X_sat, Y_sat, minibatch_size=200)
 
-            lik = stgp.likelihood.Gaussian(1.0)
+            lik = Gaussian(1.0)
 
-            Z = stgp.sparsity.FullSparsity(
-                Z=kmeans2(np.vstack(X_sat), 100, minit="points")[0]
-            )
+            Z = FullSparsity(Z=kmeans2(jnp.vstack(X_sat), 100, minit="points")[0])
 
             latent_gp = GP(
                 sparsity=Z,
@@ -82,9 +81,7 @@ class MRDGP_JAX:
 
             data = Data(X_laqn, Y_laqn)
 
-            Z = stgp.sparsity.FullSparsity(
-                Z=kmeans2(np.vstack(X_laqn), 300, minit="points")[0]
-            )
+            Z = FullSparsity(Z=kmeans2(jnp.vstack(X_laqn), 300, minit="points")[0])
 
             latent_gp = GP(  # prior
                 sparsity=Z,
@@ -97,7 +94,7 @@ class MRDGP_JAX:
             m2 = GP(  # posterior
                 data=data,
                 prior=prior,
-                likelihood=[stgp.likelihood.Gaussian(0.1)],
+                likelihood=[Gaussian(0.1)],
                 inference="Variational",
             )
 
@@ -131,20 +128,18 @@ class MRDGP_JAX:
             sat_natgrad.train(1.0, 1)
             laqn_natgrad.train(1.0, 1)
 
-            # pertrain sat
-            print("pre training sat")
+            # pretrain sat
+            print("pretraining sat")
             for i in trange(self.pretrain_epochs):
                 lc_i, _ = sat_grad.train(0.01, 1)
                 sat_natgrad.train(0.1, 1)
-
                 lc_arr.append(lc_i)
 
-            # pertrain sat
-            print("pre training laqn")
+            # pretrain laqn
+            print("pretraining laqn")
             for i in trange(self.pretrain_epochs):
                 lc_i, _ = laqn_grad.train(0.01, 1)
                 laqn_natgrad.train(0.1, 1)
-
                 lc_arr.append(lc_i)
 
             for i in trange(num_epochs):
@@ -156,6 +151,12 @@ class MRDGP_JAX:
 
             return lc_arr
 
-        m = get_laqn_sat(x_sat, y_sat, x_train, y_train)
+        m = get_laqn_sat(x_sat, y_sat, x_laqn, y_laqn)
         r = train_laqn_sat(m, self.num_epochs)
+
+        # Save the results to a file
+        with open("training_results.txt", "w") as f:
+            for loss in r:
+                f.write(f"{loss}\n")
+
         return r

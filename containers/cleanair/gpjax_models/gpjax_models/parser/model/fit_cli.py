@@ -9,7 +9,8 @@ import optax
 import jax.numpy as jnp
 import numpy as np
 from ...models.svgp import SVGP
-from ...models.stgp import STGP_SVGP
+from ...models.stgp_svgp import STGP_SVGP
+from ...models.stgp_mrdgp import STGP_MRDGP
 
 from ...data.setup_data import generate_data
 from ...utils.azure import blob_storage
@@ -68,7 +69,7 @@ def svgp(
 
 
 @app.command()
-def train(
+def train_svgp(
     train_file_path: str,
     M: int = 100,
     batch_size: int = 100,
@@ -97,10 +98,40 @@ def train(
 
     train_X = data["X"]
     train_Y = np.array(data["Y"].astype(float))
-    print(train_X)
-    print(train_Y)
-
     # Train the model
     model.fit(train_X, train_Y)
 
+    typer.echo("Training complete!")
+
+
+# TODO make one train comand to reach out config to get the model name
+@app.command()
+def train_mrdgp(
+    train_file_path: str,
+    M: int = 100,
+    batch_size: int = 100,
+    num_epochs: int = 10,
+):
+    """
+    Train the SVGP_GPF2 model on the given training data.
+
+    Args:
+        train_file_path (str): Path to the training data pickle file.
+        M (int): Number of inducing variables.
+        batch_size (int): Batch size for training.
+        num_epochs (int): Number of training epochs.
+    """
+    model = STGP_MRDGP(M, batch_size, num_epochs)
+
+    # Load training data
+    typer.echo("Loading training data!")
+    with open(train_file_path, "rb") as file:
+        data_dict = pickle.load(file)
+        data_laqn = data_dict["laqn"]
+        data_sat = data_dict["sat"]
+        x_laqn = data_laqn["X"]
+        y_laqn = data_laqn["Y"]
+        x_sat = data_sat["X"]
+        y_sat = data_sat["Y"]
+    model.fit(x_sat, y_sat, x_laqn, y_laqn)
     typer.echo("Training complete!")

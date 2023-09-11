@@ -105,18 +105,3 @@ class SVGP_GPF2:
         filename = f"elbo_{self.num_epochs}_epochs.json"  # Construct the file name with num_epochs
         with open(filename, "w", encoding="utf-8") as elbo_file:
             json.dump(Elbo, elbo_file)
-
-    # def predict(
-    #     self, x_test: np.ndarray
-    # ) -> Dict[str, Dict[str, Dict[str, np.ndarray]]]:
-    #     """
-    #     Predict using the model.
-
-    #     Args:
-    #         x_test (np.ndarray): Testing features.
-
-    #     Returns:
-    #         Dictionary of predictions.
-    #     """
-    #     predictions = self.predict_srcs({"laqn": x_test}, self.model.predict_f)
-    #     return predictions

@@ -14,6 +14,7 @@ from stgp.data import AggregatedData, Data
 from stgp.trainers import GradDescentTrainer, NatGradTrainer
 from gpjax import kernels
 from tqdm import tqdm, trange
+import pickle
 
 
 class STGP_SVGP:
@@ -99,5 +100,9 @@ class STGP_SVGP:
             return lc_arr
 
         m = get_laqn_svgp(x_train, y_train)
-        r = train_laqn(jnp.array(self.num_epochs), m)
-        return r
+        loss_values = train_laqn(jnp.array(self.num_epochs), m)
+        # Save the loss values to a pickle file
+        with open("loss_values.pickle", "wb") as file:
+            pickle.dump(loss_values, file)
+
+        return loss_values
