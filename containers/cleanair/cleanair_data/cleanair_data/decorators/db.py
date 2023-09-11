@@ -49,18 +49,28 @@ def db_query(model=None):
                 return data_frame
 
             if output_type == "html":
-                data_frame = pd.read_sql(output_q.statement, output_q.session.bind)
+                data_frame = pd.read_sql(
+                    output_q.statement,
+                    output_q.session.bind,
+                )
                 check_empty_df(data_frame, error_empty)
                 return data_frame.to_html()
 
             if output_type == "tabulate":
                 data_frame = pd.read_sql(output_q.statement, output_q.session.bind)
                 check_empty_df(data_frame, error_empty)
-                return tabulate(data_frame, headers="keys", tablefmt="psq")
+
+                # Convert DataFrame to a list of dictionaries
+                data_dict = data_frame.to_dict(orient="records")
+
+                # Use tabulate with the list of dictionaries
+                tabulated_data = tabulate(data_dict, headers="keys", tablefmt="psq")
+
+                return tabulated_data
 
             if output_type == "list":
                 query_df = pd.read_sql(output_q.statement, output_q.session.bind)
-                return query_df[query_df.columns[0]].tolist()
+                return query_df.list[query_df.columns[0]].tolist()
 
             if output_type == "query":
                 return output_q

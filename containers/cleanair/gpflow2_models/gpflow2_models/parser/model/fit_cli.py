@@ -3,12 +3,23 @@
 import typer
 import pickle
 import pandas as pd
+from pathlib import Path
 from ...models import SVGP_GPF2
 
 from ...data.setup_data import generate_data
+from ...utils.azure import blob_storage
 
 app = typer.Typer(help="SVGP model fitting")
-train_file_path = "datasets/train_data.pkl"
+train_file_path = "datasets/aq_data.pkl"
+
+
+app = typer.Typer()
+
+# Defining blob storage and other constants here
+RESOURCE_GROUP = "Datasets"
+STORAGE_CONTAINER_NAME = "aqdata"
+STORAGE_ACCOUNT_NAME = "londonaqdatasets"
+ACCOUNT_URL = "https://londonaqdatasets.blob.core.windows.net/"
 
 
 @app.command()
@@ -66,7 +77,3 @@ def predict(x_test_file: str):
     # Print or save the predictions as needed
     # For example, you can print them as JSON
     typer.echo(predictions)
-
-
-if __name__ == "__main__":
-    app()

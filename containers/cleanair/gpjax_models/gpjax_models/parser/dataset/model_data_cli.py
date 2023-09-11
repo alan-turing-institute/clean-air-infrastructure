@@ -20,11 +20,11 @@ ACCOUNT_URL = "https://londonaqdatasets.blob.core.windows.net/"
 @app.command()
 def download(
     directory: Path = typer.Option(".", help="Download logs to this directory"),
-    name: str = typer.Option("aq_data"),
+    name: str = typer.Option("data"),
 ) -> None:
     """Upload a log file to blob storage"""
 
-    typer.echo("Download a data from blob storage")
+    typer.echo("Download a datafile from blob storage")
 
     sas_token = blob_storage.generate_sas_token(
         resource_group=RESOURCE_GROUP,

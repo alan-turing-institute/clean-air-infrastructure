@@ -36,11 +36,13 @@ class DataConfig(BaseModel):
     train_interest_points: InterestPointDict = {
         Source.laqn: "all",
         Source.breathe: "all",
+        Source.satellite: "all",
     }
     pred_interest_points: InterestPointDict = {
         Source.laqn: "all",
         Source.hexgrid: "all",
         Source.breathe: "all",
+        Source.satellite: "all",
     }
     species: List[Species]
     static_features: List[StaticFeatureNames]

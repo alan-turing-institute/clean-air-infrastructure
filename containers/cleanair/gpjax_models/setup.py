@@ -7,7 +7,7 @@ AUTHORS = {
     "Ollie Hamelijnck": "ohamelijnck@turing.ac.uk",
     "Patrick O'Hara": "patrick.h.o-hara@warwick.ac.uk",
 }
-NAME = "gpflow2_models"
+NAME = "jax_models"
 URL = "https://github.com/alan-turing-institute/clean-air-infrastructure"
 VERSION = "0.1.0"
 CLASSIFIERS = [
@@ -15,7 +15,7 @@ CLASSIFIERS = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
-DESCRIPTION = "GPflow2 Models Module"
+DESCRIPTION = "Jax Models Module"
 
 # Dependencies
 INSTALL_REQUIRES = [
@@ -23,17 +23,18 @@ INSTALL_REQUIRES = [
     "azure-storage-blob==12.16.0",
     "azure-mgmt-subscription==3.1.1",
     "azure-mgmt-resource",
-    "azure.mgmt.storage",
+    "azure-mgmt-storage",
     "azure-common==1.1.28",
-    "tensorflow",
-    "gpflow",
+    "jax",
     "numpy",
-    "pandas",
-    "pydantic",
-    "scipy",
-    "typer",
-    "colorlog",
-    "nptyping",
+    "pandas==2.0.3",
+    "pydantic==1.10.12",
+    "scikit-learn",
+    "scipy==1.11.1",
+    "typer==0.9.0",
+    "tensorflow-probability",
+    "colorlog==6.7.0",
+    "nptyping==2.5.0",
 ]
 SETUP_REQUIRES = ["setuptools_scm"]
 
@@ -48,5 +49,5 @@ setup(
     packages=find_packages(),
     classifiers=CLASSIFIERS,
     setup_requires=SETUP_REQUIRES,
-    scripts=["cli/urbanair_gpf2"],
+    scripts=["cli/urbanair_jax"],
 )
