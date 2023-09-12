@@ -1,11 +1,12 @@
 import jax
 import objax
+import pickle
 import jax.numpy as jnp
 import numpy as np
-import optax
 from jax.example_libraries import stax
 from jax import random
 from scipy.cluster.vq import kmeans2
+
 import stgp
 from stgp.models import GP
 from stgp.kernels import ScaleKernel, RBF
@@ -13,8 +14,11 @@ from stgp.transforms import Independent
 from stgp.data import AggregatedData, Data
 from stgp.trainers import GradDescentTrainer, NatGradTrainer
 from gpjax import kernels
+
+from .predicting.utils import batch_predict
+from .predicting.prediction import collect_results
+from ..data.setup_data import get_X
 from tqdm import tqdm, trange
-import pickle
 
 
 class STGP_SVGP:
@@ -36,7 +40,7 @@ class STGP_SVGP:
         self.batch_size = batch_size
         self.num_epochs = num_epochs
 
-    def fit(self, x_train: np.ndarray, y_train: np.ndarray) -> list[float]:
+    def fit(self, x_train: np.ndarray, y_train: np.ndarray, pred_data) -> list[float]:
         """
         Fit the model to training data.
 
@@ -99,10 +103,32 @@ class STGP_SVGP:
 
             return lc_arr
 
+        def predict_laqn_svgp(pred_data, m) -> dict:
+            jitted_pred_fn = objax.Jit(
+                lambda x: m.predict_y(x, squeeze=False), m.vars()
+            )
+            pred_fn = lambda XS: batch_predict(
+                XS, jitted_pred_fn, batch_size=1000, verbose=True, axis=1, ci=False
+            )
+
+            results = collect_results(
+                None,
+                m,
+                pred_fn,
+                pred_data,
+                returns_ci=False,
+                data_type="regression",
+            )
+            with open("predictions_svgp.pickle", "wb") as file:
+                pickle.dump(results, file)
+
+            return results
+
         m = get_laqn_svgp(x_train, y_train)
         loss_values = train_laqn(jnp.array(self.num_epochs), m)
+        results = predict_laqn_svgp(pred_data, m)
         # Save the loss values to a pickle file
-        with open("loss_values.pickle", "wb") as file:
+        with open("loss_values_svgp.pickle", "wb") as file:
             pickle.dump(loss_values, file)
-
-        return loss_values
+        with open("loss_values_svgp.pickle", "wb") as file:
+            pickle.dump(results, file)

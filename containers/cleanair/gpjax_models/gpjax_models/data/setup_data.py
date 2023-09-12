@@ -1,7 +1,7 @@
 import pickle
 import numpy as np
 import pandas as pd
-from nptyping import NDArray, Float64
+from pathlib import Path
 
 
 from ..utils.file_manager import FileManager
@@ -13,6 +13,7 @@ def get_data_file_names(fold):
     return {
         "raw": f"raw_data.pickle",
         "train": f"train_data.pickle",
+        "test": f"test_data.pickle",
     }
 
 
@@ -39,6 +40,10 @@ def norm_X(X: np.ndarray, wrt_X: np.ndarray) -> np.ndarray:
     )
 
     return X_norm
+
+
+def load_test_data(fnames, data_root: Path) -> dict:
+    return pickle.load(open(data_root / fnames["test"], "rb"))
 
 
 def clean_data(x_array, y_array):

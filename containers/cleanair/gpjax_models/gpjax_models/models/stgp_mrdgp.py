@@ -2,6 +2,7 @@ import jax.numpy as jnp
 from scipy.cluster.vq import kmeans2
 import objax
 import numpy as np
+import pickle
 from tqdm import trange
 from stgp.data import Data, AggregatedData
 from stgp.models.wrappers import MultiObjectiveModel, LatentPredictor
@@ -152,11 +153,10 @@ class STGP_MRDGP:
             return lc_arr
 
         m = get_laqn_sat(x_sat, y_sat, x_laqn, y_laqn)
-        r = train_laqn_sat(m, self.num_epochs)
+        loss_values = train_laqn_sat(m, self.num_epochs)
 
-        # Save the results to a file
-        with open("training_results.txt", "w") as f:
-            for loss in r:
-                f.write(f"{loss}\n")
+        # Save the loss values to a pickle file
+        with open("loss_values_mrdgp.pickle", "wb") as file:
+            pickle.dump(loss_values, file)
 
-        return r
+        return loss_values

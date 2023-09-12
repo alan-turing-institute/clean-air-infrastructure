@@ -12,6 +12,7 @@ from ...models.svgp import SVGP
 from ...models.stgp_svgp import STGP_SVGP
 from ...models.stgp_mrdgp import STGP_MRDGP
 
+
 from ...data.setup_data import generate_data
 from ...utils.azure import blob_storage
 
@@ -70,7 +71,8 @@ def svgp(
 
 @app.command()
 def train_svgp(
-    train_file_path: str,
+    train_file_path1: str,
+    train_file_path2: str,
     M: int = 100,
     batch_size: int = 100,
     num_epochs: int = 10,
@@ -88,18 +90,34 @@ def train_svgp(
 
     # Load training data
     typer.echo("Loading training data!")
-    with open(train_file_path, "rb") as file:
-        data_dict = pickle.load(file)
-        data = data_dict["laqn"]
+    with open(train_file_path1, "rb") as file:
+        training_data = pickle.load(file)
+        data = training_data["laqn"]
 
-    # train_dict = generate_data(df)
-    # train_X = train_dict["X"]
-    # train_Y = train_dict["Y"]
+    typer.echo("Loading testing data!")
+    with open(train_file_path2, "rb") as file:
+        test_data = pickle.load(file)
+
+    pred_data = {
+        "hexgrid": {
+            "X": test_data["hexgrid"]["X"],
+            "Y": None,
+        },
+        "test_laqn": {
+            "X": test_data["laqn"]["X"],
+            "Y": None,
+        },
+        "train_laqn": {
+            "X": training_data["laqn"]["X"],
+            "Y": training_data["laqn"]["Y"].astype(float),
+        },
+    }
 
     train_X = data["X"]
     train_Y = np.array(data["Y"].astype(float))
+    breakpoint()
     # Train the model
-    model.fit(train_X, train_Y)
+    model.fit(train_X, train_Y, pred_data)
 
     typer.echo("Training complete!")
 
