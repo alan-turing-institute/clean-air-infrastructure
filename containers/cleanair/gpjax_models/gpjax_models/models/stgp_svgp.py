@@ -13,7 +13,6 @@ from stgp.kernels import ScaleKernel, RBF
 from stgp.transforms import Independent
 from stgp.data import AggregatedData, Data
 from stgp.trainers import GradDescentTrainer, NatGradTrainer
-from gpjax import kernels
 
 from .predicting.utils import batch_predict
 from .predicting.prediction import collect_results
