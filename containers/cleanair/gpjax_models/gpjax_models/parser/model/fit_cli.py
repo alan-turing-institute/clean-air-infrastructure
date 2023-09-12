@@ -129,9 +129,9 @@ def train_mrdgp(
         data_dict = pickle.load(file)
         data_laqn = data_dict["laqn"]
         data_sat = data_dict["sat"]
-        x_laqn = data_laqn["X"]
-        y_laqn = data_laqn["Y"]
-        x_sat = data_sat["X"]
-        y_sat = data_sat["Y"]
+        x_laqn = jnp.array(data_laqn["X"].astype(float))
+        y_laqn = jnp.array(data_laqn["Y"].astype(float))
+        x_sat = jnp.array(data_sat["X"].astype(float))
+        y_sat = jnp.array(data_sat["Y"].astype(float))
     model.fit(x_sat, y_sat, x_laqn, y_laqn)
     typer.echo("Training complete!")
