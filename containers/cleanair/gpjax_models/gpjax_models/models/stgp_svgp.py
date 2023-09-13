@@ -107,13 +107,17 @@ class STGP_SVGP:
                 lambda x: m.predict_y(x, squeeze=False), m.vars()
             )
             pred_fn = lambda XS: batch_predict(
-                XS, jitted_pred_fn, batch_size=1000, verbose=True, axis=1, ci=False
+                XS, jitted_pred_fn, batch_size=1000, verbose=True, axis=0, ci=False
             )
+
+            def pred_wrapper(XS):
+                pred_mu, pred_var = pred_fn(XS)
+                return pred_mu.T, pred_var.T
 
             results = collect_results(
                 None,
                 m,
-                pred_fn,
+                pred_wrapper,
                 pred_data,
                 returns_ci=False,
                 data_type="regression",
@@ -126,6 +130,8 @@ class STGP_SVGP:
         m = get_laqn_svgp(x_train, y_train)
         loss_values = train_laqn(jnp.array(self.num_epochs), m)
         results = predict_laqn_svgp(pred_data, m)
+
+        print(results['metrics'])
         # Save the loss values to a pickle file
         with open("loss_values_svgp.pickle", "wb") as file:
             pickle.dump(loss_values, file)

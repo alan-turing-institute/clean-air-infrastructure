@@ -34,8 +34,9 @@ def log_binary_scalar_metrics(
     metrics_results['auc'] = metrics.auc(fpr, tpr)
 
     # log 
-    name = "{prefix}_{metric}".format(prefix=prefix, metric='auc')
-    ex.log_scalar(name, metrics_results['auc'])
+    if ex is not None:
+        name = "{prefix}_{metric}".format(prefix=prefix, metric='auc')
+        ex.log_scalar(name, metrics_results['auc'])
 
     return metrics_results
 
@@ -70,7 +71,8 @@ def log_regression_scalar_metrics(
             else:
                 name = "{prefix}_{metric}".format(prefix=prefix, metric=k)
 
-            ex.log_scalar(name, metrics_results[k])
+            if ex is not None:
+                ex.log_scalar(name, metrics_results[k])
 
     return metrics_results
 
