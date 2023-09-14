@@ -115,7 +115,6 @@ def train_svgp(
 
     train_X = data["X"]
     train_Y = np.array(data["Y"].astype(float))
-    breakpoint()
     # Train the model
     model.fit(train_X, train_Y, pred_data)
 
