@@ -3,6 +3,7 @@
 import typer
 import pickle
 import pandas as pd
+import numpy as np
 from pathlib import Path
 from ...models import SVGP_GPF2
 
@@ -27,7 +28,7 @@ def train(
     train_file_path: str,
     M: int = 100,
     batch_size: int = 100,
-    num_epochs: int = 10,
+    num_epochs: int = 100,
 ):
     """
     Train the SVGP_GPF2 model on the given training data.
@@ -48,7 +49,7 @@ def train(
 
     train_dict = generate_data(df)
     train_X = train_dict["X"]
-    train_Y = train_dict["Y"]
+    train_Y = np.array(train_dict["Y"])
 
     # Train the model
     model.fit(train_X, train_Y)

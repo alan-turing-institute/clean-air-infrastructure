@@ -85,7 +85,7 @@ def download_laqn(
 
 
 @app.command()
-def upload_aq_data(
+def upload_laqn_breathe_data(
     filepath: Path,
     verbose: bool = False,
     train_start_date: Optional[datetime] = datetime(2021, 3, 1),
