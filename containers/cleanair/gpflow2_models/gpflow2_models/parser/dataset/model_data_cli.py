@@ -50,6 +50,7 @@ def download(
             account_url=ACCOUNT_URL,
             sas_token=sas_token,
         )
+        typer.echo("Data downloded from blob storage")
 
 
 @app.command()
