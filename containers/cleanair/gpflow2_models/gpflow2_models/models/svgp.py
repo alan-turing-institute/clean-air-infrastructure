@@ -105,3 +105,28 @@ class SVGP_GPF2:
         filename = f"elbo_{self.num_epochs}_epochs.json"  # Construct the file name with num_epochs
         with open(filename, "w", encoding="utf-8") as elbo_file:
             json.dump(Elbo, elbo_file)
+
+    def predict(self, model, X_test):
+        """
+        Make predictions with an SVGP model.
+
+        Args:
+            model: The SVGP model.
+            X_test: Test input data as a NumPy array or TensorFlow tensor.
+
+        Returns:
+            mean: Predicted mean values for the test data.
+            variance: Predicted variance values for the test data.
+        """
+
+        # Ensure X_test is a TensorFlow tensor
+        X_test = tf.convert_to_tensor(X_test, dtype=tf.float64)
+
+        # Make predictions using the SVGP model
+        mean, variance = model.predict_y(X_test)
+
+        # Extract the NumPy arrays from TensorFlow tensors
+        mean = mean.numpy()
+        variance = variance.numpy()
+
+        return mean, variance

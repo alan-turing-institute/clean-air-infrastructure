@@ -58,23 +58,38 @@ def train(
 
 
 @app.command()
-def predict(x_test_file: str):
+def predict(
+    train_file_path: str, M: int = 100, batch_size: int = 100, num_epochs: int = 100
+):
     """
-    Make predictions using the trained SVGP_GPF2 model.
+    Make predictions with an SVGP model.
 
     Args:
-        x_test_file (str): Path to the test data pickle file.
+        model: The SVGP model.
+        X_test: Test input data as a NumPy array or TensorFlow tensor.
+
+    Returns:
+        mean: Predicted mean values for the test data.
+        variance: Predicted variance values for the test data.
     """
-    # Load test data
-    with open(x_test_file, "rb") as file:
-        x_test = pickle.load(file)
+    model = SVGP_GPF2(train_file_path, M, batch_size, num_epochs)
+    with open(train_file_path, "rb") as file:
+        data_dict = pickle.load(file)
+        df = pd.DataFrame.from_dict(data_dict)
 
-    # Create the model instance (you may need to pass other parameters here)
-    model = SVGP_GPF2(train_file_path="datasets/train_data.pkl")
+    train_dict = generate_data(df)
+    train_X = train_dict["X"]
+    train_Y = np.array(train_dict["Y"])
 
-    # Make predictions
-    predictions = model.predict(x_test)
+    predicted_mean, predicted_variance = model.predict(model, train_X)
+    mean = predicted_mean.numpy()
+    variance = predicted_variance.numpy()
 
-    # Print or save the predictions as needed
-    # For example, you can print them as JSON
-    typer.echo(predictions)
+    # Create a dictionary to store mean and variance
+    results_dict = {"mean": mean.tolist(), "variance": variance.tolist()}
+
+    filename = f"training_prediction.pkl"
+
+    # Save the dictionary to a pickle file
+    with open(filename, "wb") as pickle_file:
+        pickle.dump(results_dict, pickle_file)
