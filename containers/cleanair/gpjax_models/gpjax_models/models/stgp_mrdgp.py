@@ -4,6 +4,9 @@ import objax
 import numpy as np
 import pickle
 from tqdm import trange
+from .predicting.utils import batch_predict
+from ..data.setup_data import get_X
+from .predicting.prediction import collect_results
 from stgp.data import Data, AggregatedData
 from stgp.models.wrappers import MultiObjectiveModel, LatentPredictor
 from stgp.models import GP
@@ -42,6 +45,8 @@ class STGP_MRDGP:
         y_sat: np.ndarray,
         x_laqn: np.ndarray,
         y_laqn: np.ndarray,
+        pred_laqn_data,
+        pred_sat_data,
     ) -> list[float]:
         """
         Fit the model to training data.
@@ -152,11 +157,49 @@ class STGP_MRDGP:
 
             return lc_arr
 
+        def predict_laqn_sat(pred_laqn_data, pred_sat_data, m) -> dict:
+            m_laqn = m[0]
+            m_sat = m[1]
+
+            jitted_sat_pred_fn = objax.Jit(
+                lambda x: m_sat.predict_y(x, squeeze=False), m_laqn.vars()
+            )
+            jitted_laqn_pred_fn = objax.Jit(
+                lambda x: m_laqn.predict_y(x, squeeze=False), m_laqn.vars()
+            )
+
+            laqn_pred_fn = lambda XS: batch_predict(
+                XS, jitted_laqn_pred_fn, batch_size=1000, verbose=True, axis=1, ci=False
+            )
+            results_sat = collect_results(
+                None,
+                m,
+                jitted_sat_pred_fn,
+                pred_sat_data,
+                returns_ci=False,
+                data_type="regression",
+            )
+
+            results_laqn = collect_results(
+                None,
+                m,
+                laqn_pred_fn,
+                pred_laqn_data,
+                returns_ci=False,
+                data_type="regression",
+            )
+
+            results_laqn["predictions"]["sat"] = results_sat["predictions"]["sat"]
+            results_laqn["metrics"]["sat_0"] = results_sat["metrics"]["sat_0"]
+
+            return results_laqn
+
         m = get_laqn_sat(x_sat, y_sat, x_laqn, y_laqn)
         loss_values = train_laqn_sat(m, self.num_epochs)
+        results = predict_laqn_sat(pred_laqn_data, pred_sat_data, m)
 
         # Save the loss values to a pickle file
-        with open("loss_values_mrdgp.pickle", "wb") as file:
+        with open("loss_values_mrdgp_try.pkl", "wb") as file:
             pickle.dump(loss_values, file)
-
-        return loss_values
+        with open("loss_values_mrdgp_try.pkl", "wb") as file:
+            pickle.dump(results, file)

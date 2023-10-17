@@ -41,6 +41,10 @@ class SVGP_GPF2:
             x_train (np.ndarray): Training features.
             y_train (np.ndarray): Training targets.
         """
+        nan_idx = ~np.isnan(y_train)
+        x_train = x_train[nan_idx]
+        y_train = y_train[nan_idx]
+
         input_dim = x_train.shape[1]
         output_dim = y_train.shape[1]
 

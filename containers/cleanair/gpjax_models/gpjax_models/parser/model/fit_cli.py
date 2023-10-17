@@ -71,11 +71,11 @@ def svgp(
 
 @app.command()
 def train_svgp(
-    train_file_path1: str,
-    train_file_path2: str,
+    train_file_path: str,
+    testing_file_path: str,
     M: int = 100,
     batch_size: int = 100,
-    num_epochs: int = 10,
+    num_epochs: int = 2000,
 ):
     """
     Train the SVGP_GPF2 model on the given training data.
@@ -90,12 +90,12 @@ def train_svgp(
 
     # Load training data
     typer.echo("Loading training data!")
-    with open(train_file_path1, "rb") as file:
+    with open(train_file_path, "rb") as file:
         training_data = pickle.load(file)
         data = training_data["laqn"]
 
     typer.echo("Loading testing data!")
-    with open(train_file_path2, "rb") as file:
+    with open(testing_file_path, "rb") as file:
         test_data = pickle.load(file)
 
     pred_data = {
@@ -125,9 +125,10 @@ def train_svgp(
 @app.command()
 def train_mrdgp(
     train_file_path: str,
+    testing_file_path: str,
     M: int = 100,
     batch_size: int = 100,
-    num_epochs: int = 10,
+    num_epochs: int = 1,
 ):
     """
     Train the SVGP_GPF2 model on the given training data.
@@ -139,16 +140,42 @@ def train_mrdgp(
         num_epochs (int): Number of training epochs.
     """
     model = STGP_MRDGP(M, batch_size, num_epochs)
-
     # Load training data
     typer.echo("Loading training data!")
     with open(train_file_path, "rb") as file:
         data_dict = pickle.load(file)
-        data_laqn = data_dict["laqn"]
+        train_data = data_dict["laqn"]
         data_sat = data_dict["sat"]
-        x_laqn = jnp.array(data_laqn["X"].astype(float))
-        y_laqn = jnp.array(data_laqn["Y"].astype(float))
-        x_sat = jnp.array(data_sat["X"].astype(float))
+        x_laqn = train_data["X"]
+        y_laqn = jnp.array(train_data["Y"].astype(float))
+        x_sat = data_sat["X"]
         y_sat = jnp.array(data_sat["Y"].astype(float))
-    model.fit(x_sat, y_sat, x_laqn, y_laqn)
+
+    typer.echo("Loading testing data!")
+    with open(testing_file_path, "rb") as file:
+        test_data = pickle.load(file)
+
+        pred_sat_data = {
+            "sat": {
+                "X": data_dict["sat"]["X"],
+                "Y": data_dict["sat"]["Y"].astype(float),
+            },
+        }
+
+        pred_laqn_data = {
+            "hexgrid": {
+                "X": test_data["hexgrid"]["X"],
+                "Y": None,
+            },
+            "test_laqn": {
+                "X": test_data["laqn"]["X"],
+                "Y": None,
+            },
+            "train_laqn": {
+                "X": data_dict["laqn"]["X"],
+                "Y": data_dict["laqn"]["Y"].astype(float),
+            },
+        }
+        breakpoint()
+    model.fit(x_sat, y_sat, x_laqn, y_laqn, pred_laqn_data, pred_sat_data)
     typer.echo("Training complete!")

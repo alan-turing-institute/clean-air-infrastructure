@@ -70,8 +70,9 @@ def db_query(model=None):
 
             if output_type == "list":
                 query_df = pd.read_sql(output_q.statement, output_q.session.bind)
-                return query_df.list[query_df.columns[0]].tolist()
-
+                # Assuming you want to convert the first column of the DataFrame to a list
+                result_list = query_df.iloc[:, 0].tolist()
+                return result_list
             if output_type == "query":
                 return output_q
 

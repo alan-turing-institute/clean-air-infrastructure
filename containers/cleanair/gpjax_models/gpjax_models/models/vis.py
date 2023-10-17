@@ -10,13 +10,17 @@ from stdata.vis.spacetime import SpaceTimeVisualise
 def load_data(root):
     training_data = pickle.load(open(str(root / "data" / "train_data.pickle"), "rb"))
     testing_data = pickle.load(open(str(root / "data" / "test_data.pickle"), "rb"))
-    raw_data = pd.read_pickle(str(root / "data" / "raw_data.pickle"))
+    raw_data = pd.read_pickle(
+        "/Users/suedaciftci/projects/clean-air/clean-air-infrastructure/containers/cleanair/gpjax_models/data/raw_data.pickle"
+    )
 
     return training_data, testing_data, raw_data
 
 
 def load_results(root):
-    training_data = pickle.load(open(str(root / "predictions_svgp.pickle"), "rb"))
+    training_data = pickle.load(
+        open(str(root / "data" / "predictions_svgp.pickle"), "rb")
+    )
     return training_data
 
 
@@ -25,9 +29,9 @@ def fix_df_columns(df):
 
 
 if __name__ == "__main__":
-    ex_root = Path("../")
+    ex_root = Path("containers/cleanair/gpjax_models")
 
-    training_data, testing_data, raw_data = load_data(ex_root / "../")
+    training_data, testing_data, raw_data = load_data(ex_root)
 
     train_laqn_df = fix_df_columns(raw_data["train"]["laqn"]["df"])
     test_laqn_df = fix_df_columns(raw_data["test"]["laqn"]["df"])

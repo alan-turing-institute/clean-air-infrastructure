@@ -131,9 +131,9 @@ class STGP_SVGP:
         loss_values = train_laqn(jnp.array(self.num_epochs), m)
         results = predict_laqn_svgp(pred_data, m)
 
-        print(results['metrics'])
+        print(results["metrics"])
         # Save the loss values to a pickle file
         with open("loss_values_svgp.pickle", "wb") as file:
             pickle.dump(loss_values, file)
-        with open("loss_values_svgp.pickle", "wb") as file:
+        with open("predictions_svgp.pickle", "wb") as file:
             pickle.dump(results, file)
