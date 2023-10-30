@@ -176,6 +176,5 @@ def train_mrdgp(
                 "Y": data_dict["laqn"]["Y"].astype(float),
             },
         }
-        breakpoint()
     model.fit(x_sat, y_sat, x_laqn, y_laqn, pred_laqn_data, pred_sat_data)
     typer.echo("Training complete!")
