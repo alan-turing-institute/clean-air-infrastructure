@@ -38,10 +38,10 @@ app = typer.Typer(help="Experiment CLI")
 def download_laqn(
     download_root: Path,
     verbose: bool = False,
-    train_start_date: Optional[datetime] = datetime(2021, 3, 1),
-    train_end_date: Optional[datetime] = datetime(2021, 3, 15),
-    pred_start_date: Optional[datetime] = datetime(2021, 3, 16),
-    pred_end_date: Optional[datetime] = datetime(2021, 3, 17),
+    train_start_date: Optional[datetime] = datetime(2020, 4, 1),
+    train_end_date: Optional[datetime] = datetime(2020, 4, 30),
+    pred_start_date: Optional[datetime] = datetime(2020, 1, 1),
+    pred_end_date: Optional[datetime] = datetime(2020, 1, 2),
     static_features: Optional[List[StaticFeatureNames]] = None,
 ) -> None:
     """Setup load data"""

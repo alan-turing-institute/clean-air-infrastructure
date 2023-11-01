@@ -164,17 +164,28 @@ class STGP_MRDGP:
             jitted_sat_pred_fn = objax.Jit(
                 lambda x: m_sat.predict_y(x, squeeze=False), m_laqn.vars()
             )
+
+            def sat_pred_fn(XS):
+                mu, var = jitted_sat_pred_fn(XS)
+                return mu.T, var.T
+
             jitted_laqn_pred_fn = objax.Jit(
                 lambda x: m_laqn.predict_y(x, squeeze=False), m_laqn.vars()
             )
 
-            laqn_pred_fn = lambda XS: batch_predict(
-                XS, jitted_laqn_pred_fn, batch_size=1000, verbose=True, axis=1, ci=False
-            )
+            def laqn_pred_fn(XS):
+                def _reshape_pred(XS):
+                    mu, var = jitted_laqn_pred_fn(XS)
+                    return mu.T, var.T
+
+                return batch_predict(
+                    XS, _reshape_pred, batch_size=1000, verbose=True, axis=1, ci=False
+                )
+
             results_sat = collect_results(
                 None,
                 m,
-                jitted_sat_pred_fn,
+                sat_pred_fn,
                 pred_sat_data,
                 returns_ci=False,
                 data_type="regression",
@@ -199,7 +210,7 @@ class STGP_MRDGP:
         results = predict_laqn_sat(pred_laqn_data, pred_sat_data, m)
 
         # Save the loss values to a pickle file
-        with open("loss_values_mrdgp_try.pkl", "wb") as file:
+        with open("training_loss_mrdgp.pkl", "wb") as file:
             pickle.dump(loss_values, file)
-        with open("loss_values_mrdgp_try.pkl", "wb") as file:
+        with open("predictions_mrdgp_try.pkl", "wb") as file:
             pickle.dump(results, file)

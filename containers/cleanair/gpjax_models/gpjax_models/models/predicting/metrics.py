@@ -11,7 +11,6 @@ def fix_shapes_and_nans(true_Y, pred_Y):
 
     true_Y = true_Y.reshape([N])
     pred_Y = pred_Y.reshape([N])
-
     # remove any nans
     non_nan_idx = np.logical_not(np.isnan(true_Y))
 
