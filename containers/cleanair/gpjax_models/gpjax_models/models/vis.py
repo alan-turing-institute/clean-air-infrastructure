@@ -3,13 +3,21 @@ import numpy as np
 import pandas as pd
 import geopandas as gpd
 from pathlib import Path
+import os
 import stdata
 from stdata.vis.spacetime import SpaceTimeVisualise
 
 
+directory_path = "containers/cleanair/gpjax_models/mrdgp_results"
+
+# Create the directory if it doesn't exist
+if not os.path.exists(directory_path):
+    os.makedirs(directory_path)
+
+
 def load_data(root):
-    training_data = pickle.load(open(str(root / "data" / "train_data.pickle"), "rb"))
-    testing_data = pickle.load(open(str(root / "data" / "test_data.pickle"), "rb"))
+    training_data = pickle.load(open(str(root / "train_data.pickle"), "rb"))
+    testing_data = pickle.load(open(str(root / "test_data.pickle"), "rb"))
     raw_data = pd.read_pickle(
         "/Users/suedaciftci/projects/clean-air/clean-air-infrastructure/containers/cleanair/gpjax_models/data/raw_data.pickle"
     )
@@ -19,7 +27,10 @@ def load_data(root):
 
 def load_results(root):
     training_data = pickle.load(
-        open(str(root / "data" / "predictions_svgp.pickle"), "rb")
+        open(
+            str(root / "mrdgp_results" / "predictions_mrdgp.pkl"),
+            "rb",
+        )
     )
     return training_data
 
@@ -29,9 +40,9 @@ def fix_df_columns(df):
 
 
 if __name__ == "__main__":
-    ex_root = Path("containers/cleanair/gpjax_models")
+    data_root = Path("containers/cleanair/gpjax_models/data")
 
-    training_data, testing_data, raw_data = load_data(ex_root)
+    training_data, testing_data, raw_data = load_data(data_root)
 
     train_laqn_df = fix_df_columns(raw_data["train"]["laqn"]["df"])
     test_laqn_df = fix_df_columns(raw_data["test"]["laqn"]["df"])
@@ -39,7 +50,7 @@ if __name__ == "__main__":
     hexgrid_df = fix_df_columns(raw_data["test"]["hexgrid"]["df"])
 
     # Load results
-    results = load_results(ex_root)
+    results = load_results(data_root)
 
     train_laqn_df["pred"] = results["predictions"]["train_laqn"]["mu"][0]
     train_laqn_df["var"] = results["predictions"]["train_laqn"]["var"][0]

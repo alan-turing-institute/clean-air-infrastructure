@@ -3,7 +3,9 @@ from scipy.cluster.vq import kmeans2
 import objax
 import numpy as np
 import pickle
+import os
 from tqdm import trange
+from abc import abstractmethod
 from .predicting.utils import batch_predict
 from ..data.setup_data import get_X
 from .predicting.prediction import collect_results
@@ -17,14 +19,16 @@ from stgp.sparsity import FullSparsity
 from stgp.trainers import NatGradTrainer, GradDescentTrainer
 from stgp.transforms import Aggregate, Independent
 
+directory_path = "containers/cleanair/gpjax_models/mrdgp_results"
+
 
 class STGP_MRDGP:
     def __init__(
         self,
-        M: int = 100,
-        batch_size: int = 100,
-        num_epochs: int = 10,
-        pretrain_epochs: int = 10,
+        M,
+        batch_size,
+        num_epochs,
+        pretrain_epochs,
     ):
         """
         Initialize the JAX-based Air Quality Gaussian Process Model.
@@ -67,11 +71,11 @@ class STGP_MRDGP:
 
             lik = Gaussian(1.0)
 
-            Z = FullSparsity(Z=kmeans2(jnp.vstack(X_sat), 100, minit="points")[0])
+            Z = FullSparsity(Z=kmeans2(jnp.vstack(X_sat), self.M, minit="points")[0])
 
             latent_gp = GP(
                 sparsity=Z,
-                kernel=ScaleKernel(RBF(input_dim=D, lengthscales=[0.1, 1.0, 1.0, 0.1])),
+                kernel=ScaleKernel(RBF(input_dim=D, lengthscales=[0.1, 0.1, 0.1, 0.1])),
             )
 
             prior = Aggregate(Independent([latent_gp]))
@@ -85,14 +89,17 @@ class STGP_MRDGP:
             # we want to predict the continuous gp, not the aggregated
             latent_m1 = LatentPredictor(m_sat)
 
-            data = Data(X_laqn, Y_laqn)
+            data = Data(
+                X_laqn,
+                Y_laqn,
+            )
 
-            Z = FullSparsity(Z=kmeans2(jnp.vstack(X_laqn), 300, minit="points")[0])
+            Z = FullSparsity(Z=kmeans2(jnp.vstack(X_laqn), self.M, minit="points")[0])
 
             latent_gp = GP(  # prior
                 sparsity=Z,
                 kernel=ScaleKernel(DeepRBF(parent=latent_m1, lengthscale=[0.1]))
-                * RBF(input_dim=3, lengthscales=[1.0, 1.0, 0.1], active_dims=[1, 2, 3]),
+                * RBF(input_dim=3, lengthscales=[0.1, 0.1, 0.1], active_dims=[1, 2, 3]),
             )
 
             prior = Independent([latent_gp])
@@ -130,7 +137,6 @@ class STGP_MRDGP:
             joint_grad = GradDescentTrainer(m, objax.optimizer.Adam)
 
             lc_arr = []
-            num_epochs = self.num_epochs
             sat_natgrad.train(1.0, 1)
             laqn_natgrad.train(1.0, 1)
 
@@ -148,12 +154,15 @@ class STGP_MRDGP:
                 laqn_natgrad.train(0.1, 1)
                 lc_arr.append(lc_i)
 
-            for i in trange(num_epochs):
+            for i in trange(self.num_epochs):
                 lc_i, _ = joint_grad.train(0.01, 1)
                 lc_arr.append(lc_i)
 
                 sat_natgrad.train(0.1, 1)
                 laqn_natgrad.train(0.1, 1)
+
+            with open(os.path.join(directory_path, "joint_lc.pkl"), "wb") as file:
+                pickle.dump(lc_arr, file)
 
             return lc_arr
 
@@ -210,7 +219,9 @@ class STGP_MRDGP:
         results = predict_laqn_sat(pred_laqn_data, pred_sat_data, m)
 
         # Save the loss values to a pickle file
-        with open("training_loss_mrdgp.pkl", "wb") as file:
+        with open(
+            os.path.join(directory_path, "training_loss_mrdgp.pkl"), "wb"
+        ) as file:
             pickle.dump(loss_values, file)
-        with open("predictions_mrdgp_try.pkl", "wb") as file:
-            pickle.dump(results, file)
+        with open(os.path.join(directory_path, "predictions_mrdgp.pkl"), "wb") as file:
+            pickle.dump(loss_values, file)

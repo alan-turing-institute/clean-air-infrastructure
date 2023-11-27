@@ -126,9 +126,10 @@ def train_svgp(
 def train_mrdgp(
     train_file_path: str,
     testing_file_path: str,
-    M: int = 100,
-    batch_size: int = 100,
-    num_epochs: int = 1,
+    M: int = 500,
+    batch_size: int = 200,
+    num_epochs: int = 2000,
+    pretrain_epochs: int = 2000,
 ):
     """
     Train the SVGP_GPF2 model on the given training data.
@@ -139,7 +140,7 @@ def train_mrdgp(
         batch_size (int): Batch size for training.
         num_epochs (int): Number of training epochs.
     """
-    model = STGP_MRDGP(M, batch_size, num_epochs)
+    model = STGP_MRDGP(M, batch_size, num_epochs, pretrain_epochs)
     # Load training data
     typer.echo("Loading training data!")
     with open(train_file_path, "rb") as file:
