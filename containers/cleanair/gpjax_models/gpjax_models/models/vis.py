@@ -8,8 +8,8 @@ from stdata.vis.spacetime import SpaceTimeVisualise
 import matplotlib.pyplot as plt
 
 DATA_PATH = Path('/Users/ohamelijnck/Downloads/data_mrdgp')
-RESULTS_PATH = Path('/Users/ohamelijnck/Downloads/data_mrdgp')
-RESULTS_FILE = 'predictions_mrdgp_2000it_2000pre_500ip.pkl'
+RESULTS_PATH = Path('/Users/ohamelijnck/Downloads/results_mrdgp')
+RESULTS_FILE = 'predictions_mrdgp.pkl'
 
 def load_data():
     training_data = pickle.load(open(str(DATA_PATH / "train_data.pickle"), "rb"))
