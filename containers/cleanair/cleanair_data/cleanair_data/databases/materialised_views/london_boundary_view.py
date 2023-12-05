@@ -16,11 +16,13 @@ class LondonBoundaryView(Base):
         schema="interest_points",
         owner="refresher",
         selectable=select(
-            [
+            (
                 func.ST_MakePolygon(
-                    func.ST_Boundary(func.ST_Union(HexGrid.geom)), type_=RawGeometry
+                    func.ST_Boundary(
+                        func.ST_Union(select(HexGrid.geom)), type_=RawGeometry
+                    )
                 ).label("geom")
-            ]
+            )
         ),
         metadata=Base.metadata,
     )
