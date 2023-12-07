@@ -80,8 +80,6 @@ if __name__ == "__main__":
     hexgrid_df["var"] = results["predictions"]["hexgrid"]["var"][0]
     # Create a SpaceTimeVisualise object with geopandas_flag=True
 
-    plt.show()
-
     vis_obj = SpaceTimeVisualise(laqn_df, hexgrid_df, geopandas_flag=True)
 
     # Show the visualization
