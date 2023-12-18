@@ -63,7 +63,7 @@ class SatelliteWriter(
         "PM10": "particulate_matter_10um",
         "O3": "ozone",
     }
-    n_grid_squares_expected = 32  # number of expected hours of data per grib file
+    n_grid_squares_expected = 32  # number of expected hourly data per grib file
     species = [i.value for i in Species]
 
     def __init__(

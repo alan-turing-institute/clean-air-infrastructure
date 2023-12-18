@@ -4,6 +4,8 @@ Mixin for loading database loggin info and creating connection strings
 import json
 import os
 from ...loggers import get_logger, green, red
+import psycopg2
+import paramiko
 
 
 class DBConnectionMixin:
@@ -46,17 +48,38 @@ class DBConnectionMixin:
                 self.connection_info, self.read_environment_password()
             )
 
-        # See here (https://www.postgresql.org/docs/11/libpq-connect.html) for keepalive documentation
-        self.connection_dict = {
-            "options": "keepalives=1&keepalives_idle=10",
-            **self.connection_info,
-        }
+        # Connect to the Aquifer server using SSH
+        ssh = paramiko.SSHClient()
+        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        ssh.connect(
+            hostname="10.131.53.64",  # Replace with your actual SSH server hostname
+            username="USERNAME",  # Replace with your actual SSH username
+            password="PASSWORD",  # Replace with your actual SSH password
+        )
 
-        if (
-            "ssl_mode" in self.connection_info
-            and self.connection_info["ssl_mode"] == "require"
-        ):
-            self.connection_dict["options"] += "&sslmode=require"
+        # Assuming your local PostgreSQL server is running on localhost (127.0.0.1)
+        local_db_host = "127.0.0.1/8"
+        local_db_port = 5432
+        # Establish an SSH tunnel to the local PostgreSQL server
+        with ssh.get_transport().open_channel(
+            "direct-tcpip", (local_db_host, local_db_port), ("localhost", 0)
+        ) as tunnel:
+            self.connection_info[
+                "host"
+            ] = local_db_host  # Update to the target database host
+            self.connection_info["port"] = tunnel.local_addr[1]
+
+            # See here (https://www.postgresql.org/docs/11/libpq-connect.html) for keepalive documentation
+            self.connection_dict = {
+                "options": "keepalives=1&keepalives_idle=10",
+                **self.connection_info,
+            }
+
+            if (
+                "ssl_mode" in self.connection_info
+                and self.connection_info["ssl_mode"] == "require"
+            ):
+                self.connection_dict["options"] += "&sslmode=require"
 
     @property
     def connection_keys(self):
@@ -66,6 +89,7 @@ class DBConnectionMixin:
     @property
     def connection_string(self):
         """Get a connection string"""
+
         return "postgresql://{username}:{password}@{host}:{port}/{db_name}?{options}".format(
             **self.connection_dict
         )
@@ -86,7 +110,6 @@ class DBConnectionMixin:
                 return data
 
         except FileNotFoundError as file_not_found_error:
-
             # Construct available secrets files
             secrets_directories = ["/secrets"]
             secrets_files = [
@@ -155,5 +178,4 @@ class DBConnectionMixin:
         for key, _ in secret_dict.items():
             if key in self.connection_keys:
                 connection_info_[key] = secret_dict[key]
-
         return connection_info_
