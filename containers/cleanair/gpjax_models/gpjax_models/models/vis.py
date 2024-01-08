@@ -3,13 +3,11 @@ import numpy as np
 import pandas as pd
 import geopandas as gpd
 from pathlib import Path
-import matplotlib.pyplot as plt
 import os
-import stdata
 from stdata.vis.spacetime import SpaceTimeVisualise
 
 
-directory_path = "containers/cleanair/gpjax_models/mrdgp_results"
+directory_path = "/Users/suedaciftci/projects/clean-air/clean-air-infrastructure/containers/cleanair/gpjax_models/data/mrdgp_results"
 
 # Create the directory if it doesn't exist
 if not os.path.exists(directory_path):
@@ -17,27 +15,24 @@ if not os.path.exists(directory_path):
 
 
 def load_data(root):
-    with open(str(root / "train_data.pickle"), "rb") as file:
+    with open(str(root / "train_data_dict.pkl"), "rb") as file:
         training_data = pd.read_pickle(file)
-    with open(str(root / "test_data.pickle"), "rb") as file:
+    with open(str(root / "test_data_dict.pkl"), "rb") as file:
         testing_data = pd.read_pickle(file)
     # Load raw data using pickle
     with open(
-        "/Users/suedaciftci/projects/clean-air/clean-air-infrastructure/containers/cleanair/gpjax_models/data/raw_data.pickle",
+        "/Users/suedaciftci/projects/clean-air/clean-air-infrastructure/containers/cleanair/gpjax_models/data/raw_data_dict.pkl",
         "rb",
     ) as file:
         raw_data = pd.read_pickle(file)
 
-    with open(
-        root / "test_data_laqn.csv", "r", newline="", encoding="utf-8"
-    ) as csvfile:
-        laqn_all = pd.read_csv(csvfile)
-
-    return training_data, testing_data, raw_data, laqn_all
+    return training_data, testing_data, raw_data
 
 
 def load_results(root):
-    with open(str(root / "mrdgp_results" / "predictions_mrdgp.pkl"), "rb") as file:
+    with open(
+        str(root / "mrdgp_results" / "predictions_mrdgp_1000it_0.1lenght.pkl"), "rb"
+    ) as file:
         training_data = pd.read_pickle(file)
     return training_data
 
@@ -49,10 +44,12 @@ def fix_df_columns(df):
 if __name__ == "__main__":
     data_root = Path("containers/cleanair/gpjax_models/data")
 
-    training_data, testing_data, raw_data, laqn_all = load_data(data_root)
+    training_data, testing_data, raw_data = load_data(data_root)
 
     train_laqn_df = fix_df_columns(raw_data["train"]["laqn"]["df"])
     test_laqn_df = fix_df_columns(raw_data["test"]["laqn"]["df"])
+
+    test_laqn_true_values = train_laqn_df["NO2"]
 
     hexgrid_df = fix_df_columns(raw_data["test"]["hexgrid"]["df"])
 
@@ -67,14 +64,17 @@ if __name__ == "__main__":
 
     test_laqn_df["pred"] = results["predictions"]["test_laqn"]["mu"][0]
     test_laqn_df["var"] = results["predictions"]["test_laqn"]["var"][0]
-    test_laqn_df["observed"] = laqn_all["value"]
+    test_laqn_df["observed"] = test_laqn_true_values
 
     laqn_df = pd.concat([train_laqn_df, test_laqn_df])
+    # Assuming 'geom' is the column containing Shapely Point geometries
+    hexgrid_df["geom"] = gpd.points_from_xy(hexgrid_df["lon"], hexgrid_df["lat"])
 
-    hexgrid_df = gpd.GeoDataFrame(
-        hexgrid_df, geometry=gpd.points_from_xy(hexgrid_df["lon"], hexgrid_df["lat"])
-    )
-    hexgrid_df["geom"] = hexgrid_df["geometry"].buffer(0.002)
+    # Buffer each Point geometry by 0.002
+    hexgrid_df["geom"] = hexgrid_df["geom"].apply(lambda point: point.buffer(0.002))
+
+    # Create a GeoDataFrame using the 'geom' column
+    hexgrid_gdf = gpd.GeoDataFrame(hexgrid_df, geometry="geom")
 
     hexgrid_df["pred"] = results["predictions"]["hexgrid"]["mu"][0]
     hexgrid_df["var"] = results["predictions"]["hexgrid"]["var"][0]

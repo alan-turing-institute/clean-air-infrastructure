@@ -1,6 +1,10 @@
 import jax.numpy as jnp
 from scipy.cluster.vq import kmeans2
 import objax
+import jax
+from jax.config import config as jax_config
+
+jax_config.update("jax_enable_x64", True)
 import numpy as np
 import pickle
 import os
@@ -19,7 +23,7 @@ from stgp.sparsity import FullSparsity
 from stgp.trainers import NatGradTrainer, GradDescentTrainer
 from stgp.transforms import Aggregate, Independent
 
-directory_path = "containers/cleanair/gpjax_models/mrdgp_results"
+directory_path = "/containers/cleanair/gpjax_models/data/mrdgp_results"
 
 
 class STGP_MRDGP:
@@ -67,7 +71,7 @@ class STGP_MRDGP:
         def get_aggregated_sat_model(X_sat, Y_sat):
             N, D = X_sat.shape[0], X_sat.shape[-1]
 
-            data = AggregatedData(X_sat, Y_sat, minibatch_size=200)
+            data = AggregatedData(X_sat, Y_sat, minibatch_size=self.batch_size)
 
             lik = Gaussian(1.0)
 
@@ -188,7 +192,12 @@ class STGP_MRDGP:
                     return mu.T, var.T
 
                 return batch_predict(
-                    XS, _reshape_pred, batch_size=1000, verbose=True, axis=1, ci=False
+                    XS,
+                    _reshape_pred,
+                    batch_size=self.batch_size,
+                    verbose=True,
+                    axis=1,
+                    ci=False,
                 )
 
             results_sat = collect_results(
@@ -220,8 +229,10 @@ class STGP_MRDGP:
 
         # Save the loss values to a pickle file
         with open(
-            os.path.join(directory_path, "training_loss_mrdgp.pkl"), "wb"
+            os.path.join(directory_path, "training_loss_mrdgp.pkl"),
+            "wb",
         ) as file:
             pickle.dump(loss_values, file)
+
         with open(os.path.join(directory_path, "predictions_mrdgp.pkl"), "wb") as file:
-            pickle.dump(loss_values, file)
+            pickle.dump(results, file)

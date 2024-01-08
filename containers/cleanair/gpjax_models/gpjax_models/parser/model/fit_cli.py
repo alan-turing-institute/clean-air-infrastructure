@@ -5,6 +5,10 @@ import pickle
 import pandas as pd
 from pathlib import Path
 import jax
+import jax
+from jax.config import config as jax_config
+
+jax_config.update("jax_enable_x64", True)
 import optax
 import jax.numpy as jnp
 import numpy as np
@@ -73,9 +77,9 @@ def svgp(
 def train_svgp(
     train_file_path: str,
     testing_file_path: str,
-    M: int = 100,
+    M: int = 300,
     batch_size: int = 100,
-    num_epochs: int = 2000,
+    num_epochs: int = 100,
 ):
     """
     Train the SVGP_GPF2 model on the given training data.
@@ -128,8 +132,8 @@ def train_mrdgp(
     testing_file_path: str,
     M: int = 500,
     batch_size: int = 200,
-    num_epochs: int = 2000,
-    pretrain_epochs: int = 2000,
+    num_epochs: int = 1000,
+    pretrain_epochs: int = 1000,
 ):
     """
     Train the SVGP_GPF2 model on the given training data.
@@ -143,14 +147,14 @@ def train_mrdgp(
     model = STGP_MRDGP(M, batch_size, num_epochs, pretrain_epochs)
     # Load training data
     typer.echo("Loading training data!")
+
+    # generate_data(data_dict)
     with open(train_file_path, "rb") as file:
         data_dict = pickle.load(file)
-        train_data = data_dict["laqn"]
-        data_sat = data_dict["sat"]
-        x_laqn = train_data["X"]
-        y_laqn = jnp.array(train_data["Y"].astype(float))
-        x_sat = data_sat["X"]
-        y_sat = jnp.array(data_sat["Y"].astype(float))
+        x_laqn = data_dict["laqn"]["X"]
+        y_laqn = data_dict["laqn"]["Y"]
+        x_sat = data_dict["sat"]["X"]
+        y_sat = data_dict["sat"]["Y"]
 
     typer.echo("Loading testing data!")
     with open(testing_file_path, "rb") as file:
@@ -159,10 +163,9 @@ def train_mrdgp(
         pred_sat_data = {
             "sat": {
                 "X": data_dict["sat"]["X"],
-                "Y": data_dict["sat"]["Y"].astype(float),
+                "Y": data_dict["sat"]["Y"],
             },
         }
-
         pred_laqn_data = {
             "hexgrid": {
                 "X": test_data["hexgrid"]["X"],
@@ -174,7 +177,7 @@ def train_mrdgp(
             },
             "train_laqn": {
                 "X": data_dict["laqn"]["X"],
-                "Y": data_dict["laqn"]["Y"].astype(float),
+                "Y": data_dict["laqn"]["Y"],
             },
         }
     model.fit(x_sat, y_sat, x_laqn, y_laqn, pred_laqn_data, pred_sat_data)
