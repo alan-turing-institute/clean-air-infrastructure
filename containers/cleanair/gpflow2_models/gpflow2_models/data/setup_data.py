@@ -17,7 +17,7 @@ def get_data_file_names(fold):
 
 
 def get_X(df):
-    return np.array(df[["epoch", "lat", "lon", "value_500_park"]])
+    return np.array(df[["epoch", "lat", "lon", "value_100_park"]])
 
 
 def get_Y(df):

@@ -1,10 +1,11 @@
 """Commands for a Sparse Variational GP to model air quality."""
 
 import typer
+
 import pickle
 import pandas as pd
 from pathlib import Path
-import jax
+from typing import Optional
 import jax
 from jax.config import config as jax_config
 
@@ -130,10 +131,10 @@ def train_svgp(
 def train_mrdgp(
     train_file_path: str,
     testing_file_path: str,
-    M: int = 500,
-    batch_size: int = 200,
-    num_epochs: int = 1000,
-    pretrain_epochs: int = 1000,
+    M: Optional[int] = 500,
+    batch_size: Optional[int] = 200,
+    num_epochs: Optional[int] = 1000,
+    pretrain_epochs: Optional[int] = 1000,
 ):
     """
     Train the SVGP_GPF2 model on the given training data.

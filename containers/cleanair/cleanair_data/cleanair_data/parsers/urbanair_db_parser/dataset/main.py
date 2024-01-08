@@ -84,6 +84,7 @@ def download_laqn(
     training_data[Source.laqn].to_csv(download_root / "laqn_training_data.csv")
 
 
+# uploads concated laqn and breathe london data to Azure blobs
 @app.command()
 def upload_laqn_breathe_data(
     filepath: Path,
@@ -157,6 +158,7 @@ def upload_laqn_breathe_data(
     file_path.unlink()
 
 
+# uploads concated laqn and satellite data to Azure blobs
 @app.command()
 def upload_laqn_sat_data(
     filepath: Path,
