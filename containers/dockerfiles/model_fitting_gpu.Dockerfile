@@ -19,8 +19,8 @@ ARG urbanair_version
 ENV SETUPTOOLS_SCM_PRETEND_VERSION ${urbanair_version}
 
 # Copy the cleanair directory contents into the container
-COPY cleanair /app/cleanair
-COPY scripts/ /app/scripts
+COPY containers/cleanair /app/cleanair
+COPY containers/scripts/ /app/scripts
 
 # Install cleanair
 RUN pip install '/app/cleanair[traffic, models]'

@@ -19,7 +19,7 @@ from ....mixins import InstanceMixin
 from ....models import ModelData
 from ..shared_args import ExperimentDir
 from ..state import state
-from ....types import ExperimentName
+from ....types import ExperimentName, Source
 from ....utils import FileManager
 
 app = typer.Typer(help="Experiment CLI")
@@ -80,7 +80,12 @@ def setup_cached_instance(cached_root: Path):
 
 
 @app.command()
-def run(experiment_name: ExperimentName, experiment_root: Path = ExperimentDir) -> None:
+def run(
+    experiment_name: ExperimentName,
+    experiment_root: Path = ExperimentDir,
+    run_iters: int = None,
+    pred_src: Source = None,
+) -> None:
     """Run an experiment: fit models and predict"""
     # setup experiment
     runnable_experiment = RunnableAirQualityExperiment(experiment_name, experiment_root)
@@ -89,8 +94,31 @@ def run(experiment_name: ExperimentName, experiment_root: Path = ExperimentDir) 
     experiment_config = runnable_experiment.read_experiment_config_from_json()
     runnable_experiment.add_instances_from_file(experiment_config.instance_id_list)
 
+    # this is a hack to override the number of iterations run. Useful for testing.
+    if run_iters is not None:
+        # assign run_iters for all instances
+        for instance_id in runnable_experiment._instances.keys():
+            instance = runnable_experiment._instances[instance_id]
+            instance.model_params.maxiter = run_iters
+
     # load datasets from file
     runnable_experiment.load_datasets()
+
+    # This is a hack to override the testing prediction sources. Useful for testing.
+    #  this done by reconstruction the test data to only include pred_src
+    if pred_src is not None:
+        new_test_dataset_dict = {}
+        for instance_id in runnable_experiment._test_dataset.keys():
+            instance_test_dataset_list = runnable_experiment._test_dataset[instance_id]
+
+            new_test_dataset_dict[instance_id] = []
+
+            for instance_test_dataset in instance_test_dataset_list:
+                new_test_dataset_dict[instance_id].append(
+                    {pred_src: instance_test_dataset[pred_src]}
+                )
+        runnable_experiment._test_dataset = new_test_dataset_dict
+
     # run the experiment: train, predict and save results
     runnable_experiment.run_experiment()
 
@@ -203,6 +231,7 @@ def download(
     experiment_root.mkdir(exist_ok=True, parents=False)
     download_root.mkdir(exist_ok=True, parents=False)
     FileManager(
-        download_root / instance_id, blob_id=instance_id,
+        download_root / instance_id,
+        blob_id=instance_id,
     )
     logging.info("Saving instance to %s", download_root / instance_id)

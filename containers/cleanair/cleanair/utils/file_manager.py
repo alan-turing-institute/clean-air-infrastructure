@@ -69,12 +69,11 @@ class FileManager:
     RESULT = Path("result")
     PRED_FORECAST_PICKLE = RESULT / "pred_forecast.pkl"
     PRED_TRAINING_PICKLE = RESULT / "pred_training.pkl"
+    INDUCING_PICKLE = RESULT / "inducing_points.pkl"
 
     def __init__(self, input_dir: Path, blob_id: str = None) -> None:
-
         # Download a zipped blob from storage if specified
         if blob_id:
-
             try:
                 sas_token = blob_storage.generate_sas_token(
                     resource_group="RG_CLEANAIR_INFRASTRUCTURE",
@@ -130,8 +129,10 @@ class FileManager:
         if not pickle_path.exists():
             raise FileNotFoundError(f"Could not find file at path {pickle_path}")
 
-        with pickle_path.open("rb") as pickle_f:
-            return pickle.load(pickle_f)
+        with open(pickle_path, "rb") as pickle_f:
+            return pickle.load(
+                pickle_f, fix_imports=True, encoding="ASCII", errors="strict"
+            )
 
     def archive(self):
         """Zips the managed files"""
@@ -276,7 +277,10 @@ class FileManager:
         # use the load function to get the model from the filepath
         export_dir = self.input_dir / FileManager.MODEL
         model = load_fn(
-            export_dir, model_name, compile_model=compile_model, tf_session=tf_session,
+            export_dir,
+            model_name,
+            compile_model=compile_model,
+            tf_session=tf_session,
         )
         return model
 
@@ -333,6 +337,12 @@ class FileManager:
         """Save the training predictions to a pickled file"""
         self.logger.debug("Saving the predictions on the training set to a pickle")
         self.__save_pickle(y_pred, self.input_dir / FileManager.PRED_TRAINING_PICKLE)
+
+    def save_inducing_points_to_pickle(self, inducing_points):
+        self.logger.debug("Saving the inducing points to a pickle")
+        self.__save_pickle(
+            inducing_points, self.input_dir / FileManager.INDUCING_PICKLE
+        )
 
     def __save_result_to_csv(
         self, result_df: pd.DataFrame, source: Source, filename: str

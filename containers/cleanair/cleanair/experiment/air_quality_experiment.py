@@ -227,7 +227,11 @@ class RunnableAirQualityExperiment(RunnableExperimentMixin):
         #  load the data from this instance
         training_data = file_manager.load_training_data()
         full_config = file_manager.load_data_config(full=True)
-        return model_data.get_data_arrays(full_config, training_data, prediction=False,)
+        return model_data.get_data_arrays(
+            full_config,
+            training_data,
+            prediction=False,
+        )
 
     def load_test_dataset(self, data_id: str) -> IndexedDatasetDict:
         """Load a test dataset from file"""
@@ -238,7 +242,11 @@ class RunnableAirQualityExperiment(RunnableExperimentMixin):
         #  load the data from this instance
         test_data = file_manager.load_test_data()
         full_config = file_manager.load_data_config(full=True)
-        return model_data.get_data_arrays(full_config, test_data, prediction=True,)
+        return model_data.get_data_arrays(
+            full_config,
+            test_data,
+            prediction=True,
+        )
 
     def load_model(self, instance_id: str) -> Model:
         """Load the model using the instance id"""
@@ -298,14 +306,21 @@ class RunnableAirQualityExperiment(RunnableExperimentMixin):
         self._test_result[instance_id] = y_forecast
         return y_forecast
 
+    def get_inducing_point(self, instance_id: str):
+        model = self._models[instance_id]
+        inducing_points = model.inducing_locations
+        return inducing_points
+
     def save_result(self, instance_id: str) -> None:
         """Save the predictions on training set and test set to file"""
         # save predictions to file
         file_manager: FileManager = self._file_managers[instance_id]
         y_training_result = self._training_result[instance_id]
+        inducing_points = self.get_inducing_point(instance_id)
         y_forecast = self._test_result[instance_id]
         file_manager.save_pred_training_to_pickle(y_training_result)
         file_manager.save_forecast_to_pickle(y_forecast)
+        file_manager.save_inducing_points_to_pickle(inducing_points)
         file_manager.save_elbo(self._models[instance_id].elbo)
 
 

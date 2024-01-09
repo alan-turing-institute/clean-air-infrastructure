@@ -50,6 +50,7 @@ class ModelMixin:
         self.model = None
         self.elbo: List[float] = []
         self.epoch = 0
+        self.inducing_locations = []
         self.batch_size = batch_size
         self.refresh = refresh
         # Ensure logging is available
@@ -215,7 +216,9 @@ class ModelMixin:
         self.elbo.append(objective)
         if (self.epoch % self.refresh) == 0:
             self.logger.info(
-                "Iteration: %s, ELBO: %s", self.epoch, objective,
+                "Iteration: %s, ELBO: %s",
+                self.epoch,
+                objective,
             )
         self.epoch += 1
 
@@ -287,7 +290,9 @@ class ModelMixin:
         for src, x_src in x_test.items():
             for pollutant in self.tasks:
                 self.logger.info(
-                    "Batch predicting for %s on %s", pollutant, src,
+                    "Batch predicting for %s on %s",
+                    pollutant,
+                    src,
                 )
                 y_mean, y_var = self.batch_predict(x_src, predict_fn)
                 y_dict[src] = {pollutant: dict(mean=y_mean, var=y_var)}

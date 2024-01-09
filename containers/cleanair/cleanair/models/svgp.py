@@ -68,6 +68,7 @@ class SVGP(ModelMixin):
                     A=np.ones((x_array.shape[1], 1)), b=np.ones((1,))
                 ),
             )
+            print(self.model)
 
     def fit(self, x_train: FeaturesDict, y_train: TargetDict) -> None:
         """Train the SVGP.
@@ -93,10 +94,12 @@ class SVGP(ModelMixin):
         if self.model_params.num_inducing_points > x_array.shape[0]:
             self.model_params.num_inducing_points = x_array.shape[0]
 
-        z_r = kmeans2(x_array, self.model_params.num_inducing_points, minit="points")[0]
+        self.inducing_locations = kmeans2(
+            x_array, self.model_params.num_inducing_points, minit="points"
+        )[0]
 
         # setup SVGP model
-        self.setup_model(x_array, y_array, z_r)
+        self.setup_model(x_array, y_array, self.inducing_locations)
         self.model.compile()
 
         # optimize and setup elbo logging
@@ -126,7 +129,6 @@ class SVGP(ModelMixin):
         return y_dict
 
     def params(self) -> SVGPParams:
-
         params = deepcopy(self.model_params)
         params.kernel.variance = self.model.kern.variance.read_value().tolist()
         params.kernel.lengthscales = self.model.kern.lengthscales.read_value().tolist()
