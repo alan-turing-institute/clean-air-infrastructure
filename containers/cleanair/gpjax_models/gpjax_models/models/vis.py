@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 import geopandas as gpd
 from pathlib import Path
+import matplotlib.pyplot as plt
 import os
 from stdata.vis.spacetime import SpaceTimeVisualise
 
@@ -30,9 +31,7 @@ def load_data(root):
 
 
 def load_results(root):
-    with open(
-        str(root / "mrdgp_results" / "predictions_mrdgp_1000it_0.1lenght.pkl"), "rb"
-    ) as file:
+    with open(str(root / "mrdgp_results" / "predictions_mrdgp_1500.pkl"), "rb") as file:
         training_data = pd.read_pickle(file)
     return training_data
 
@@ -49,7 +48,7 @@ if __name__ == "__main__":
     train_laqn_df = fix_df_columns(raw_data["train"]["laqn"]["df"])
     test_laqn_df = fix_df_columns(raw_data["test"]["laqn"]["df"])
 
-    test_laqn_true_values = train_laqn_df["NO2"]
+    test_laqn_true_values = test_laqn_df["NO2"]
 
     hexgrid_df = fix_df_columns(raw_data["test"]["hexgrid"]["df"])
 
