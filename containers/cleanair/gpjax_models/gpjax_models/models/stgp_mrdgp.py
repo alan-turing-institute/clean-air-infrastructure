@@ -23,8 +23,6 @@ from stgp.sparsity import FullSparsity
 from stgp.trainers import NatGradTrainer, GradDescentTrainer
 from stgp.transforms import Aggregate, Independent
 
-directory_path = "/containers/cleanair/gpjax_models/data/mrdgp_results"
-
 
 class STGP_MRDGP:
     def __init__(
@@ -165,7 +163,7 @@ class STGP_MRDGP:
                 sat_natgrad.train(0.1, 1)
                 laqn_natgrad.train(0.1, 1)
 
-            with open(os.path.join(directory_path, "joint_lc.pkl"), "wb") as file:
+            with open(os.path.join("joint_lc.pkl"), "wb") as file:
                 pickle.dump(lc_arr, file)
 
             return lc_arr
@@ -229,10 +227,10 @@ class STGP_MRDGP:
 
         # Save the loss values to a pickle file
         with open(
-            os.path.join(directory_path, "training_loss_mrdgp.pkl"),
+            os.path.join("training_loss_mrdgp.pkl"),
             "wb",
         ) as file:
             pickle.dump(loss_values, file)
 
-        with open(os.path.join(directory_path, "predictions_mrdgp.pkl"), "wb") as file:
+        with open(os.path.join("predictions_mrdgp.pkl"), "wb") as file:
             pickle.dump(results, file)
