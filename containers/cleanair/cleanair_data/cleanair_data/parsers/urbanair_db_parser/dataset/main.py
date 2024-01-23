@@ -10,13 +10,13 @@ from typing import List, Optional
 from ....utils.azure import blob_storage
 from azure.storage.blob import BlobServiceClient
 
-from ....dataset.model_config import ModelConfig
+from ....models.model_config import ModelConfig
 from ....environment_settings.settings import get_settings
-from ....dataset.model_data import ModelData
+from ....models.model_data import ModelData
 from ..state import state
 from typing import Dict
 from ....loggers import initialise_logging
-from ....dataset.model_config import ModelConfig, DataConfig
+from ....models.model_config import ModelConfig, DataConfig
 
 from ....types import (
     Source,

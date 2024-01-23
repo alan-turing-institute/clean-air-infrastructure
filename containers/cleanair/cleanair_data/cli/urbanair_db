@@ -6,6 +6,7 @@ import typer
 from cleanair_data.parsers.urbanair_db_parser import (
     config,
     echo,
+    experiment,
     init,
     inputs,
     logs,
@@ -20,6 +21,7 @@ app = typer.Typer()
 app.add_typer(config.app, name="config")
 app.add_typer(dataset.app, name="dataset")
 app.add_typer(echo.app, name="echo")
+app.add_typer(experiment.app, name="experiment")
 app.add_typer(init.app, name="init")
 app.add_typer(inputs.app, name="inputs")
 app.add_typer(logs.app, name="logs")

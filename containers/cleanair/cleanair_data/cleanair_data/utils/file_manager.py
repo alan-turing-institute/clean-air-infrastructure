@@ -18,13 +18,11 @@ from ..mixins import InstanceMixin
 from ..types import (
     DataConfig,
     FullDataConfig,
-    ModelName,
-    MRDGPParams,
     Source,
-    SVGPParams,
     TargetDict,
-    model_params_from_dict,
 )
+from ..types.enum_types import ModelName
+
 
 if TYPE_CHECKING:
     from pydantic import BaseModel

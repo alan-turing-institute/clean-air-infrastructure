@@ -21,21 +21,20 @@ from .experiment import (
 )
 from ..loggers import get_logger
 from ..metrics import TrainingMetrics
-from ..dataset.model_data import ModelData, ModelDataExtractor
-from ...tenserflow1_model.svgp import SVGP
-from ...tenserflow1_model.mr_dgp_model import MRDGP
-from ..types import ExperimentName, IndexedDatasetDict, ModelName, Source, TargetDict
+from ..models.model_data import ModelData, ModelDataExtractor
+from ..types.experiment_types import ExperimentName
+from ..types.dataset_types import IndexedDatasetDict, Source, TargetDict
 from ..utils.file_manager import FileManager
 
-if TYPE_CHECKING:
-    import os
-    import tensorflow as tf
+# if TYPE_CHECKING:
+#     import os
+#     import tensorflow as tf
 
-    # turn off tensorflow warnings for gpflow
-    os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
-    tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
-    # pylint: disable=wrong-import-position,wrong-import-order
-    from gpflow.models.model import Model
+#     # turn off tensorflow warnings for gpflow
+#     os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
+#     tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
+#     # pylint: disable=wrong-import-position,wrong-import-order
+#     from gpflow.models.model import Model
 
 
 class SetupAirQualityExperiment(SetupExperimentMixin):
@@ -249,16 +248,6 @@ class RunnableAirQualityExperiment(RunnableExperimentMixin):
             test_data,
             prediction=True,
         )
-
-    def load_model(self, instance_id: str) -> Model:
-        """Load the model using the instance id"""
-        instance = self._instances[instance_id]
-        if instance.model_name == ModelName.svgp:
-            model = SVGP(instance.model_params)
-        elif instance.model_name == ModelName.mrdgp:
-            model = MRDGP(instance.model_params)
-        self._models[instance_id] = model
-        return model
 
     def train_model(self, instance_id: str) -> None:
         """Train the model"""

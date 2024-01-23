@@ -2,10 +2,10 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta
-from typing import Dict, List, Any
+from typing import List
 from sqlalchemy import func, text, cast, String, and_
 
-from ..types.enum_types import DynamicFeatureNames
+from cleanair_data.types.enum_types import DynamicFeatureNames
 
 from ..databases import DBReader
 from ..databases.materialised_views import LondonBoundaryView
@@ -17,13 +17,13 @@ from ..mixins.availability_mixins import (
     LAQNAvailabilityMixin,
     AQEAvailabilityMixin,
     SatelliteAvailabilityMixin,
-    BreatheAvailabilityMixin,
 )
 from ..timestamps import as_datetime
 from ..types import (
     Source,
     Species,
     StaticFeatureNames,
+    DynamicFeatureNames,
     DataConfig,
     FullDataConfig,
     FeatureBufferSize,
@@ -35,16 +35,12 @@ ONE_DAY_INTERVAL = text("interval '1 day'")
 
 
 class ModelConfig(
-    LAQNAvailabilityMixin,
-    AQEAvailabilityMixin,
-    SatelliteAvailabilityMixin,
-    BreatheAvailabilityMixin,
-    DBReader,
+    LAQNAvailabilityMixin, AQEAvailabilityMixin, SatelliteAvailabilityMixin, DBReader
 ):
-    """Create and validate configurations for a clean air quality prediction model
-    Runs checks the availability of features in a database"""
+    """Create and validate cleanair model configurations
+    Runs checks against the database"""
 
-    def __init__(self, **kwargs: Any) -> None:
+    def __init__(self, **kwargs) -> None:
         # Initialise parent classes
         super().__init__(**kwargs)
 
@@ -89,7 +85,7 @@ class ModelConfig(
             include_prediction_y=False,
         )
 
-    def validate_config(self, config: DataConfig) -> None:
+    def validate_config(self, config: DataConfig):
         """Validate a configuration file
 
         Check:
@@ -166,7 +162,6 @@ class ModelConfig(
 
         return FullDataConfig(**config_dict)
 
-    #  pylint: disable=W0613
     def check_static_features_available(
         self,
         features: List[StaticFeatureNames],
@@ -218,7 +213,7 @@ class ModelConfig(
                     )
                 )
 
-    def check_sources_available(self, sources: List[Source]) -> None:
+    def check_sources_available(self, sources: List[Source]):
         """Check that sources are available in the database
 
         args:
@@ -239,7 +234,7 @@ class ModelConfig(
                 )
             )
 
-    def get_interest_point_ids(self, interest_point_dict: InterestPointDict) -> Dict:
+    def get_interest_point_ids(self, interest_point_dict: InterestPointDict):
         """Get ids of interest points"""
         output_dict: InterestPointDict = {}
 
@@ -262,7 +257,7 @@ class ModelConfig(
         return output_dict
 
     @db_query()
-    def get_available_static_features(self) -> None:
+    def get_available_static_features(self):
         """Return available static features from the CleanAir database"""
 
         with self.dbcnxn.open_session() as session:
@@ -275,7 +270,7 @@ class ModelConfig(
     @db_query()
     def get_available_dynamic_features(
         self, start_datetime: datetime, upto_datetime: datetime
-    ) -> None:
+    ):
         """Return available dynamic features from the CleanAir database
 
         Notes:
@@ -293,7 +288,7 @@ class ModelConfig(
             return feature_types_q
 
     @db_query()
-    def get_available_sources(self) -> None:
+    def get_available_sources(self):
         """Return the available interest point sources in a database"""
 
         with self.dbcnxn.open_session() as session:
@@ -302,14 +297,14 @@ class ModelConfig(
             return feature_types_q
 
     @db_query()
-    def query_london_boundary(self) -> None:
+    def query_london_boundary(self):
         """Query LondonBoundary to obtain the bounding geometry for London.
         Only get the first row as should only be one entry"""
         with self.dbcnxn.open_session() as session:
             return session.query(LondonBoundaryView.geom).limit(1)
 
     @db_query()
-    def get_meta_point_ids(self, source: Source) -> None:
+    def get_meta_point_ids(self, source: Source):
         """Get metapoint ids"""
         with self.dbcnxn.open_session() as session:
             return session.query(MetaPoint.id.label("point_id")).filter(
@@ -317,9 +312,7 @@ class ModelConfig(
             )
 
     @db_query()
-    def get_available_interest_points(
-        self, source: Source, within_london_only: bool
-    ) -> None:
+    def get_available_interest_points(self, source: Source, within_london_only: bool):
         """
         Get available interest points for a particular source
         and optionally filter sites outside of london
@@ -337,9 +330,6 @@ class ModelConfig(
 
         elif source == Source.aqe:
             point_ids_sq = self.get_aqe_open_sites(output_type="subquery")
-
-        elif source == Source.breathe:
-            point_ids_sq = self.get_breathe_open_sites(output_type="subquery")
 
         elif source == Source.satellite:
             point_ids_sq = self.get_satellite_interest_points_in_boundary(

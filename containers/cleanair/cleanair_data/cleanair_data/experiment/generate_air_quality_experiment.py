@@ -40,7 +40,8 @@ from ..params import (
     PRODUCTION_MRDGP_TRAIN_SOURCES,
 )
 from ..timestamps import datetime_from_word
-from ..types import StaticFeatureNames, ModelName, Tag, FeatureBufferSize, Source
+from ..types import StaticFeatureNames, Tag, FeatureBufferSize, Source
+from ..types.model_types import ModelName
 from .default_air_quality_data_config import (
     default_laqn_data_config,
     default_sat_data_config,
@@ -503,7 +504,6 @@ def dgp_vary_static_features(
     model_config = ModelConfig(secretfile=secretfile)
 
     for static_features in VARY_STATIC_FEATURES:
-
         # create a data config from static_features
         data_config = default_sat_data_config()
         data_config.static_features = static_features

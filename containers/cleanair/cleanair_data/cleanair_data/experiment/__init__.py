@@ -8,12 +8,11 @@ from .experiment import (
     RunnableExperimentMixin,
     UpdateExperimentMixin,
 )
-
-# from .air_quality_experiment import (
-#     RunnableAirQualityExperiment,
-#     SetupAirQualityExperiment,
-#     UpdateAirQualityExperiment,
-# )
+from .air_quality_experiment import (
+    RunnableAirQualityExperiment,
+    SetupAirQualityExperiment,
+    UpdateAirQualityExperiment,
+)
 from .air_quality_instance import AirQualityInstance
 from .air_quality_result import AirQualityResult
 
@@ -21,10 +20,10 @@ __all__ = [
     "AirQualityInstance",
     "AirQualityResult",
     "ExperimentMixin",
-    # "SetupAirQualityExperiment",
+    "SetupAirQualityExperiment",
     "SetupExperimentMixin",
-    # "RunnableAirQualityExperiment",
+    "RunnableAirQualityExperiment",
     "RunnableExperimentMixin",
-    # "UpdateAirQualityExperiment",
+    "UpdateAirQualityExperiment",
     "UpdateExperimentMixin",
 ]
