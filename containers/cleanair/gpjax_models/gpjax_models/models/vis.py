@@ -31,7 +31,7 @@ def load_data(root):
 
 
 def load_results(root):
-    with open(str(root / "mrdgp_results" / "predictions_mrdgp_1500.pkl"), "rb") as file:
+    with open(str(root / "mrdgp_results" / "predictions_mrdgp.pkl"), "rb") as file:
         training_data = pd.read_pickle(file)
     return training_data
 
@@ -65,8 +65,13 @@ if __name__ == "__main__":
     test_laqn_df["var"] = results["predictions"]["test_laqn"]["var"][0]
     test_laqn_df["observed"] = test_laqn_true_values
 
+    train_laqn_df["measurement_start_utc"] = pd.to_datetime(
+        train_laqn_df["measurement_start_utc"]
+    )
+    train_end = train_laqn_df["epoch"].max()
+
     laqn_df = pd.concat([train_laqn_df, test_laqn_df])
-    # Assuming 'geom' is the column containing Shapely Point geometries
+    #'geom' is the column containing Shapely Point geometries
     hexgrid_df["geom"] = gpd.points_from_xy(hexgrid_df["lon"], hexgrid_df["lat"])
 
     # Buffer each Point geometry by 0.002
@@ -77,9 +82,9 @@ if __name__ == "__main__":
 
     hexgrid_df["pred"] = results["predictions"]["hexgrid"]["mu"][0]
     hexgrid_df["var"] = results["predictions"]["hexgrid"]["var"][0]
-    # Create a SpaceTimeVisualise object with geopandas_flag=True
-
-    vis_obj = SpaceTimeVisualise(laqn_df, hexgrid_df, geopandas_flag=True)
+    vis_obj = SpaceTimeVisualise(
+        laqn_df, hexgrid_df, geopandas_flag=True, test_start=train_end
+    )
 
     # Show the visualization
     vis_obj.show()

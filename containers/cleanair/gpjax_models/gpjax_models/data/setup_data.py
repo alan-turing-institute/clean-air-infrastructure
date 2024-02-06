@@ -25,11 +25,57 @@ def get_Y(df):
     return np.array(df["NO2"])[:, None]
 
 
+def get_Y_sat(df):
+    # Sat has one value per box_id, so we only need to return the first one
+    return np.array([df["NO2"].iloc[0]])[:, None]
+
+
 def process_data(df):
     return get_X(df), get_Y(df)
 
 
+def process_sat_data(train_data_sat):
+    """process satellite to group by box id"""
+    train_data_sat = train_data_sat.sort_values(by=["box_id", "lat", "lon"])
+
+    sat_gb = train_data_sat.groupby(["box_id", "epoch"])
+    sat_arr = [sat_gb.get_group(i) for i in sat_gb.groups]
+    X_sat = np.array([get_X(df_i) for df_i in sat_arr])
+    Y_sat = np.array([get_Y_sat(df_i) for df_i in sat_arr])
+
+    Y_sat = Y_sat[..., 0]
+
+    return X_sat, Y_sat
+
+
+def time_norm(X, wrt_to_X):
+    """units will now be in days"""
+    return (X - np.min(wrt_to_X)) / (60 * 60 * 24)
+
+
+def normalise(X, wrt_X):
+    return (X - np.mean(wrt_X, axis=0)) / np.std(wrt_X, axis=0)
+
+
+def space_norm(X, wrt_X):
+    df_norm = normalise(X[:, 1:3], wrt_X[:, 1:3])
+    return df_norm[:, 0], df_norm[:, 1]
+
+
 def norm_X(X: np.ndarray, wrt_X: np.ndarray) -> np.ndarray:
+    """
+    First column is epoch, second is lat, third is lon, the rest are covariates
+
+    Epochs:
+        convert units to days, and shift to start at zero
+
+    lat/lon:
+        convert units to kilometers, and shift to start at zero
+
+    Covariates:
+        z-standarised
+    """
+
     X_time = time_norm(X[:, 0], wrt_X[:, 0])
     X_eastings, X_northings = space_norm(X, wrt_X)
 

@@ -13,7 +13,7 @@ NAME = "cleanair_data"
 URL = "https://github.com/alan-turing-institute/clean-air-infrastructure"
 VERSION = "0.1.0"
 CLASSIFIERS = [
-    "Programming Language :: Python :: 3.10.11",
+    "Programming Language :: Python :: 3.11.7",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
