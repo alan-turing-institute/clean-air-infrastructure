@@ -4,8 +4,10 @@ import typer
 
 import pickle
 import pandas as pd
+import json
 from pathlib import Path
 from typing import Optional
+import os
 import jax
 from jax.config import config as jax_config
 
@@ -14,11 +16,11 @@ import optax
 import jax.numpy as jnp
 import numpy as np
 from ...models.svgp import SVGP
-from ...models.stgp_svgp import STGP_SVGP
+from ...models.stgp_svgp import STGP_SVGP_SAT, STGP_SVGP
 from ...models.stgp_mrdgp import STGP_MRDGP
 
 
-from ...data.setup_data import generate_data
+from ...data.setup_data import generate_data, generate_data_norm, generate_data_test
 from ...utils.azure import blob_storage
 
 app = typer.Typer(help="SVGP model fitting")
@@ -75,9 +77,8 @@ def svgp(
 
 
 @app.command()
-def train_svgp(
-    train_file_path: str,
-    testing_file_path: str,
+def train_svgp_sat(
+    root_dir: str,
     M: int = 300,
     batch_size: int = 100,
     num_epochs: int = 100,
@@ -91,17 +92,33 @@ def train_svgp(
         batch_size (int): Batch size for training.
         num_epochs (int): Number of training epochs.
     """
-    model = STGP_SVGP(M, batch_size, num_epochs)
+    model = STGP_SVGP_SAT(M, batch_size, num_epochs)
 
     # Load training data
     typer.echo("Loading training data!")
-    with open(train_file_path, "rb") as file:
-        training_data = pickle.load(file)
-        data = training_data["laqn"]
+    # Iterate over the directories and subdirectories
+    for dirpath, dirnames, filenames in os.walk(root_dir):
+        # Check if 'training_dataset.pkl' exists in the current directory
+        if "training_dataset.pkl" in filenames:
+            # If found, print the path of the file
+            file_path = os.path.join(dirpath, "training_dataset.pkl")
+            with open(file_path, "rb") as file:
+                train_data = pickle.load(file)
 
     typer.echo("Loading testing data!")
-    with open(testing_file_path, "rb") as file:
-        test_data = pickle.load(file)
+    for dirpath, dirnames, filenames in os.walk(root_dir):
+        # Check if 'training_dataset.pkl' exists in the current directory
+        if "training_dataset.pkl" in filenames:
+            # If found, print the path of the file
+            file_path = os.path.join(dirpath, "test_dataset.pkl")
+            with open(file_path, "rb") as file:
+                test_data_dict = pickle.load(file)
+
+    training_data = generate_data_norm(train_data["satellite"])
+    test_data = {
+        "hexgrid": generate_data_test(test_data_dict["hexgrid"]),
+        "laqn": generate_data_test(test_data_dict["laqn"]),
+    }
 
     pred_data = {
         "hexgrid": {
@@ -112,16 +129,13 @@ def train_svgp(
             "X": test_data["laqn"]["X"],
             "Y": None,
         },
-        "train_laqn": {
-            "X": training_data["laqn"]["X"],
-            "Y": training_data["laqn"]["Y"].astype(float),
+        "train_sat": {
+            "X": training_data["X"],
+            "Y": training_data["Y"].astype(float),
         },
     }
-
-    train_X = data["X"]
-    train_Y = np.array(data["Y"].astype(float))
     # Train the model
-    model.fit(train_X, train_Y, pred_data)
+    model.fit(training_data["X"], training_data["Y"], pred_data)
 
     typer.echo("Training complete!")
 
@@ -133,8 +147,8 @@ def train_mrdgp(
     testing_file_path: str,
     M: Optional[int] = 500,
     batch_size: Optional[int] = 200,
-    num_epochs: Optional[int] = 1000,
-    pretrain_epochs: Optional[int] = 1000,
+    num_epochs: Optional[int] = 2000,
+    pretrain_epochs: Optional[int] = 2000,
 ):
     """
     Train the SVGP_GPF2 model on the given training data.

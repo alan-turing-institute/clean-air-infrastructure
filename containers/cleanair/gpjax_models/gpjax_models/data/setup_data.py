@@ -18,7 +18,11 @@ def get_data_file_names(fold):
 
 
 def get_X(df):
-    return np.array(df[["epoch", "lat", "lon"]])
+    return np.array(df[["epoch", "lat", "lon", "value_200_park"]])
+
+
+def get_X_norm(df):
+    return np.array(df[["epoch_norm", "lat_norm", "lon_norm", "value_200_park_norm"]])
 
 
 def get_Y(df):
@@ -30,8 +34,25 @@ def get_Y_sat(df):
     return np.array([df["NO2"].iloc[0]])[:, None]
 
 
+def get_Y_norm(df):
+    return np.array(df["NO2"])[:, None]
+
+
+def get_Y_sat_norm(df):
+    # Sat has one value per box_id, so we only need to return the first one
+    return np.array([df["NO2"].iloc[0]])[:, None]
+
+
 def process_data(df):
     return get_X(df), get_Y(df)
+
+
+def process_data_test(df):
+    return get_X_norm(df)
+
+
+def process_data_norm(df):
+    return get_X_norm(df), get_Y_norm(df)
 
 
 def process_sat_data(train_data_sat):
@@ -131,3 +152,28 @@ def generate_data(df):
     }
 
     return train_dict
+
+
+def generate_data_norm(df):
+    # load cleaned data pickle
+    # collect training arrays
+    train_X, train_Y = process_data_norm(df)
+
+    # Create the train_dict
+    train_dict = {
+        "X": train_X,
+        "Y": train_Y,
+    }
+
+    return train_dict
+
+
+def generate_data_test(df):
+    # load cleaned data pickle
+    # collect training arrays
+    test_X = process_data_test(df)
+
+    # Create the train_dict
+    test_dict = {"X": test_X, "Y": None}
+
+    return test_dict

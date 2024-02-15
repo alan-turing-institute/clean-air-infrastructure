@@ -10,7 +10,7 @@ from scipy.cluster.vq import kmeans2
 import stgp
 from stgp.models import GP
 from stgp.kernels import ScaleKernel, RBF
-from stgp.transforms import Independent
+from stgp.transforms import Aggregate, Independent
 from stgp.data import AggregatedData, Data
 from stgp.trainers import GradDescentTrainer, NatGradTrainer
 
@@ -107,7 +107,12 @@ class STGP_SVGP:
                 lambda x: m.predict_y(x, squeeze=False), m.vars()
             )
             pred_fn = lambda XS: batch_predict(
-                XS, jitted_pred_fn, batch_size=1000, verbose=True, axis=0, ci=False
+                XS,
+                jitted_pred_fn,
+                batch_size=self.batch_size,
+                verbose=True,
+                axis=0,
+                ci=False,
             )
 
             def pred_wrapper(XS):
@@ -135,5 +140,95 @@ class STGP_SVGP:
         # Save the loss values to a pickle file
         with open("loss_values_svgp.pickle", "wb") as file:
             pickle.dump(loss_values, file)
+        with open("predictions_svgp.pickle", "wb") as file:
+            pickle.dump(results, file)
+
+
+class STGP_SVGP_SAT:
+    def __init__(
+        self,
+        M: int = 100,
+        batch_size: int = 100,
+        num_epochs: int = 10,
+    ):
+        """
+        Initialize the JAX-based Air Quality Gaussian Process Model.
+
+        Args:
+            M (int): Number of inducing variables.
+            batch_size (int): Batch size for training.
+            num_epochs (int): Number of training epochs.
+        """
+        self.M = M
+        self.batch_size = batch_size
+        self.num_epochs = num_epochs
+
+    def fit(self, x_train: np.ndarray, y_train: np.ndarray, pred_data) -> list[float]:
+        """
+        Fit the model to training data.
+
+        Args:
+            x_train (np.ndarray): Training features.
+            y_train (np.ndarray): Training targets.
+
+        Returns:
+            list[float]: List of loss values during training.
+        """
+
+        def get_aggregated_sat_model(X_sat, Y_sat):
+            N, D = X_sat.shape[0], X_sat.shape[-1]
+
+            data = AggregatedData(X_sat, Y_sat, minibatch_size=200)
+
+            lik = stgp.likelihood.Gaussian(1.0)
+
+            Z = stgp.sparsity.FullSparsity(
+                Z=kmeans2(np.vstack(X_sat), 100, minit="points")[0]
+            )
+
+            latent_gp = GP(
+                sparsity=Z,
+                kernel=ScaleKernel(RBF(input_dim=D, lengthscales=[0.1, 1.0, 1.0, 0.1])),
+            )
+
+            prior = Aggregate(Independent([latent_gp]))
+
+            m = GP(data=data, likelihood=[lik], prior=prior, inference="Variational")
+            return m
+
+        def predict_laqn_svgp(pred_data, m) -> dict:
+            jitted_pred_fn = objax.Jit(
+                lambda x: m.predict_y(x, squeeze=False), m.vars()
+            )
+            pred_fn = lambda XS: batch_predict(
+                XS,
+                jitted_pred_fn,
+                batch_size=self.batch_size,
+                verbose=True,
+                axis=0,
+                ci=False,
+            )
+
+            def pred_wrapper(XS):
+                pred_mu, pred_var = pred_fn(XS)
+                return pred_mu.T, pred_var.T
+
+            results = collect_results(
+                None,
+                m,
+                pred_wrapper,
+                pred_data,
+                returns_ci=False,
+                data_type="regression",
+            )
+            with open("predictions_svgp.pickle", "wb") as file:
+                pickle.dump(results, file)
+
+            return results
+
+        m = get_aggregated_sat_model(x_train, y_train)
+        results = predict_laqn_svgp(pred_data, m)
+
+        print(results["metrics"])
         with open("predictions_svgp.pickle", "wb") as file:
             pickle.dump(results, file)
