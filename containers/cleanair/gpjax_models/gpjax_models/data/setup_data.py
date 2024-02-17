@@ -3,9 +3,6 @@ import numpy as np
 import pandas as pd
 from pathlib import Path
 
-
-from ..utils.file_manager import FileManager
-from ..types.dataset_types import FeaturesDict
 from .normalise import normalise, space_norm, time_norm
 
 

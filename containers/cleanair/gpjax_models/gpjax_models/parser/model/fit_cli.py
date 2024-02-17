@@ -1,27 +1,22 @@
 """Commands for a Sparse Variational GP to model air quality."""
 
 import typer
-
 import pickle
 import pandas as pd
-import json
-from pathlib import Path
 from typing import Optional
 import os
 import jax
+import optax
+import jax.numpy as jnp
+
 from jax.config import config as jax_config
 
 jax_config.update("jax_enable_x64", True)
-import optax
-import jax.numpy as jnp
-import numpy as np
+
 from ...models.svgp import SVGP
-from ...models.stgp_svgp import STGP_SVGP_SAT, STGP_SVGP
+from ...models.stgp_svgp import STGP_SVGP_SAT
 from ...models.stgp_mrdgp import STGP_MRDGP
-
-
 from ...data.setup_data import generate_data, generate_data_norm, generate_data_test
-from ...utils.azure import blob_storage
 
 app = typer.Typer(help="SVGP model fitting")
 train_file_path = "datasets/aq_data.pkl"
