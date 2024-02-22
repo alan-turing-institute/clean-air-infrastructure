@@ -3,7 +3,6 @@ import numpy as np
 import pandas as pd
 from pathlib import Path
 import logging
-from .azure import blob_storage
 
 
 class ExperimentInstanceNotFoundError(Exception):

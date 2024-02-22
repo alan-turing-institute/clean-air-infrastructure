@@ -13,19 +13,7 @@ from .enum_types import (
     KernelType,
     ModelName,
 )
-from .dataset_types import (
-    DataConfig,
-    DatasetDict,
-    FeaturesDict,
-    IndexedDatasetDict,
-    IndexDict,
-    PredictionDict,
-    TargetDict,
-    NDArrayTuple,
-    FullDataConfig,
-    InterestPointDict,
-)
-from .experiment_types import ExperimentConfig, ExperimentName
+
 from .model_types import (
     BaseModelParams,
     KernelParams,
@@ -39,23 +27,11 @@ from .model_types import (
 __all__ = [
     "Borough",
     "BaseModelParams",
-    "DataConfig",
-    "ExperimentConfig",
-    "ExperimentName",
-    "FullDataConfig",
-    "DatasetDict",
-    "FeaturesDict",
     "FeatureBufferSize",
-    "IndexDict",
-    "IndexedDatasetDict",
-    "InterestPointDict",
     "KernelType",
     "MRDGPParams",
     "CompiledMRDGPParams",
-    "NDArrayTuple",
-    "PredictionDict",
     "SVGPParams",
-    "TargetDict",
     "Source",
     "Species",
     "ScootProcessType",
