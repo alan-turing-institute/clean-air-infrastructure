@@ -16,7 +16,12 @@ jax_config.update("jax_enable_x64", True)
 from ...models.svgp import SVGP
 from ...models.stgp_svgp import STGP_SVGP_SAT
 from ...models.stgp_mrdgp import STGP_MRDGP
-from ...data.setup_data import generate_data, generate_data_norm, generate_data_test
+from ...data.setup_data import (
+    generate_data,
+    generate_data_norm_sat,
+    generate_data_norm,
+    generate_data_test,
+)
 
 app = typer.Typer(help="SVGP model fitting")
 train_file_path = "datasets/aq_data.pkl"
@@ -75,8 +80,8 @@ def svgp(
 def train_svgp_sat(
     root_dir: str,
     M: int = 300,
-    batch_size: int = 100,
-    num_epochs: int = 100,
+    batch_size: int = 200,
+    num_epochs: int = 500,
 ):
     """
     Train the SVGP_GPF2 model on the given training data.
@@ -99,6 +104,8 @@ def train_svgp_sat(
             file_path = os.path.join(dirpath, "training_dataset.pkl")
             with open(file_path, "rb") as file:
                 train_data = pickle.load(file)
+                train_laqn = pd.DataFrame(train_data["laqn"])
+                train_laqn = train_laqn.dropna(subset=["NO2"], axis=0)
 
     typer.echo("Loading testing data!")
     for dirpath, dirnames, filenames in os.walk(root_dir):
@@ -109,13 +116,23 @@ def train_svgp_sat(
             with open(file_path, "rb") as file:
                 test_data_dict = pickle.load(file)
 
-    training_data = generate_data_norm(train_data["satellite"])
+    training_data_sat = generate_data_norm_sat(train_data["satellite"])
+    training_data_laqn = generate_data_norm(train_laqn)
+    x_sat = training_data_sat["X"]
+    y_sat = training_data_sat["Y"]
     test_data = {
         "hexgrid": generate_data_test(test_data_dict["hexgrid"]),
         "laqn": generate_data_test(test_data_dict["laqn"]),
     }
 
-    pred_data = {
+    pred_sat_data = {
+        "sat": {
+            "X": training_data_sat["X"],
+            "Y": training_data_sat["Y"],
+        },
+    }
+
+    pred_laqn_data = {
         "hexgrid": {
             "X": test_data["hexgrid"]["X"],
             "Y": None,
@@ -124,14 +141,13 @@ def train_svgp_sat(
             "X": test_data["laqn"]["X"],
             "Y": None,
         },
-        "train_sat": {
-            "X": training_data["X"],
-            "Y": training_data["Y"].astype(float),
+        "train_laqn": {
+            "X": training_data_laqn["X"],
+            "Y": training_data_laqn["Y"],
         },
     }
     # Train the model
-    model.fit(training_data["X"], training_data["Y"], pred_data)
-
+    model.fit(x_sat, y_sat, pred_laqn_data, pred_sat_data)
     typer.echo("Training complete!")
 
 

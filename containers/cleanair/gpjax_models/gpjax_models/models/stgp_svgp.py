@@ -1,12 +1,15 @@
 import jax
 import objax
 import pickle
+import os
 import jax.numpy as jnp
 import numpy as np
 from jax.example_libraries import stax
 from jax import random
 from scipy.cluster.vq import kmeans2
+from jax.config import config as jax_config
 
+jax_config.update("jax_enable_x64", True)
 import stgp
 from stgp.models import GP
 from stgp.kernels import ScaleKernel, RBF
@@ -147,9 +150,9 @@ class STGP_SVGP:
 class STGP_SVGP_SAT:
     def __init__(
         self,
-        M: int = 100,
-        batch_size: int = 100,
-        num_epochs: int = 10,
+        M,
+        batch_size,
+        num_epochs,
     ):
         """
         Initialize the JAX-based Air Quality Gaussian Process Model.
@@ -163,13 +166,15 @@ class STGP_SVGP_SAT:
         self.batch_size = batch_size
         self.num_epochs = num_epochs
 
-    def fit(self, x_train: np.ndarray, y_train: np.ndarray, pred_data) -> list[float]:
+    def fit(
+        self, x_sat: np.ndarray, y_sat: np.ndarray, pred_laqn_data, pred_sat_data
+    ) -> list[float]:
         """
         Fit the model to training data.
 
         Args:
-            x_train (np.ndarray): Training features.
-            y_train (np.ndarray): Training targets.
+            x_sat (np.ndarray): Training features.
+            y_sat (np.ndarray): Training targets.
 
         Returns:
             list[float]: List of loss values during training.
@@ -196,39 +201,83 @@ class STGP_SVGP_SAT:
             m = GP(data=data, likelihood=[lik], prior=prior, inference="Variational")
             return m
 
-        def predict_laqn_svgp(pred_data, m) -> dict:
-            jitted_pred_fn = objax.Jit(
-                lambda x: m.predict_y(x, squeeze=False), m.vars()
+        def train_sat(num_epoch, m_sat):
+            sat_natgrad = NatGradTrainer(m_sat)
+
+            for q in range(len(m_sat.approximate_posterior.approx_posteriors)):
+                m_sat.approximate_posterior.approx_posteriors[q]._S_chol.fix()
+                m_sat.approximate_posterior.approx_posteriors[q]._m.fix()
+
+            sat_grad = GradDescentTrainer(m_sat, objax.optimizer.Adam)
+
+            lc_arr = []
+            sat_natgrad.train(1.0, 1)
+
+            print("pretraining sat")
+            for i in trange(self.num_epochs):
+                lc_i, _ = sat_grad.train(0.01, 1)
+                sat_natgrad.train(0.1, 1)
+                lc_arr.append(lc_i)
+
+            return lc_arr
+
+        def predict_laqn_sat_from_sat_only(pred_laqn_data, pred_sat_data, m) -> dict:
+            jitted_sat_pred_fn = objax.Jit(
+                lambda x: m.predict_f(x, squeeze=False), m.vars()
             )
-            pred_fn = lambda XS: batch_predict(
+            jitted_laqn_pred_fn = objax.Jit(
+                lambda x: m.predict_latents(x, squeeze=False), m.vars()
+            )
+
+            laqn_pred_fn = lambda XS: batch_predict(
                 XS,
-                jitted_pred_fn,
+                jitted_laqn_pred_fn,
                 batch_size=self.batch_size,
                 verbose=True,
                 axis=0,
                 ci=False,
             )
 
-            def pred_wrapper(XS):
-                pred_mu, pred_var = pred_fn(XS)
-                return pred_mu.T, pred_var.T
+            def laqn_pred(XS):
+                mu, var = laqn_pred_fn(XS)
+                return mu.T, var.T
 
-            results = collect_results(
+            def sat_pred(XS):
+                mu, var = jitted_sat_pred_fn(XS)
+                return mu.T, var.T
+
+            results_sat = collect_results(
                 None,
                 m,
-                pred_wrapper,
-                pred_data,
+                sat_pred,
+                pred_sat_data,
                 returns_ci=False,
                 data_type="regression",
             )
-            with open("predictions_svgp.pickle", "wb") as file:
-                pickle.dump(results, file)
 
-            return results
+            results_laqn = collect_results(
+                None,
+                m,
+                laqn_pred,
+                pred_laqn_data,
+                returns_ci=False,
+                data_type="regression",
+            )
 
-        m = get_aggregated_sat_model(x_train, y_train)
-        results = predict_laqn_svgp(pred_data, m)
+            results_laqn["predictions"]["sat"] = results_sat["predictions"]["sat"]
+            results_laqn["metrics"]["sat_0"] = results_sat["metrics"]["sat_0"]
 
+            return results_laqn
+
+        m = get_aggregated_sat_model(x_sat, y_sat)
+        loss_values = train_sat(self.num_epochs, m)
+        results = predict_laqn_sat_from_sat_only(pred_laqn_data, pred_sat_data, m)
+
+        with open(
+            os.path.join("training_loss_svgp_sat.pkl"),
+            "wb",
+        ) as file:
+            pickle.dump(loss_values, file)
         print(results["metrics"])
-        with open("predictions_svgp.pickle", "wb") as file:
+        with open("predictions_svgp.pkl", "wb") as file:
             pickle.dump(results, file)

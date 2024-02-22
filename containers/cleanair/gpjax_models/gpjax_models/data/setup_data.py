@@ -165,6 +165,20 @@ def generate_data_norm(df):
     return train_dict
 
 
+def generate_data_norm_sat(df):
+    # load cleaned data pickle
+    # collect training arrays
+    train_X, train_Y = process_sat_data(df)
+
+    # Create the train_dict
+    train_dict = {
+        "X": train_X,
+        "Y": train_Y,
+    }
+
+    return train_dict
+
+
 def generate_data_test(df):
     # load cleaned data pickle
     # collect training arrays
