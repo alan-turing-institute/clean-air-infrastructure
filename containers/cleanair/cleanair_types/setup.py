@@ -21,7 +21,7 @@ CLASSIFIERS = [
 DESCRIPTION = "Clean Air Type Module"
 
 # Dependencies
-INSTALL_REQUIRES = ["pydantic", "nptyping"]
+INSTALL_REQUIRES = ["pydantic"]
 
 SETUP_REQUIRES = ["setuptools_scm"]
 
