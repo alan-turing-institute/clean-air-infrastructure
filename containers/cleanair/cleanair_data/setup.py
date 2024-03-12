@@ -1,4 +1,5 @@
 """CleanAir module setup script"""
+
 from setuptools import setup, find_packages
 
 # sorted by surname
@@ -36,27 +37,18 @@ INSTALL_REQUIRES = [
     "colorlog==6.7.0",
     "geoAlchemy2==0.14.2",
     "gitpython==3.1.31",
-    "nptyping==2.5.0",
     "numpy==1.24.3",
     "packaging==23.1",
     "pathos==0.3.0",
     "pandas==2.1.0",
-    "pydantic==1.10.9",
     "python-dateutil==2.8.2",
     "pytz==2023.3",
-    "pyyaml==6.0",
     "psycopg2-binary==2.9.7",
     "requests==2.31.0",
-    "scipy==1.11.1",
     "sqlalchemy==1.4.50",
     "sqlalchemy-utils==0.37.8",
     "shapely==2.0.1",
-    "tabulate==0.9.0",
     "termcolor==2.3.0",
-    "typer==0.9.0",
-    "uuid==1.30",
-    "uuid==1.30",
-    "xarray==2023.5.0",
 ]
 EXTRAS_REQUIRE = require = {
     "traffic": [

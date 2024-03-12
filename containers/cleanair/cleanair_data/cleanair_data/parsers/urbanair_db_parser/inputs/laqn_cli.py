@@ -1,9 +1,10 @@
 """LAQN input cli"""
+
 from typing import List
 import typer
 from ....inputs import LAQNWriter
 from ....loggers import initialise_logging
-from ....types import Species as ValidSpecies
+from cleanair_types.types import Species as ValidSpecies
 from ..shared_args import UpTo, NDays, NHours, Species
 from ..state import state
 

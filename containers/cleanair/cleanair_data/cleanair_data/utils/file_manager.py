@@ -15,13 +15,13 @@ from cleanair_data.utils.azure import blob_storage
 from ..loggers import get_logger
 from ..metrics import TrainingMetrics
 from ..mixins import InstanceMixin
-from ..types import (
+from cleanair_types.types import (
     DataConfig,
     FullDataConfig,
     Source,
     TargetDict,
 )
-from ..types.enum_types import ModelName
+from cleanair_types.types.enum_types import ModelName
 
 
 if TYPE_CHECKING:

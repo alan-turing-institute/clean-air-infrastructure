@@ -1,6 +1,10 @@
 """Parameters shared by models."""
 
-from ..types import DynamicFeatureNames, FeatureBufferSize, StaticFeatureNames
+from cleanair_types.types import (
+    DynamicFeatureNames,
+    FeatureBufferSize,
+    StaticFeatureNames,
+)
 
 LENGTHSCALES: float = 1.0
 LIKELIHOOD_VARIANCE: float = 0.1

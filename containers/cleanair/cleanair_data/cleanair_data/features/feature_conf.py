@@ -1,9 +1,10 @@
 """
 Street Canyon feature extraction
 """
+
 from ..databases.tables import StreetCanyon, OSHighway, UKMap
 from .feature_funcs import sum_length, avg_, min_, max_, sum_area
-from ..types import StaticFeatureNames, DynamicFeatureNames
+from cleanair_types.types import StaticFeatureNames, DynamicFeatureNames
 
 
 FEATURE_CONFIG = {

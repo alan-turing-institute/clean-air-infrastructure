@@ -20,7 +20,7 @@ from ..mixins import (
     ResultQueryMixin,
     SpatioTemporalMetricsQueryMixin,
 )
-from ..types import FullDataConfig, Source, Species
+from cleanair_types.types import FullDataConfig, Source, Species
 
 
 class AirQualityMetrics(DBWriter, InstanceQueryMixin, ResultQueryMixin):

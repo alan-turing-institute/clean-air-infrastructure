@@ -2,7 +2,7 @@
 
 from datetime import datetime
 from ..models import ModelConfig
-from ..types import DataConfig, FeatureBufferSize, Source, Species
+from cleanair_types.types import DataConfig, FeatureBufferSize, Source, Species
 
 FORECAST_DAYS = 2
 TRAIN_UPTO = datetime(2021, 4, 15)

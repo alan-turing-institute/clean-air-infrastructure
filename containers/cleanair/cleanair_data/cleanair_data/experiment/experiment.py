@@ -18,7 +18,7 @@ from ..databases.mixins import (
 )
 from ..loggers import get_logger
 from ..mixins import InstanceMixin
-from ..types.experiment_types import ExperimentConfig, ExperimentName
+from cleanair_types.types.experiment_types import ExperimentConfig, ExperimentName
 from ..utils.file_manager import FileManager
 
 

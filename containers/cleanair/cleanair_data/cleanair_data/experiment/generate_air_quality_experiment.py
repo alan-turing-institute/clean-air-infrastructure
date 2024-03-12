@@ -23,8 +23,8 @@ from ..params.svgp_params import (
     PRODUCTION_SVGP_TRAIN_INTEREST_POINTS,
     PRODUCTION_SVGP_TRAIN_SOURCES,
 )
-from ..types.dataset_types import DataConfig
-from ..types.enum_types import ClusterId
+from cleanair_types.types.dataset_types import DataConfig
+from cleanair_types.types.enum_types import ClusterId
 from ..utils.dimension_calculator import total_num_features
 from ..mixins import InstanceMixin
 from ..models import ModelConfig
@@ -40,8 +40,8 @@ from ..params import (
     PRODUCTION_MRDGP_TRAIN_SOURCES,
 )
 from ..timestamps import datetime_from_word
-from ..types import StaticFeatureNames, Tag, FeatureBufferSize, Source
-from ..types.model_types import ModelName
+from cleanair_types.types import StaticFeatureNames, Tag, FeatureBufferSize, Source
+from cleanair_types.types.model_types import ModelName
 from .default_air_quality_data_config import (
     default_laqn_data_config,
     default_sat_data_config,

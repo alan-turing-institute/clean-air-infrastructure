@@ -1,6 +1,6 @@
 """Calculate the input dimension of data"""
 
-from ..types import DataConfig
+from cleanair_types.types import DataConfig
 
 
 def total_num_features(data_config: DataConfig) -> int:

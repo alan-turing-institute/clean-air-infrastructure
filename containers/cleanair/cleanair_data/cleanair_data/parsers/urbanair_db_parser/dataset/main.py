@@ -1,4 +1,5 @@
 """Exporting dataset from Cleanair database."""
+
 # pylint: disable=C0411
 
 import typer
@@ -18,7 +19,7 @@ from typing import Dict
 from ....loggers import initialise_logging
 from ....models.model_config import ModelConfig, DataConfig
 
-from ....types import (
+from cleanair_types.types import (
     Source,
     Species,
     StaticFeatureNames,
