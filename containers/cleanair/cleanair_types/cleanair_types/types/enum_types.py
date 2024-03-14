@@ -1,7 +1,6 @@
 """Cleanair enum types"""
-from enum import Enum, unique
 
-# pylint: disable=C0103
+from enum import Enum, unique
 
 
 @unique
@@ -101,7 +100,6 @@ class Source(str, Enum):
     aqe = "aqe"
     hexgrid = "hexgrid"
     laqn = "laqn"
-    breathe = "breathe"
     grid_100 = "grid_100"
     scoot = "scoot"
     satellite = "satellite"

@@ -1,4 +1,5 @@
 """Mixin class for querying instances."""
+
 import datetime
 from abc import abstractmethod
 from typing import Any
@@ -10,8 +11,10 @@ from ...databases.mixins import (
     ModelTableMixin,
 )
 from ..instance_mixins import InstanceMixin
-from ...types import (
+from cleanair_types.types import (
     FullDataConfig,
+    ModelName,
+    model_params_from_dict,
 )
 
 

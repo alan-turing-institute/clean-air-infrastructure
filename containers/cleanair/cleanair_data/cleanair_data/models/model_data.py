@@ -1,4 +1,5 @@
 """Vizualise available sensor data for a model fit"""
+
 from __future__ import annotations
 
 import sys
@@ -13,7 +14,7 @@ from pydantic import ValidationError
 from sqlalchemy import func, text, column, String, cast, and_
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql.expression import Alias
-from cleanair_data.types.enum_types import DynamicFeatureNames
+from cleanair_types.types.enum_types import DynamicFeatureNames
 
 from .schemas import (
     DynamicFeatureSchema,
@@ -31,7 +32,7 @@ from ..databases.tables import (
 from ..decorators import db_query
 from ..loggers import get_logger, green
 from ..mixins import DBQueryMixin
-from ..types import (
+from cleanair_types.types import (
     FullDataConfig,
     Source,
     Species,
@@ -146,14 +147,12 @@ class ModelDataExtractor:
     @overload
     def get_array(
         self, data_df: pd.DataFrame, x_names, species: None
-    ) -> Tuple[pd.Index, NDArray[Float64]]:
-        ...
+    ) -> Tuple[pd.Index, NDArray[Float64]]: ...
 
     @overload
     def get_array(
         self, data_df: pd.DataFrame, x_names, species: List[Species]
-    ) -> Tuple[pd.Index, NDArray[Float64], Dict[Species, NDArray[Float64]]]:
-        ...
+    ) -> Tuple[pd.Index, NDArray[Float64], Dict[Species, NDArray[Float64]]]: ...
 
     def get_array(self, data_df, x_names, species=None):
         """Get an array from a pandas dataframe for any Source except satellite"""

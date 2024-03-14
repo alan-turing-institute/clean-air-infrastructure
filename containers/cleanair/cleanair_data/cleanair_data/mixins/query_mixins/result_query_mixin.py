@@ -7,7 +7,7 @@ from sqlalchemy import func, Column
 from ...databases.mixins import ResultTableMixin
 from ...databases.tables import HexGrid, MetaPoint
 from ...decorators import db_query
-from ...types import Source
+from cleanair_types.types import Source
 
 
 class ResultQueryMixin:

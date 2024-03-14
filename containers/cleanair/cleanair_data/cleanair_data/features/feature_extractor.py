@@ -1,6 +1,7 @@
 """
 Feature extraction Base  class
 """
+
 import time
 from datetime import timedelta
 from math import ceil
@@ -38,7 +39,7 @@ from ..decorators import db_query
 from ..loggers import duration, green, red, get_logger
 from ..mixins import DBQueryMixin, DateRangeMixin
 from ..mixins.availability_mixins import StaticFeatureAvailabilityMixin
-from ..types.enum_types import Source
+from cleanair_types.types.enum_types import Source
 
 
 ONE_HOUR_INTERVAL = text("interval '1 hour'")

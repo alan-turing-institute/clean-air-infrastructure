@@ -1,6 +1,7 @@
 """
 Mixin for useful database queries
 """
+
 from datetime import datetime
 from typing import List
 
@@ -19,7 +20,7 @@ from ...databases.tables import (
 )
 from ...decorators import db_query
 from ...loggers import get_logger
-from ...types import Species
+from cleanair_types.types import Species
 
 
 class DBQueryMixin:

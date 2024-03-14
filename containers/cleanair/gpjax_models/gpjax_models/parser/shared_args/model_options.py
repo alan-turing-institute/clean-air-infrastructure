@@ -12,7 +12,7 @@ from ....params import (
     MRDGP_NUM_INDUCING_POINTS,
     SVGP_NUM_INDUCING_POINTS,
 )
-from ....types import KernelType
+from cleanair_types.types import KernelType
 
 # pylint: disable=C0103
 
@@ -38,7 +38,9 @@ Lengthscales = typer.Option(
     LENGTHSCALES, help=ModelHelp.lengthscales.value, show_default=True
 )
 LikelihoodVariance = typer.Option(
-    LIKELIHOOD_VARIANCE, help=ModelHelp.likelihood_variance.value, show_default=True,
+    LIKELIHOOD_VARIANCE,
+    help=ModelHelp.likelihood_variance.value,
+    show_default=True,
 )
 KernelOption = typer.Option(
     KernelType.matern32, help=ModelHelp.kernel_type.value, show_default=True
@@ -59,5 +61,9 @@ SVGPNumInducingPoints = typer.Option(
     help=ModelHelp.num_inducing_points.value,
     show_default=True,
 )
-MaxIter = typer.Option(SVGP_MAXITER, help=ModelHelp.maxiter.value, show_default=True,)
+MaxIter = typer.Option(
+    SVGP_MAXITER,
+    help=ModelHelp.maxiter.value,
+    show_default=True,
+)
 Refresh = typer.Option(default=10, help=ModelHelp.refresh.value, show_default=True)

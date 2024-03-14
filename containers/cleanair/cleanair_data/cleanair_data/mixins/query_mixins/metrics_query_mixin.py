@@ -10,7 +10,7 @@ from ...databases.mixins import (
 from ...databases.tables import MetaPoint
 from ...decorators import db_query
 from .result_query_mixin import ResultQueryMixin
-from ...types import Source
+from cleanair_types.types import Source
 
 
 class SpatioTemporalMetricsQueryMixin(ResultQueryMixin):

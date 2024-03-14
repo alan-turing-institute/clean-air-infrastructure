@@ -7,9 +7,9 @@ from .shared_params import (
     MINIBATCH_SIZE,
     KERNEL_VARIANCE,
 )
-from ..types import Source, Species
-from ..types.model_types import SVGPParams, KernelParams
-from ..types.enum_types import KernelType
+from cleanair_types.types import Source, Species
+from cleanair_types.types.model_types import SVGPParams, KernelParams
+from cleanair_types.types.enum_types import KernelType
 
 JITTER: float = 1e-5
 SVGP_NUM_INDUCING_POINTS = 2000

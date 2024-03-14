@@ -1,11 +1,12 @@
 """Vizualise available sensor data for a model fit"""
+
 from __future__ import annotations
 
 from datetime import datetime, timedelta
 from typing import List
 from sqlalchemy import func, text, cast, String, and_
 
-from cleanair_data.types.enum_types import DynamicFeatureNames
+from cleanair_types.types.enum_types import DynamicFeatureNames
 
 from ..databases import DBReader
 from ..databases.materialised_views import LondonBoundaryView
@@ -19,7 +20,7 @@ from ..mixins.availability_mixins import (
     SatelliteAvailabilityMixin,
 )
 from ..timestamps import as_datetime
-from ..types import (
+from cleanair_types.types import (
     Source,
     Species,
     StaticFeatureNames,

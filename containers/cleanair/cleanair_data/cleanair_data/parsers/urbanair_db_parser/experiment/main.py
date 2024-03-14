@@ -1,4 +1,5 @@
 """Setup, run and update experiments"""
+
 import json
 import logging
 from typing import Callable, List, Optional
@@ -12,13 +13,13 @@ from ....experiment.air_quality_experiment import (
     UpdateAirQualityExperiment,
 )
 from ....loggers import initialise_logging
-from ....types.enum_types import ClusterId
+from cleanair_types.types.enum_types import ClusterId
 from ....metrics import AirQualityMetrics
 from ....mixins import InstanceMixin
 from ....models.model_data import ModelData
 from ..shared_args import ExperimentDir
 from ..state import state
-from ....types.experiment_types import ExperimentName
+from cleanair_types.types.experiment_types import ExperimentName
 from ....utils.file_manager import FileManager
 
 app = typer.Typer(help="Experiment CLI")
@@ -48,9 +49,9 @@ def setup(
     initialise_logging(verbose)  # set logging level
 
     # get the function that will generate instances
-    experiment_generator_function: Callable[
-        [str, ClusterId], List[InstanceMixin]
-    ] = getattr(generate_air_quality_experiment, experiment_name.value)
+    experiment_generator_function: Callable[[str, ClusterId], List[InstanceMixin]] = (
+        getattr(generate_air_quality_experiment, experiment_name.value)
+    )
     # generate the instances
     instance_list = experiment_generator_function(secretfile, cluster_id=cluster_id)
 

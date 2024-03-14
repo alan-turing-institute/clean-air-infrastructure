@@ -1,6 +1,7 @@
 """
 PydanticModels for serialising database query results
 """
+
 from datetime import datetime
 from enum import Enum
 from typing import Optional
@@ -8,7 +9,12 @@ from uuid import UUID
 
 from pydantic import BaseModel, validator, ValidationError
 
-from ..types import StaticFeatureNames, DynamicFeatureNames, Source, Species
+from cleanair_types.types import (
+    StaticFeatureNames,
+    DynamicFeatureNames,
+    Source,
+    Species,
+)
 
 
 # pylint: disable=R0201,C0115,E0213

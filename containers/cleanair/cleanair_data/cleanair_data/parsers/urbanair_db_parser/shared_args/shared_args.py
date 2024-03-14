@@ -1,4 +1,5 @@
 """Shared CLI arguments"""
+
 from typing import Dict, List
 import os
 import json
@@ -7,7 +8,7 @@ import typer
 from ..state import DATA_CACHE, EXPERIMENT_CACHE
 from ....features import FEATURE_CONFIG, FEATURE_CONFIG_DYNAMIC
 from ....timestamps import as_datetime, TIMESTRINGS
-from ....types import Source as ValidSources
+from cleanair_types.types import Source as ValidSources
 
 
 # pylint: disable=C0103

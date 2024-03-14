@@ -2,8 +2,6 @@
 
 from enum import Enum, unique
 
-# pylint: disable=C0103
-
 
 @unique
 class Source(Enum):

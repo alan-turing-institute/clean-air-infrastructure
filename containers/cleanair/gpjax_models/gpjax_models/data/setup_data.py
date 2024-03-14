@@ -3,9 +3,6 @@ import numpy as np
 import pandas as pd
 from pathlib import Path
 
-
-from ..utils.file_manager import FileManager
-from ..types.dataset_types import FeaturesDict
 from .normalise import normalise, space_norm, time_norm
 
 
@@ -158,6 +155,20 @@ def generate_data_norm(df):
     # load cleaned data pickle
     # collect training arrays
     train_X, train_Y = process_data_norm(df)
+
+    # Create the train_dict
+    train_dict = {
+        "X": train_X,
+        "Y": train_Y,
+    }
+
+    return train_dict
+
+
+def generate_data_norm_sat(df):
+    # load cleaned data pickle
+    # collect training arrays
+    train_X, train_Y = process_sat_data(df)
 
     # Create the train_dict
     train_dict = {

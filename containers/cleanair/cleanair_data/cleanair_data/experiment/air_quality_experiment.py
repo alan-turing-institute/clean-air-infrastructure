@@ -22,8 +22,8 @@ from .experiment import (
 from ..loggers import get_logger
 from ..metrics import TrainingMetrics
 from ..models.model_data import ModelData, ModelDataExtractor
-from ..types.experiment_types import ExperimentName
-from ..types.dataset_types import IndexedDatasetDict, Source, TargetDict
+from cleanair_types.types.experiment_types import ExperimentName
+from cleanair_types.types.dataset_types import IndexedDatasetDict, Source, TargetDict
 from ..utils.file_manager import FileManager
 
 # if TYPE_CHECKING:
@@ -93,9 +93,9 @@ class SetupAirQualityExperiment(SetupExperimentMixin):
     def load_training_dataset(self, data_id: str) -> Dict[Source, pd.DataFrame]:
         """Load unnormalised training dataset from the database."""
         data_config = self._data_config_lookup[data_id]
-        training_data: Dict[
-            Source, pd.DateFrame
-        ] = self.model_data.download_config_data(data_config, training_data=True)
+        training_data: Dict[Source, pd.DateFrame] = (
+            self.model_data.download_config_data(data_config, training_data=True)
+        )
         return training_data
 
     def normalised_training_dataset(
@@ -111,9 +111,9 @@ class SetupAirQualityExperiment(SetupExperimentMixin):
     def load_test_dataset(self, data_id: str) -> Dict[Source, pd.DataFrame]:
         """Load unnormalised test dataset from the dataset"""
         data_config = self._data_config_lookup[data_id]
-        prediction_data: Dict[
-            Source, pd.DateFrame
-        ] = self.model_data.download_config_data(data_config, training_data=False)
+        prediction_data: Dict[Source, pd.DateFrame] = (
+            self.model_data.download_config_data(data_config, training_data=False)
+        )
         return prediction_data
 
     def load_datasets_from_cache(self, cache_dir: Path) -> None:
@@ -180,10 +180,10 @@ class SetupAirQualityExperiment(SetupExperimentMixin):
         else:
             norm_wrt_data = training_data
 
-        prediction_data_norm: Dict[
-            Source, pd.DateFrame
-        ] = self.model_data.normalize_data_wrt(
-            data_config, prediction_data, norm_wrt_data
+        prediction_data_norm: Dict[Source, pd.DateFrame] = (
+            self.model_data.normalize_data_wrt(
+                data_config, prediction_data, norm_wrt_data
+            )
         )
         return prediction_data_norm
 
