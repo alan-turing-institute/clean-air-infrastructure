@@ -1,6 +1,6 @@
 """Types for datasets."""
 
-from typing import Dict, List, Tuple, Union, Optional
+from typing import Dict, List, Tuple, Union, Optional, Any
 from datetime import datetime
 from pydantic import BaseModel, validator
 from .enum_types import (
@@ -12,14 +12,14 @@ from .enum_types import (
 )
 
 # pylint: disable=invalid-name
-FeaturesDict = Dict[Source, any]
-IndexDict = Dict[Source, any]
-TargetDict = Dict[Source, Dict[Species, any]]
-NDArrayTuple = Tuple[any, any]
+FeaturesDict = Dict[Source, Any]
+IndexDict = Dict[Source, Any]
+TargetDict = Dict[Source, Dict[Species, Any]]
+NDArrayTuple = Tuple[Any, Any]
 DatasetDict = Dict[str, Union[FeaturesDict, TargetDict]]
 IndexedDatasetDict = Tuple[FeaturesDict, TargetDict, IndexDict]
 InterestPointDict = Dict[Source, Union[str, List[str]]]
-PredictionDict = Dict[Source, Dict[Species, Dict[str, any]]]
+PredictionDict = Dict[Source, Dict[Species, Dict[str, Any]]]
 
 
 class DataConfig(BaseModel):
