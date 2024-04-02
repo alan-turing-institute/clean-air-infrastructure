@@ -8,9 +8,9 @@ from typing import Any, Callable, Dict, List, Optional, Union, TYPE_CHECKING
 import json
 import pickle
 import pandas as pd
-from azure.core.exceptions import ResourceNotFoundError
+
 from cleanair_data.environment_settings import get_settings
-from cleanair_data.utils.azure import blob_storage
+
 
 from ..loggers import get_logger
 from ..metrics import TrainingMetrics
@@ -20,19 +20,12 @@ from cleanair_types.types import (
     FullDataConfig,
     Source,
     TargetDict,
+    ModelName,
 )
-from cleanair_types.types.enum_types import ModelName
 
 
 if TYPE_CHECKING:
     from pydantic import BaseModel
-
-
-class ExperimentInstanceNotFoundError(Exception):
-    """Error for when a blob is not found"""
-
-    def __init__(self, instance_id):
-        super().__init__(f"Blob for {instance_id} not found in storage container")
 
 
 # pylint: disable=R0904
@@ -61,30 +54,7 @@ class FileManager:
     PRED_FORECAST_PICKLE = RESULT / "pred_forecast.pkl"
     PRED_TRAINING_PICKLE = RESULT / "pred_training.pkl"
 
-    def __init__(self, input_dir: Path, blob_id: str = None) -> None:
-        # Download a zipped blob from storage if specified
-        if blob_id:
-            try:
-                sas_token = blob_storage.generate_sas_token(
-                    resource_group="RG_CLEANAIR_INFRASTRUCTURE",
-                    storage_account_name="cleanairexperiments",
-                    storage_account_key=get_settings().cleanair_experiment_archive_key,
-                    permit_write=True,
-                )
-
-                zipfile_path = input_dir.with_suffix(".zip")
-
-                blob_storage.download_blob(
-                    storage_container_name="instances",
-                    blob_name=blob_id,
-                    account_url="https://cleanairexperiments.blob.core.windows.net/",
-                    target_file=str(zipfile_path),
-                    sas_token=sas_token,
-                )
-            except ResourceNotFoundError as resource_error:
-                raise ExperimentInstanceNotFoundError(blob_id) from resource_error
-
-            unpack_archive(zipfile_path, input_dir)
+    def __init__(self, input_dir: Path) -> None:
 
         if not hasattr(self, "logger"):
             self.logger = get_logger("file_manager")
@@ -125,27 +95,6 @@ class FileManager:
     def archive(self):
         """Zips the managed files"""
         return Path(make_archive(self.input_dir, "zip", self.input_dir))
-
-    def upload(self):
-        """Zips and uploads the files to blob storage"""
-        sas_token = blob_storage.generate_sas_token(
-            resource_group="RG_CLEANAIR_INFRASTRUCTURE",
-            storage_account_name="cleanairexperiments",
-            storage_account_key=get_settings().cleanair_experiment_archive_key,
-            permit_write=True,
-        )
-
-        zipfile = self.archive()
-
-        blob_storage.upload_blob(
-            storage_container_name="instances",
-            blob_name=self.input_dir.stem,
-            account_url="https://cleanairexperiments.blob.core.windows.net/",
-            source_file=str(zipfile),
-            sas_token=sas_token,
-        )
-
-        zipfile.unlink()
 
     def load_data_config(self, full: bool = False) -> Union[DataConfig, FullDataConfig]:
         """Load an existing configuration file"""
