@@ -2,10 +2,9 @@
 
 from pathlib import Path
 import typer
-from ..shared_args import (
+from ..shared_args.model_options import (
     Ard,
     Jitter,
-    InputDir,
     KernelOption,
     KernelVariance,
     Lengthscales,
@@ -15,13 +14,14 @@ from ..shared_args import (
     MRDGPNumInducingPoints,
     SVGPNumInducingPoints,
 )
-from ....types import FullDataConfig
-from ....types.model_types import (
+from ..shared_args import InputDir
+from cleanair_types.types import (
     BaseModelParams,
     KernelParams,
     SVGPParams,
     MRDGPParams,
     KernelType,
+    FullDataConfig,
 )
 from ....utils.dimension_calculator import total_num_features
 from ....utils.file_manager import FileManager

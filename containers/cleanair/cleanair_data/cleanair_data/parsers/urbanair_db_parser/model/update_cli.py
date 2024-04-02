@@ -10,8 +10,8 @@ from ....experiment import AirQualityInstance, AirQualityResult
 from ....loggers import get_logger
 
 from ....metrics import AirQualityMetrics
-from ....dataset.model_data import ModelData, ModelDataExtractor
-from ....types import ClusterId, ModelName, Tag, Source
+from ....models.model_data import ModelData, ModelDataExtractor
+from cleanair_types.types import ClusterId, ModelName, Tag, Source
 from ....utils.file_manager import FileManager
 
 app = typer.Typer(help="Update database with model fit.")

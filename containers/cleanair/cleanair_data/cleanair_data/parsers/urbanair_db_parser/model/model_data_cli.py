@@ -1,29 +1,23 @@
-"""Commands for a Sparse Variational GP to model air quality."""
 from typing import List
 from pathlib import Path
 import shutil
 import typer
 from ..state import state, DATA_CACHE
-from ..shared_args import (
-    InputDir,
-    NDays_callback,
-    ValidSources,
-    UpTo_callback,
-)
-
-from ....dataset.model_config import ModelConfig
-from ....dataset.model_data import ModelData
-from ....types import (
+from ..shared_args import InputDir, NDays_callback, UpTo_callback
+from ....models.model_config import ModelConfig
+from ....models.model_data import ModelData
+from cleanair_types.types import (
     Species,
     Source,
     StaticFeatureNames,
     DynamicFeatureNames,
     FeatureBufferSize,
+    ValidSources,
 )
 from ....loggers import red, green
 from ....utils.file_manager import FileManager
 
-app = typer.Typer(help="Get data for model fitting")
+app = typer.Typer(help="Commands for a Sparse Variational GP to model air quality")
 
 
 def delete_model_cache(overwrite: bool):
@@ -38,24 +32,23 @@ def delete_model_cache(overwrite: bool):
             if run != "y":
                 raise typer.Abort()
 
-    # delete sub-directories
-    cache_content = [
-        DATA_CACHE / FileManager.DATA_CONFIG,
-        DATA_CACHE / FileManager.DATA_CONFIG_FULL,
-        DATA_CACHE / FileManager.INITIAL_MODEL_PARAMS,
-        DATA_CACHE / FileManager.FINAL_MODEL_PARAMS,
-        DATA_CACHE / FileManager.PRED_FORECAST_PICKLE,
-        DATA_CACHE / FileManager.PRED_TRAINING_PICKLE,
-        DATA_CACHE / FileManager.TEST_DATA_PICKLE,
-        DATA_CACHE / FileManager.TRAINING_DATA_PICKLE,
+    # Delete sub-directories
+    cache_files = [
+        FileManager.DATA_CONFIG,
+        FileManager.DATA_CONFIG_FULL,
+        FileManager.INITIAL_MODEL_PARAMS,
+        FileManager.FINAL_MODEL_PARAMS,
+        FileManager.PRED_FORECAST_PICKLE,
+        FileManager.PRED_TRAINING_PICKLE,
+        FileManager.TEST_DATA_PICKLE,
+        FileManager.TRAINING_DATA_PICKLE,
     ]
 
-    for cache_file in cache_content:
-        if (cache_file).exists():
-            cache_file.unlink()
+    for cache_file in cache_files:
+        if (DATA_CACHE / cache_file).exists():
+            (DATA_CACHE / cache_file).unlink()
 
 
-# pylint: disable=too-many-arguments
 @app.command()
 def generate_config(
     input_dir: Path = InputDir,
@@ -116,12 +109,16 @@ def generate_config(
 ) -> None:
     """Generate a model fitting configuration file"""
 
-    state["logger"].info("Generate a model config")
+    if "logger" not in state or state["logger"] is None:
+        print("Logger not initialized. Cannot log information.")
+        return
+
+    state["logger"].info("Generating a model config")
 
     # Delete cache
     delete_model_cache(overwrite)
 
-    # create a dictionary of data settings
+    # Create a dictionary of data settings
     data_config = ModelConfig.generate_data_config(
         trainupto,
         trainhours=trainhours + traindays,
@@ -156,14 +153,14 @@ def generate_full_config(input_dir: Path = InputDir) -> None:
 
     Overwrites any existing full configuration file"""
 
-    state["logger"].info("Validate the cached config file")
+    state["logger"].info("Validating the cached config file")
     file_manager = FileManager(input_dir)
     config = file_manager.load_data_config()
     model_config = ModelConfig(secretfile=state["secretfile"])
     model_config.validate_config(config)
 
     # Generate a full configuration file
-    state["logger"].info(green("Creating full config file"))
+    state["logger"].info(green("Creating a full config file"))
     full_config = model_config.generate_full_config(config)
     file_manager.save_data_config(full_config, full=True)
 
@@ -250,6 +247,5 @@ def delete_cache(
         False, "--overwrite", help="Always overwrite cache. Don't prompt"
     )
 ):
-
     """Delete the model data cache"""
     delete_model_cache(overwrite)

@@ -7,14 +7,14 @@ from .shared_params import (
     MINIBATCH_SIZE,
     KERNEL_VARIANCE,
 )
-from cleanair_types.types.model_types import (
+from cleanair_types.types import (
     BaseModelParams,
     KernelParams,
     KernelType,
     MRDGPParams,
+    Source,
+    Species,
 )
-
-from cleanair_types.types.enum_types import Source, Species
 
 MRDGP_NUM_INDUCING_POINTS = 500
 MRDGP_MAXITER: int = 5000
