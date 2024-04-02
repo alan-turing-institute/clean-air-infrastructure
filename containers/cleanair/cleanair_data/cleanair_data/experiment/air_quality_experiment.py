@@ -22,19 +22,9 @@ from .experiment import (
 from ..loggers import get_logger
 from ..metrics import TrainingMetrics
 from ..models.model_data import ModelData, ModelDataExtractor
-from cleanair_types.types.experiment_types import ExperimentName
-from cleanair_types.types.dataset_types import IndexedDatasetDict, Source, TargetDict
+from cleanair_types.types import ExperimentName
+from cleanair_types.types import IndexedDatasetDict, Source, TargetDict
 from ..utils.file_manager import FileManager
-
-# if TYPE_CHECKING:
-#     import os
-#     import tensorflow as tf
-
-#     # turn off tensorflow warnings for gpflow
-#     os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
-#     tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
-#     # pylint: disable=wrong-import-position,wrong-import-order
-#     from gpflow.models.model import Model
 
 
 class SetupAirQualityExperiment(SetupExperimentMixin):
@@ -249,20 +239,6 @@ class RunnableAirQualityExperiment(RunnableExperimentMixin):
             prediction=True,
         )
 
-    def train_model(self, instance_id: str) -> None:
-        """Train the model"""
-        instance = self._instances[instance_id]
-        model = self._models[instance_id]
-        X_train, Y_train, _ = self._training_dataset[instance.data_id]
-        fit_start_time = datetime.now()
-        model.fit(X_train, Y_train)
-        fit_end_time = datetime.now()
-        self._training_metrics[instance_id] = TrainingMetrics(
-            fit_end_time=fit_end_time,
-            fit_start_time=fit_start_time,
-            instance_id=instance_id,
-        )
-
     def save_training_metrics(self, instance_id) -> None:
         """Save the training metrics of the instance"""
         file_manager = self.get_file_manager(instance_id)
@@ -274,28 +250,6 @@ class RunnableAirQualityExperiment(RunnableExperimentMixin):
         self._file_managers[instance_id].save_model_final_params(
             self._models[instance_id].params()
         )
-
-    def predict_on_training_set(self, instance_id: str) -> TargetDict:
-        """Predict on the training set"""
-        instance = self._instances[instance_id]
-        X_train, _, _ = self._training_dataset[instance.data_id]
-        model = self._models[instance_id]
-        if (
-            Source.satellite in X_train
-        ):  # remove satellite when predicting on training set
-            X_train.pop(Source.satellite)
-        y_training_result = model.predict(X_train)
-        self._training_result[instance_id] = y_training_result
-        return y_training_result
-
-    def predict_on_test_set(self, instance_id: str) -> TargetDict:
-        """Predict on the test set"""
-        instance = self._instances[instance_id]
-        X_test, _, _ = self._test_dataset[instance.data_id]
-        model = self._models[instance_id]
-        y_forecast = model.predict(X_test)
-        self._test_result[instance_id] = y_forecast
-        return y_forecast
 
     def save_result(self, instance_id: str) -> None:
         """Save the predictions on training set and test set to file"""

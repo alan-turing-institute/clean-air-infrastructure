@@ -18,7 +18,7 @@ from ..databases.mixins import (
 )
 from ..loggers import get_logger
 from ..mixins import InstanceMixin
-from cleanair_types.types.experiment_types import ExperimentConfig, ExperimentName
+from cleanair_types.types import ExperimentConfig, ExperimentName
 from ..utils.file_manager import FileManager
 
 
@@ -217,22 +217,6 @@ class RunnableExperimentMixin(SetupExperimentMixin):
     @abstractmethod
     def predict_on_test_set(self, instance_id: str) -> Any:
         """Predict on the test set"""
-
-    # def run_experiment(self) -> None:
-    #     """Run the experiment"""
-    #     # make sure to load the datasets first
-    #     for instance_id, instance in self._instances.items():
-    #         instance.fit_start_time = datetime.now()
-    #         with tf.compat.v1.Graph().as_default():
-    #             with tf.compat.v1.Session().as_default() as session:
-    #                 self.load_model(instance_id)
-    #                 self.train_model(instance_id)
-    #                 self.save_training_metrics(instance_id)
-    #                 # self.save_model_parameters(instance_id) # TODO there is a bug in here - fix and restart ASAP
-    #                 self.predict_on_training_set(instance_id)
-    #                 self.predict_on_test_set(instance_id)
-    #                 self.save_result(instance_id)
-    #                 session.close()
 
 
 class UpdateExperimentMixin(ExperimentMixin):
