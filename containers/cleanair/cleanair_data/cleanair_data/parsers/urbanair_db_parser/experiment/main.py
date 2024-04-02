@@ -13,13 +13,12 @@ from ....experiment.air_quality_experiment import (
     UpdateAirQualityExperiment,
 )
 from ....loggers import initialise_logging
-from cleanair_types.types.enum_types import ClusterId
 from ....metrics import AirQualityMetrics
 from ....mixins import InstanceMixin
 from ....models.model_data import ModelData
 from ..shared_args import ExperimentDir
 from ..state import state
-from cleanair_types.types.experiment_types import ExperimentName
+from cleanair_types.types import ExperimentName, ClusterId
 from ....utils.file_manager import FileManager
 
 app = typer.Typer(help="Experiment CLI")
@@ -37,7 +36,7 @@ def size(experiment_name: ExperimentName, experiment_root: Path = ExperimentDir)
 
 @app.command()
 def setup(
-    experiment_name: Optional[str] = ExperimentName,
+    experiment_name: ExperimentName,
     cluster_id: ClusterId = ClusterId.nc6,
     experiment_root: Path = ExperimentDir,
     instance_root: Optional[Path] = None,

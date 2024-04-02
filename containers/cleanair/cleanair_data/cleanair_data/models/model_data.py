@@ -14,7 +14,6 @@ from pydantic import ValidationError
 from sqlalchemy import func, text, column, String, cast, and_
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql.expression import Alias
-from cleanair_types.types.enum_types import DynamicFeatureNames
 
 from .schemas import (
     DynamicFeatureSchema,
@@ -34,6 +33,7 @@ from ..loggers import get_logger, green
 from ..mixins import DBQueryMixin
 from cleanair_types.types import (
     FullDataConfig,
+    DynamicFeatureNames,
     Source,
     Species,
     StaticFeatureNames,
@@ -85,7 +85,7 @@ class ModelDataExtractor:
             self.logger = get_logger(__name__)
 
     def __norm_stats(
-        self, full_config: FullDataConfig, data_frames: Dict[str, pd.DateFrame]
+        self, full_config: FullDataConfig, data_frames: Dict[str, pd.DataFrame]
     ) -> Tuple[pd.Series, pd.Series]:
         """Normalise a dataset"""
 
@@ -97,7 +97,7 @@ class ModelDataExtractor:
             full_config.x_names
         ].std(axis=0)
 
-        if norm_std.eq(0).any().any():
+        if norm_std.eq(0).any():
             self.logger.warning(
                 "No variance in feature: %s. Setting variance to 1.",
                 norm_std[norm_std == 0].index,
@@ -112,8 +112,8 @@ class ModelDataExtractor:
         return [x + "_norm" for x in x_names]
 
     def normalize_data(
-        self, full_config: FullDataConfig, data_frames: Dict[str, pd.DateFrame]
-    ) -> Dict[str, pd.DateFrame]:
+        self, full_config: FullDataConfig, data_frames: Dict[str, pd.DataFrame]
+    ) -> Dict[str, pd.DataFrame]:
         """Normalise the x columns"""
 
         # Normlize data_frames w.r.t to itself
@@ -122,17 +122,18 @@ class ModelDataExtractor:
     def normalize_data_wrt(
         self,
         full_config: FullDataConfig,
-        data_frames: Dict[str, pd.DateFrame],
-        wrt_data_frames: Dict[str, pd.DateFrame],
-    ) -> Dict[str, pd.DateFrame]:
+        data_frames: Dict[str, pd.DataFrame],
+        wrt_data_frames: Dict[str, pd.DataFrame],
+    ) -> Dict[str, pd.DataFrame]:
         """Normalise the x columns wrt wrt_data_frames"""
 
         norm_mean, norm_std = self.__norm_stats(full_config, wrt_data_frames)
 
         x_names_norm = self.__x_names_norm(full_config.x_names)
 
-        data_output: Dict[str, pd.DateFrame] = {}
+        data_output: Dict[str, pd.DataFrame] = {}
         for source, data_df in data_frames.items():
+
             data_df_normed = data_df.copy()
 
             data_df_normed[x_names_norm] = (
@@ -222,6 +223,7 @@ class ModelDataExtractor:
         data_frame_dict: Dict[Source, pd.DataFrame],
         prediction: bool = False,
     ) -> IndexedDatasetDict:
+
         species = full_config.species
         x_names = self.__x_names_norm(full_config.x_names)
         X_dict: FeaturesDict = {}
@@ -229,6 +231,7 @@ class ModelDataExtractor:
         index_dict: FeaturesDict = {source: {} for source in data_frame_dict.keys()}
 
         for source in data_frame_dict.keys():
+
             data_df = data_frame_dict[source]
             if source != Source.satellite:
                 if prediction:
@@ -281,7 +284,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
 
     def download_config_data(
         self, full_config: FullDataConfig, training_data: bool = True
-    ) -> Dict[Source, pd.DateFrame]:
+    ) -> Dict[Source, pd.DataFrame]:
         """Download all input data specified in a validated full config file
         by calling self.download_config_data() for all sources
 
@@ -309,7 +312,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
             else full_config.pred_interest_points
         )
 
-        data_output: Dict[Source, pd.DateFrame] = {}
+        data_output: Dict[Source, pd.DataFrame] = {}
         for source in sources:
             self.logger.info(
                 "Downloading source: %s. Training data: %s",
@@ -351,7 +354,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
 
     def download_forecast_data(
         self, full_config: FullDataConfig
-    ) -> Dict[Source, pd.DateFrame]:
+    ) -> Dict[Source, pd.DataFrame]:
         """Download the readings for a forecast period. Used for calculating metrics."""
         data_output: Dict[Source, pd.DataFrame] = {}
         for source in full_config.pred_sources:
@@ -390,7 +393,6 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
                 features=static_features,
                 source=source,
                 species=species,
-                output_type="all",
             )
         except ValidationError:
             self.logger.error(
@@ -405,7 +407,6 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
                 end_date=end_date,
                 point_ids=point_ids,
                 features=dynamic_features,
-                output_type="all",
             )
         else:
             dynamic_source_data = []
@@ -441,6 +442,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
         "Get the selected dynamic features for a specific locatoin and time"
 
         with self.dbcnxn.open_session() as session:
+
             # Get a row with all the point ids requested
             point_id_sq = session.query(
                 Values(
@@ -525,16 +527,14 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
         source: Source,
         point_ids: List[str],
         species: List[Species],
-    ) -> pd.DateFrame:
+    ) -> pd.DataFrame:
         """
         Query the database for static features
             and then cross join with the datetime range and
             species requested.
         """
 
-        static_features = self.select_static_features(
-            point_ids, features, source, output_type="subquery"
-        )
+        static_features = self.select_static_features(point_ids, features, source)
 
         static_features_expand = self.__expand_time_species(
             static_features, start_date, end_date, species
@@ -562,6 +562,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
         """
 
         with self.dbcnxn.open_session() as session:
+
             # Get a row with all the point ids requested
             point_id_sq = session.query(
                 Values(
@@ -587,7 +588,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
                 point_id_sq, feature_sq
             ).subquery()
 
-            london_boundary = self.query_london_boundary(output_type="subquery")
+            london_boundary = self.query_london_boundary()
 
             static_features_with_loc_sq = (
                 session.query(
@@ -658,6 +659,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
         """
 
         with self.dbcnxn.open_session() as session:
+
             cols = [
                 func.generate_series(
                     start_date.isoformat(),
@@ -699,21 +701,14 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
             source,
             point_ids,
             species,
-            output_type="subquery",
         )
 
         if source == Source.laqn:
-            sensor_readings = self.get_laqn_readings(
-                start_date, end_date, species, output_type="subquery"
-            )
+            sensor_readings = self.get_laqn_readings(start_date, end_date, species)
         elif source == Source.aqe:
-            sensor_readings = self.get_aqe_readings(
-                start_date, end_date, species, output_type="subquery"
-            )
+            sensor_readings = self.get_aqe_readings(start_date, end_date, species)
         elif source == Source.satellite:
-            sensor_readings = self.get_satellite_readings(
-                start_date, end_date, species, output_type="subquery"
-            )
+            sensor_readings = self.get_satellite_readings(start_date, end_date, species)
         else:
             raise ValueError(
                 f"Source must be one of {[Source.laqn, Source.aqe, Source.satellite]}"
@@ -754,6 +749,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
             columns.append(sensor_readings.c.box_id)
 
         with self.dbcnxn.open_session() as session:
+
             static_with_sensor_readings = (
                 session.query(*columns)
                 .join(

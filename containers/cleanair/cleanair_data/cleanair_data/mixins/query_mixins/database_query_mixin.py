@@ -3,7 +3,7 @@ Mixin for useful database queries
 """
 
 from datetime import datetime
-from typing import List
+from typing import List, Any
 
 from sqlalchemy import func, or_, desc
 
@@ -35,7 +35,7 @@ class DBQueryMixin:
             self.logger = get_logger(__name__)
 
     @db_query()
-    def query_london_boundary(self):
+    def query_london_boundary(self) -> Any:
         """Query LondonBoundary to obtain the bounding geometry for London.
         Only get the first row as should only be one entry"""
         with self.dbcnxn.open_session() as session:

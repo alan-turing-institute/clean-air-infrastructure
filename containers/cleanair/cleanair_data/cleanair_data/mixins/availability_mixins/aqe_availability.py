@@ -1,7 +1,8 @@
 """
 Mixin for checking what aqe data is in database and what is missing
 """
-from typing import Optional
+
+from typing import Optional, Any
 from datetime import timedelta
 from sqlalchemy import func, text
 from dateutil.parser import isoparse
@@ -27,7 +28,7 @@ class AQEAvailabilityMixin:
             self.logger = get_logger(__name__)
 
     @db_query()
-    def get_aqe_open_sites(self, with_location=False):
+    def get_aqe_open_sites(self, with_location=False) -> Any:
         """Get open AQE sites
 
         Args:
@@ -59,7 +60,6 @@ class AQEAvailabilityMixin:
     def get_readings_between_dates(
         self, start_date: str, end_date: Optional[str] = None
     ):
-
         """Count the number of AQE readings for each open aqe site between start_date and end_data"""
 
         with self.dbcnxn.open_session() as session:
@@ -81,7 +81,7 @@ class AQEAvailabilityMixin:
             return in_data
 
     @db_query()
-    def gen_date_range(self, start_date: str, end_date: Optional[str] = None):
+    def gen_date_range(self, start_date: str, end_date: Optional[str] = None) -> Any:
         """Generate a data range"""
         with self.dbcnxn.open_session() as session:
 
@@ -121,12 +121,8 @@ class AQEAvailabilityMixin:
         """
 
         in_data_cte = self.get_readings_between_dates(start_date, end_date).cte()
-        open_sites_sq = self.get_aqe_open_sites(
-            with_location=False, output_type="subquery"
-        )
-        expected_dates = self.gen_date_range(
-            start_date, end_date, output_type="subquery"
-        )
+        open_sites_sq = self.get_aqe_open_sites(with_location=False)
+        expected_dates = self.gen_date_range(start_date, end_date)
 
         with self.dbcnxn.open_session() as session:
 

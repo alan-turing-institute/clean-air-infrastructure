@@ -1,7 +1,8 @@
 """
 Mixin for checking what laqn data is in database and what is missing
 """
-from typing import Optional, List
+
+from typing import Optional, List, Any
 from datetime import timedelta
 from sqlalchemy import func, text, column, String, literal, values
 from dateutil.parser import isoparse
@@ -27,7 +28,7 @@ class LAQNAvailabilityMixin:
             self.logger = get_logger(__name__)
 
     @db_query()
-    def get_laqn_open_sites(self, exclude_closed=True):
+    def get_laqn_open_sites(self, exclude_closed=True) -> Any:
         """Get open LAQN sites
 
         Some LAQN sites have more than one sitecode but have the same location.
@@ -35,7 +36,7 @@ class LAQNAvailabilityMixin:
         """
 
         with self.dbcnxn.open_session() as session:
-            
+
             # uses the SQL functions to block doubled site code and gets the max and min time loop of the site
             columns = [
                 LAQNSite.point_id,
@@ -65,7 +66,6 @@ class LAQNAvailabilityMixin:
         point_ids: List[str] = None,
         site_codes: List[str] = None,
     ):
-
         """Get raw LAQN sensor data between a start_date and end_date for a particular species
 
         Args:

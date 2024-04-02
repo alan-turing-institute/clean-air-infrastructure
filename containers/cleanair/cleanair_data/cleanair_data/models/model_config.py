@@ -3,10 +3,8 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta
-from typing import List
+from typing import List, Any
 from sqlalchemy import func, text, cast, String, and_
-
-from cleanair_types.types.enum_types import DynamicFeatureNames
 
 from ..databases import DBReader
 from ..databases.materialised_views import LondonBoundaryView
@@ -171,7 +169,7 @@ class ModelConfig(
     ) -> None:
         """Check that all requested static features exist in the database"""
 
-        available_features = self.get_available_static_features(output_type="list")
+        available_features = self.get_available_static_features()
         unavailable_features = []
 
         for feature in features:
@@ -196,7 +194,7 @@ class ModelConfig(
         if len(features) > 0:
             self.logger.debug("Requested dynamic features: %s", features)
             available_features_list = self.get_available_dynamic_features(
-                start_date, end_date, output_type="list"
+                start_date, end_date
             )
             available_features = set(available_features_list)
             self.logger.debug("Available dynamic features: %s", available_features)
@@ -221,7 +219,7 @@ class ModelConfig(
             sources: A list of sources
         """
 
-        available_sources = self.get_available_sources(output_type="list")
+        available_sources = self.get_available_sources()
         unavailable_sources = []
 
         for source in sources:
@@ -247,9 +245,7 @@ class ModelConfig(
                 and interest_point_dict[key] == "all"
             ):
                 output_dict[key] = self.get_available_interest_points(
-                    key,
-                    within_london_only=(key != Source.satellite),
-                    output_type="list",
+                    key, within_london_only=(key != Source.satellite)
                 )
 
             else:
@@ -258,7 +254,7 @@ class ModelConfig(
         return output_dict
 
     @db_query()
-    def get_available_static_features(self):
+    def get_available_static_features(self) -> List:
         """Return available static features from the CleanAir database"""
 
         with self.dbcnxn.open_session() as session:
@@ -289,7 +285,7 @@ class ModelConfig(
             return feature_types_q
 
     @db_query()
-    def get_available_sources(self):
+    def get_available_sources(self) -> List:
         """Return the available interest point sources in a database"""
 
         with self.dbcnxn.open_session() as session:
@@ -298,14 +294,14 @@ class ModelConfig(
             return feature_types_q
 
     @db_query()
-    def query_london_boundary(self):
+    def query_london_boundary(self) -> Any:
         """Query LondonBoundary to obtain the bounding geometry for London.
         Only get the first row as should only be one entry"""
         with self.dbcnxn.open_session() as session:
             return session.query(LondonBoundaryView.geom).limit(1)
 
     @db_query()
-    def get_meta_point_ids(self, source: Source):
+    def get_meta_point_ids(self, source: Source) -> Any:
         """Get metapoint ids"""
         with self.dbcnxn.open_session() as session:
             return session.query(MetaPoint.id.label("point_id")).filter(
@@ -313,7 +309,9 @@ class ModelConfig(
             )
 
     @db_query()
-    def get_available_interest_points(self, source: Source, within_london_only: bool):
+    def get_available_interest_points(
+        self, source: Source, within_london_only: bool
+    ) -> List:
         """
         Get available interest points for a particular source
         and optionally filter sites outside of london
@@ -324,21 +322,19 @@ class ModelConfig(
             interest points themselves are in London.
         """
 
-        bounded_geom = self.query_london_boundary(output_type="subquery")
+        bounded_geom = self.query_london_boundary()
 
         if source == Source.laqn:
-            point_ids_sq = self.get_laqn_open_sites(output_type="subquery")
+            point_ids_sq = self.get_laqn_open_sites()
 
         elif source == Source.aqe:
-            point_ids_sq = self.get_aqe_open_sites(output_type="subquery")
+            point_ids_sq = self.get_aqe_open_sites()
 
         elif source == Source.satellite:
-            point_ids_sq = self.get_satellite_interest_points_in_boundary(
-                output_type="subquery"
-            )
+            point_ids_sq = self.get_satellite_interest_points_in_boundary()
 
         elif source in [Source.hexgrid]:
-            point_ids_sq = self.get_meta_point_ids(source, output_type="subquery")
+            point_ids_sq = self.get_meta_point_ids(source)
 
         else:
             raise NotImplementedError("Cannot get interest points for this source")
