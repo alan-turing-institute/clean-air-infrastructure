@@ -4,8 +4,8 @@ import shutil
 import typer
 from ..state import state, DATA_CACHE
 from ..shared_args import InputDir, NDays_callback, UpTo_callback
-from ....models.model_config import ModelConfig
-from ....models.model_data import ModelData
+from ....models_data.model_config import ModelConfig
+from ....models_data.model_data import ModelData
 from cleanair_types.types import (
     Species,
     Source,

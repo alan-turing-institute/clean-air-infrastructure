@@ -11,13 +11,12 @@ from typing import List, Optional
 from ....utils.azure import blob_storage
 from azure.storage.blob import BlobServiceClient
 
-from ....models.model_config import ModelConfig
+from ....models_data.model_config import ModelConfig
+from ....models_data.model_data import ModelData
 from ....environment_settings.settings import get_settings
-from ....models.model_data import ModelData
 from ..state import state
 from typing import Dict
 from ....loggers import initialise_logging
-from ....models.model_config import ModelConfig, DataConfig
 
 from cleanair_types.types import (
     Source,

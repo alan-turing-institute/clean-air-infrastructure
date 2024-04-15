@@ -14,7 +14,7 @@ from ..databases.tables import (
     AirQualityTemporalMetricsTable,
 )
 from ..loggers import get_logger
-from ..models.model_data import ModelData
+from ..models_data.model_data import ModelData
 from ..mixins import (
     InstanceQueryMixin,
     ResultQueryMixin,
