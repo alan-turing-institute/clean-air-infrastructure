@@ -144,31 +144,34 @@ class ModelDataExtractor:
 
         return data_output
 
-    # pylint: disable=C0116,R0201
-    @overload
-    def get_array(
-        self, data_df: pd.DataFrame, x_names, species: None
-    ) -> Tuple[pd.Index, NDArray[Float64]]: ...
+    def get_array(self, data_df: pd.DataFrame, x_names, species=None):
+        """Get an array from a pandas dataframe for any Source except satellite.
 
-    @overload
-    def get_array(
-        self, data_df: pd.DataFrame, x_names, species: List[Species]
-    ) -> Tuple[pd.Index, NDArray[Float64], Dict[Species, NDArray[Float64]]]: ...
+        Args:
+            data_df (pd.DataFrame): The pandas DataFrame containing the data.
+            x_names (List[str]): The list of column names to extract as features.
+            species (List[Species], optional): A list of Species objects for which
+                to extract additional data. Defaults to None.
 
-    def get_array(self, data_df, x_names, species=None):
-        """Get an array from a pandas dataframe for any Source except satellite"""
+        Returns:
+            Tuple[pd.Index, NDArray[Float64], Optional[Dict[Species, NDArray[Float64]]]]:
+                A tuple containing:
+                    - index (pd.Index): The index of the DataFrame.
+                    - X (NDArray[Float64]): The NumPy array containing the features.
+                    - Y (Optional[Dict[Species, NDArray[Float64]]]): A dictionary
+                        containing additional data for each species (if provided),
+                        otherwise None.
+        """
+
         index = data_df.index.to_numpy()
         X = data_df[x_names].to_numpy()
 
         if species:
-            Y: Dict[Species, NDArray[Float64]] = {
-                spec: np.expand_dims(data_df[spec.value].to_numpy(), axis=1)
-                for spec in species
-            }
+            Y = {spec: data_df[spec.value].values[:, np.newaxis] for spec in species}
+        else:
+            Y = None
 
-            return index, X, Y
-
-        return index, X
+        return index, X, Y
 
     def get_array_satellite(
         self, data_df: pd.DataFrame, x_names, species: List[Species]
@@ -709,6 +712,8 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
             sensor_readings = self.get_aqe_readings(start_date, end_date, species)
         elif source == Source.satellite:
             sensor_readings = self.get_satellite_readings(start_date, end_date, species)
+        elif source == Source.breathe:
+            sensor_readings = self.get_breathe_readings(start_date, end_date, species)
         else:
             raise ValueError(
                 f"Source must be one of {[Source.laqn, Source.aqe, Source.satellite]}"

@@ -1,4 +1,5 @@
-"""Model fitting classes"""
+"""Models data classes"""
+
 from .model_data import ModelData, ModelDataExtractor
 from .model_config import ModelConfig
 

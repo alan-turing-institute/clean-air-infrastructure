@@ -1,7 +1,7 @@
 """Default settings for loading air quality data"""
 
 from datetime import datetime
-from ..models import ModelConfig
+from ..models_data import ModelConfig
 from cleanair_types.types import DataConfig, FeatureBufferSize, Source, Species
 
 FORECAST_DAYS = 2

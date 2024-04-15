@@ -22,13 +22,6 @@ DESCRIPTION = "Clean Air Data Module"
 
 # Dependencies
 INSTALL_REQUIRES = [
-    "azure-identity==1.13.0",
-    "azure-storage-blob==12.16.0",
-    "azure-mgmt-subscription==3.1.1",
-    "azure-cli==2.49.0",
-    "azure-cli-core==2.49.0",
-    "azure-mgmt-storage==21.0.0",
-    "azure-common==1.1.28",
     "boto3==1.26.149",
     "botocore==1.29.149",
     "cdsapi==0.6.1",

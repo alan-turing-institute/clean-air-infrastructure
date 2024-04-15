@@ -15,7 +15,7 @@ from ....experiment.air_quality_experiment import (
 from ....loggers import initialise_logging
 from ....metrics import AirQualityMetrics
 from ....mixins import InstanceMixin
-from ....models.model_data import ModelData
+from ....models_data.model_data import ModelData
 from ..shared_args import ExperimentDir
 from ..state import state
 from cleanair_types.types import ExperimentName, ClusterId

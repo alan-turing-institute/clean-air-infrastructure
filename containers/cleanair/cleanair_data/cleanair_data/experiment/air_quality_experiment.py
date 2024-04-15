@@ -21,7 +21,7 @@ from .experiment import (
 )
 from ..loggers import get_logger
 from ..metrics import TrainingMetrics
-from ..models.model_data import ModelData, ModelDataExtractor
+from ..models_data.model_data import ModelData, ModelDataExtractor
 from cleanair_types.types import ExperimentName
 from cleanair_types.types import IndexedDatasetDict, Source, TargetDict
 from ..utils.file_manager import FileManager
