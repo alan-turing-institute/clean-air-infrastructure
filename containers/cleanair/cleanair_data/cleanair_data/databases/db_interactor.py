@@ -1,6 +1,7 @@
 """
 Table reader/writer
 """
+
 from .connector import Connector
 from ..loggers import get_logger
 
@@ -13,7 +14,7 @@ class DBInteractor:
     def __init__(
         self,
         secretfile,
-        initialise_tables=True,
+        initialise_tables=False,
         connection=None,
         secret_dict=None,
         threadsafe=False,

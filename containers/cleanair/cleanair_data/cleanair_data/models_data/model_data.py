@@ -5,11 +5,10 @@ from __future__ import annotations
 import sys
 from datetime import datetime, timedelta
 from itertools import groupby
-from typing import Dict, List, Tuple, overload, Callable
+from typing import Dict, List, Tuple, Any, Callable
 
 import numpy as np
 import pandas as pd
-from nptyping import NDArray, Float64
 from pydantic import ValidationError
 from sqlalchemy import func, text, column, String, cast, and_
 from sqlalchemy.dialects.postgresql import UUID
@@ -175,7 +174,7 @@ class ModelDataExtractor:
 
     def get_array_satellite(
         self, data_df: pd.DataFrame, x_names, species: List[Species]
-    ) -> Tuple[pd.Index, NDArray[Float64], Dict[Species, NDArray[Float64]]]:
+    ) -> Tuple[pd.Index, Any, Dict[Species, Any]]:
         """Always returns an index, X and Y"""
 
         data_df_sorted = data_df.sort_values(
@@ -203,7 +202,7 @@ class ModelDataExtractor:
         # Get X_array
         sat_df = data_df_sorted[x_names]
         X = sat_df.to_numpy().reshape((n_boxes * n_hours, n_interest_points, n_x_names))
-        Y: Dict[Species, NDArray[Float64]] = {}
+        Y: Dict[Species, Any] = {}
 
         # Get Y_array
         for spec in species:
