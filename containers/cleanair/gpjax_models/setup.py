@@ -1,4 +1,5 @@
 """CleanAir module setup script"""
+
 from setuptools import setup, find_packages
 
 # sorted by surname
@@ -19,12 +20,6 @@ DESCRIPTION = "Jax Models Module"
 
 # Dependencies
 INSTALL_REQUIRES = [
-    "azure-identity==1.13.0",
-    "azure-storage-blob==12.16.0",
-    "azure-mgmt-subscription==3.1.1",
-    "azure-mgmt-resource",
-    "azure-mgmt-storage",
-    "azure-common==1.1.28",
     "jax",
     "numpy",
     "pandas==2.1.3",
@@ -32,6 +27,7 @@ INSTALL_REQUIRES = [
     "scikit-learn",
     "scipy==1.11.2",
     "typer==0.9.0",
+    "tinygp==0.3.0",
     "tensorflow-probability",
     "colorlog==6.7.0",
     "nptyping==2.5.0",
