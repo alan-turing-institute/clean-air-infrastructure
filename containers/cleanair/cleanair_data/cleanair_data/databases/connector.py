@@ -1,10 +1,11 @@
 """
 Class for connecting to Azure databases
 """
+
 from contextlib import contextmanager
 import time
 import requests
-from sqlalchemy import create_engine, event
+from sqlalchemy import create_engine, event, inspect
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.declarative import DeferredReflection
 from sqlalchemy.orm import sessionmaker, scoped_session
@@ -50,18 +51,33 @@ class Connector(DBConnectionMixin):
         # Make threadsafe
         self.threadsafe = threadsafe
 
+    def any_index_exists_in_database(self, inspector):
+        # Iterate over all schemas
+        for schema in inspector.get_schema_names():
+            # Iterate over all tables in the schema
+            for table_name in inspector.get_table_names(schema=schema):
+                # Iterate over all indexes in the table
+                for index in inspector.get_indexes(table_name, schema=schema):
+                    # Check if the index exists
+                    if index["name"].startswith("idx_"):
+                        return True  # At least one index exists
+
+        return False  # No index found
+
     def initialise_tables(self):
         """Ensure that all table connections exist"""
 
-        # Next create all other tables
-        if self.connection:
-            # Consider reflected tables first as these already exist
-            DeferredReflection.prepare(self.connection)
-            Base.metadata.create_all(self.connection, checkfirst=True)
-        else:
-            # Consider reflected tables first as these already exist
-            DeferredReflection.prepare(self.engine)
-            Base.metadata.create_all(self.engine, checkfirst=True)
+        connection = self.connection if self.connection else self.engine
+
+        # Create an inspector object
+        inspector = inspect(connection)
+
+        # Consider reflected tables first as these already exist
+        DeferredReflection.prepare(connection)
+
+        # Check if any index exists before creating tables
+        if not self.any_index_exists_in_database(inspector):
+            Base.metadata.create_all(connection, checkfirst=True)
 
     @property
     def engine(self):

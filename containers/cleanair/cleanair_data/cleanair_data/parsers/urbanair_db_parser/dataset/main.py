@@ -8,8 +8,6 @@ import pickle
 from pathlib import Path
 from datetime import datetime
 from typing import List, Optional
-
-
 from ....models_data.model_config import ModelConfig
 from ....models_data.model_data import ModelData
 from ....environment_settings.settings import get_settings
@@ -75,7 +73,7 @@ def download_laqn(
     full_config = model_config.generate_full_config(data_config)
     # Download and save training data
     training_data = model_data.download_config_data(full_config, training_data=True)
-    training_data[Source.laqn].to_csv(download_root / "laqn_data.csv")
+    training_data[Source.laqn].to_csv(download_root / "laqn_training_data.csv")
 
 
 @app.command()

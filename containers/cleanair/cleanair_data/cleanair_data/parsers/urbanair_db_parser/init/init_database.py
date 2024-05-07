@@ -15,10 +15,6 @@ from ..state import (
 from ....loggers.logcolours import red, green
 from ....databases import DBInteractor
 from ..state import state
-from ....utils.database_authentication import (
-    get_database_access_token,
-    get_database_username,
-)
 
 app = typer.Typer(help="Initialise the CLI to connect to a database.")
 
@@ -47,37 +43,6 @@ def docker(
     typer.echo("Copy secretfile to urbanair config directory")
     shutil.copy(
         str(secretfile), str(DOCKER_CONFIG_SECRETFILE_PATH / ".db_secrets.json")
-    )
-
-
-@app.command()
-def production() -> None:
-    """Initialise the CLI to connect to the production database
-
-    Ensure you have run 'az login' first"""
-
-    # Create app dir
-    if not os.path.isdir(APP_DIR):
-        os.mkdir(APP_DIR)
-
-    username = get_database_username()
-
-    # Request an access token
-    typer.echo(
-        f"Requesting access token for {green(username)} to connect to {green(PROD_HOST)}"
-    )
-
-    PROD_SECRET_DICT["password"] = get_database_access_token()
-    PROD_SECRET_DICT["username"] = username
-
-    # Create config secretfile
-    with open(CONFIG_SECRETFILE_PATH, "w", encoding="utf-8") as secretfile:
-        json.dump(PROD_SECRET_DICT, secretfile, indent=4)
-
-    typer.echo(
-        f"Credentials for {green(username)} written to {CONFIG_SECRETFILE_PATH}\n"
-        f"To remove credentials call {green('urbanair remove_config')}\n"
-        f"{red('Credentials will expire after 5-60 minutes.')} If access required for longer contact admin"
     )
 
 

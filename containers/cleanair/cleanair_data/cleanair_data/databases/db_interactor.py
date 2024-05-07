@@ -14,7 +14,7 @@ class DBInteractor:
     def __init__(
         self,
         secretfile,
-        initialise_tables=False,
+        initialise_tables=True,
         connection=None,
         secret_dict=None,
         threadsafe=False,
