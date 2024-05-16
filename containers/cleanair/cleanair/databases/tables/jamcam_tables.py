@@ -1,6 +1,13 @@
 """Tables for jamcam results"""
 from geoalchemy2 import Geometry
-from sqlalchemy import Column, String, BigInteger, Text
+from sqlalchemy import (
+    Column,
+    String,
+    BigInteger,
+    Text,
+    ForeignKeyConstraint,
+    PrimaryKeyConstraint,
+)
 from sqlalchemy import Index, UniqueConstraint
 from sqlalchemy.dialects.postgresql import (
     TIMESTAMP,
@@ -16,39 +23,10 @@ from sqlalchemy.dialects.postgresql import (
 from ..base import Base
 
 
-class JamCamFrameStats(Base):
-    """Table of detection events"""
-
-    __tablename__ = "frame_stats_v3"
-    __table_args__ = {"schema": "jamcam"}
-
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
-    camera_id = Column(String(20))
-    video_upload_datetime = Column(TIMESTAMP)
-    frame_id = Column(SMALLINT)
-    detection_id = Column(SMALLINT)
-    detection_class = Column(String(20))
-    confidence = Column(REAL)
-    box_x = Column(SMALLINT)
-    box_y = Column(SMALLINT)
-    box_w = Column(SMALLINT)
-    box_h = Column(SMALLINT)
-    creation_datetime = Column(TIMESTAMP)
-    source = Column(SMALLINT, default=1, nullable=False)
-    filename = Column(Text())
-
-    def __repr__(self):
-        vals = [
-            "{}='{}'".format(column, getattr(self, column))
-            for column in [c.name for c in self.__table__.columns]
-        ]
-        return "<JamCamFrameStats(" + ", ".join(vals) + ")>"
-
-
 class JamCamVideoStats(Base):
     """Table of detection counts"""
 
-    __tablename__ = "video_stats_v3"
+    __tablename__ = "video_stats_v4"
     __table_args__ = {"schema": "jamcam"}
 
     id = Column(BigInteger, primary_key=True, autoincrement=True)
@@ -62,12 +40,56 @@ class JamCamVideoStats(Base):
     source = Column(SMALLINT, default=1, nullable=False)
     filename = Column(Text())
 
+    primary_key = PrimaryKeyConstraint(
+        camera_id, video_upload_datetime, detection_class, name="primary_key"
+    )
+
     def __repr__(self):
         vals = [
             "{}='{}'".format(column, getattr(self, column))
             for column in [c.name for c in self.__table__.columns]
         ]
         return "<JamCamVideoStats(" + ", ".join(vals) + ")>"
+
+
+class JamCamFrameStats(Base):
+    """Table of detection events"""
+
+    __tablename__ = "frame_stats_v4"
+    __table_args__ = {"schema": "jamcam"}
+
+    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    camera_id = Column(String(20))
+    video_upload_datetime = Column(TIMESTAMP)
+    frame_id = Column(SMALLINT)
+    detection_id = Column(SMALLINT)
+    detection_class = Column(String(20))
+    confidence = Column(REAL)
+    box_x = Column(SMALLINT)
+    box_y = Column(SMALLINT)
+    box_w = Column(SMALLINT)
+    box_h = Column(SMALLINT)
+    location = Column(Geometry(geometry_type="POINT"))
+    creation_datetime = Column(TIMESTAMP)
+    source = Column(SMALLINT, default=1, nullable=False)
+    filename = Column(Text())
+
+    foreign_key = ForeignKeyConstraint(
+        [camera_id, video_upload_datetime, detection_class],
+        [
+            JamCamVideoStats.camera_id,
+            JamCamVideoStats.video_upload_datetime,
+            JamCamVideoStats.detection_class,
+        ],
+        name="video_key",
+    )
+
+    def __repr__(self):
+        vals = [
+            "{}='{}'".format(column, getattr(self, column))
+            for column in [c.name for c in self.__table__.columns]
+        ]
+        return "<JamCamFrameStats(" + ", ".join(vals) + ")>"
 
 
 class JamCamDayStats(Base):
@@ -139,6 +161,13 @@ class JamCamMetaData(Base):
     v0 = Column(SMALLINT)
     u1 = Column(SMALLINT)
     h = Column(REAL)
+    translation_x = Column(REAL)
+    translation_y = Column(REAL)
+    rotation = Column(REAL)
+    scale_x = Column(REAL)
+    scale_y = Column(REAL)
+    shear_x = Column(REAL)
+    shear_y = Column(REAL)
     flag = Column(SMALLINT)
     borough_name = Column(VARCHAR)
     borough_gss_code = Column(VARCHAR)

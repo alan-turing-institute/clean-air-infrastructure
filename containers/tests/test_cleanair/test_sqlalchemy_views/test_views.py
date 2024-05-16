@@ -16,7 +16,15 @@ def test_create_view(secretfile, connection, my_view):
     )
 
     db_instance.commit_records(
-        [JamCamVideoStats(id=4232, camera_id="sdfs", source=1)],
+        [
+            JamCamVideoStats(
+                id=4232,
+                camera_id="sdfs",
+                video_upload_datetime=datetime.utcnow(),
+                detection_class="test",
+                source=1,
+            )
+        ],
         on_conflict="ignore",
         table=JamCamVideoStats,
     )
