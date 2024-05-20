@@ -23,6 +23,11 @@ from stgp.sparsity import FullSparsity
 from stgp.trainers import NatGradTrainer, GradDescentTrainer
 from stgp.transforms import Aggregate, Independent
 
+results_path = "/Users/suedaciftci/projects/clean-air/clean-air-infrastructure/containers/cleanair/gpjax_models/data/mrdgp_production_results"
+# Create the directory if it doesn't exist
+if not os.path.exists(results_path):
+    os.makedirs(results_path)
+
 
 class STGP_MRDGP:
     def __init__(
@@ -100,8 +105,12 @@ class STGP_MRDGP:
 
             latent_gp = GP(  # prior
                 sparsity=Z,
-                kernel=ScaleKernel(DeepRBF(parent=latent_m1, lengthscale=[0.1]))
-                * RBF(input_dim=3, lengthscales=[0.1, 0.1, 0.1], active_dims=[1, 2, 3]),
+                kernel=ScaleKernel(DeepRBF(parent=latent_m1, lengthscale=[1]))
+                * RBF(
+                    input_dim=4,
+                    lengthscales=[0.1, 0.1, 0.1, 0.1],
+                    active_dims=[1, 2, 3, 4],
+                ),
             )
 
             prior = Independent([latent_gp])
@@ -163,7 +172,8 @@ class STGP_MRDGP:
                 sat_natgrad.train(0.1, 1)
                 laqn_natgrad.train(0.1, 1)
 
-            with open(os.path.join("joint_lc.pkl"), "wb") as file:
+            joint_elbo_path = os.path.join(results_path, "joint_lc_1_500ip.pkl")
+            with open(joint_elbo_path, "wb") as file:
                 pickle.dump(lc_arr, file)
 
             return lc_arr
@@ -226,11 +236,10 @@ class STGP_MRDGP:
         results = predict_laqn_sat(pred_laqn_data, pred_sat_data, m)
 
         # Save the loss values to a pickle file
-        with open(
-            os.path.join("training_loss_mrdgp.pkl"),
-            "wb",
-        ) as file:
+        training_path = os.path.join(results_path, "training_loss_mrdgp_1_500ip.pkl")
+        with open(training_path, "wb") as file:
             pickle.dump(loss_values, file)
-
-        with open(os.path.join("predictions_mrdgp.pkl"), "wb") as file:
+        # All prediction path
+        prediction_path = os.path.join(results_path, "predictions_mrdgp_1_500ip.pkl")
+        with open(prediction_path, "wb") as file:
             pickle.dump(results, file)

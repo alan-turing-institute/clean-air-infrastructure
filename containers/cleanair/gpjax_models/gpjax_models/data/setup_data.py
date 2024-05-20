@@ -1,9 +1,8 @@
 import pickle
 import numpy as np
 import pandas as pd
-from pathlib import Path
-
-from .normalise import normalise, space_norm, time_norm
+from stdata.ops import ensure_continuous_timeseries
+from stdata.utils import datetime_to_epoch
 
 
 def get_data_file_names(fold):
@@ -15,11 +14,10 @@ def get_data_file_names(fold):
 
 
 def get_X(df):
-    return np.array(df[["epoch", "lat", "lon", "value_200_park"]])
-
-
-def get_X_norm(df):
-    return np.array(df[["epoch_norm", "lat_norm", "lon_norm", "value_200_park_norm"]])
+    # return np.array(df[['epoch', 'lat', 'lon', 'value_100_total_a_road_length', 'value_100_total_a_road_primary_length', 'value_100_flat', 'value_100_max_canyon_ratio']])
+    return np.array(
+        df[["epoch", "lat", "lon", "value_200_total_a_road_primary_length"]]
+    )
 
 
 def get_Y(df):
@@ -29,27 +27,6 @@ def get_Y(df):
 def get_Y_sat(df):
     # Sat has one value per box_id, so we only need to return the first one
     return np.array([df["NO2"].iloc[0]])[:, None]
-
-
-def get_Y_norm(df):
-    return np.array(df["NO2"])[:, None]
-
-
-def get_Y_sat_norm(df):
-    # Sat has one value per box_id, so we only need to return the first one
-    return np.array([df["NO2"].iloc[0]])[:, None]
-
-
-def process_data(df):
-    return get_X(df), get_Y(df)
-
-
-def process_data_test(df):
-    return get_X_norm(df)
-
-
-def process_data_norm(df):
-    return get_X_norm(df), get_Y_norm(df)
 
 
 def process_sat_data(train_data_sat):
@@ -66,48 +43,8 @@ def process_sat_data(train_data_sat):
     return X_sat, Y_sat
 
 
-def time_norm(X, wrt_to_X):
-    """units will now be in days"""
-    return (X - np.min(wrt_to_X)) / (60 * 60 * 24)
-
-
-def normalise(X, wrt_X):
-    return (X - np.mean(wrt_X, axis=0)) / np.std(wrt_X, axis=0)
-
-
-def space_norm(X, wrt_X):
-    df_norm = normalise(X[:, 1:3], wrt_X[:, 1:3])
-    return df_norm[:, 0], df_norm[:, 1]
-
-
-def norm_X(X: np.ndarray, wrt_X: np.ndarray) -> np.ndarray:
-    """
-    First column is epoch, second is lat, third is lon, the rest are covariates
-
-    Epochs:
-        convert units to days, and shift to start at zero
-
-    lat/lon:
-        convert units to kilometers, and shift to start at zero
-
-    Covariates:
-        z-standarised
-    """
-
-    X_time = time_norm(X[:, 0], wrt_X[:, 0])
-    X_eastings, X_northings = space_norm(X, wrt_X)
-
-    X_covariates = normalise(X[:, 3:], wrt_X[:, 3:])
-
-    X_norm = np.hstack(
-        [X_time[:, None], X_eastings[:, None], X_northings[:, None], X_covariates]
-    )
-
-    return X_norm
-
-
-def load_test_data(fnames, data_root: Path) -> dict:
-    return pickle.load(open(data_root / fnames["test"], "rb"))
+def process_data(df):
+    return get_X(df), get_Y(df)
 
 
 def clean_data(x_array, y_array):
@@ -127,64 +64,135 @@ def clean_data(x_array, y_array):
 
     idx = np.isnan(x_array[:, :])
     idx = [not (True in row) for row in idx]
-
     x_array = x_array[idx, :]
     y_array = y_array[idx, :]
 
     return x_array, y_array
 
 
-def generate_data(df):
-    # load cleaned data pickle
-    # collect training arrays
-    train_X, train_Y = process_data(df)
-    # Normalize X, laqn_X is used as the reference
-    train_X_norm = norm_X(train_X, train_X)
-    x_train, y_train = clean_data(train_X_norm, train_Y)
+def time_norm(X, wrt_to_X):
+    """units will now be in days"""
+    return (X - np.min(wrt_to_X)) / (60 * 60 * 24)
 
-    # Create the train_dict
+
+def space_norm(X, wrt_X):
+    df_norm = normalise(X[:, 1:3], wrt_X[:, 1:3])
+    return df_norm[:, 0], df_norm[:, 1]
+
+
+def normalise(X, wrt_X):
+    return (X - np.mean(wrt_X, axis=0)) / np.std(wrt_X, axis=0)
+
+
+def norm_X(X, wrt_X):
+    """
+    First column is epoch, second is lat, third is lon, the rest are covariates
+
+    Epochs:
+        convert units to days, and shift to start at zero
+
+    lat/lon:
+        z-standardised
+
+    Covariates:
+        z-standarised
+    """
+    X_time = time_norm(X[..., 0], wrt_X[..., 0])
+    X_eastings, X_northings = space_norm(X, wrt_X)
+    X_covariates = normalise(X[..., 3:], wrt_X[..., 3:])
+    X_norm = np.hstack(
+        [X_time[:, None], X_eastings[:, None], X_northings[:, None], X_covariates]
+    )
+    return X_norm
+
+
+def generate_data(train_data, test_data):
+    train_laqn_df = train_data["laqn"]
+    train_sat_df = train_data["satellite"]
+    test_laqn_df = test_data["laqn"]
+    test_hexgrid_df = test_data["hexgrid"]
+
+    train_laqn_df["measurement_start_utc"] = pd.to_datetime(
+        train_laqn_df["measurement_start_utc"]
+    )
+    test_laqn_df["measurement_start_utc"] = pd.to_datetime(
+        test_laqn_df["measurement_start_utc"]
+    )
+    test_hexgrid_df["measurement_start_utc"] = pd.to_datetime(
+        test_hexgrid_df["measurement_start_utc"]
+    )
+
+    test_hexgrid_sites = test_hexgrid_df.drop_duplicates(subset="point_id")
+
+    test_hexgrid_df = ensure_continuous_timeseries(
+        test_hexgrid_sites,
+        dt_col="measurement_start_utc",
+        id_col="point_id",
+        freq="H",
+        min_dt=train_laqn_df["measurement_start_utc"].min(),
+        max_dt=test_laqn_df["measurement_start_utc"].max(),
+    )
+    test_hexgrid_df = test_hexgrid_df[["measurement_start_utc", "point_id"]].merge(
+        test_hexgrid_sites.drop(columns="measurement_start_utc"), on=["point_id"]
+    )
+
+    test_hexgrid_df["epoch"] = datetime_to_epoch(
+        test_hexgrid_df["measurement_start_utc"]
+    )
+
+    train_laqn_X, train_laqn_Y = process_data(train_laqn_df)
+    train_sat_X, train_sat_Y = process_sat_data(train_sat_df)
+
+    test_laqn_X = get_X(test_laqn_df)
+    test_hexgrid_X = get_X(test_hexgrid_df)
+    breakpoint()
+    # Remove NaN data
+    train_laqn_X, train_laqn_Y = clean_data(train_laqn_X, train_laqn_Y)
+    train_sat_X, train_sat_Y = clean_data(train_sat_X, train_sat_Y)
+    test_laqn_X, _ = clean_data(
+        test_laqn_X, np.zeros((test_laqn_X.shape[0], 1))
+    )  # Test data has no Y
+    test_hexgrid_X, _ = clean_data(
+        test_hexgrid_X, np.zeros((test_hexgrid_X.shape[0], 1))
+    )  # Test data has no Y
+
+    train_laqn_X_norm = norm_X(train_laqn_X, train_laqn_X)
+    train_sat_X_norm_list = [
+        norm_X(train_sat_X[i], train_laqn_X) for i in range(train_sat_X.shape[0])
+    ]
+    train_sat_X_norm = np.array(train_sat_X_norm_list)
+
+    test_laqn_X_norm = norm_X(test_laqn_X, train_laqn_X)
+    test_hexgrid_X_norm = norm_X(test_hexgrid_X, train_laqn_X)
+
+    print("======")
+    print(
+        f"LAQN train: {train_laqn_X_norm.shape}, {train_laqn_X.shape}, {train_laqn_Y.shape}"
+    )
+    print(
+        f"SAT train: {train_sat_X_norm.shape}, {train_sat_X.shape}, {train_sat_Y.shape}"
+    )
+    print(f"LAQN test: {test_laqn_X_norm.shape}, {test_laqn_X.shape}, -")
+    print(f"HEXGRID test: {test_hexgrid_X_norm.shape}, {test_hexgrid_X.shape}, -")
+    print("======")
+
     train_dict = {
-        "X": x_train,
-        "Y": y_train,
+        "laqn": {"X": train_laqn_X_norm, "Y": train_laqn_Y},
+        "sat": {"X": train_sat_X_norm, "Y": train_sat_Y},
     }
 
-    return train_dict
-
-
-def generate_data_norm(df):
-    # load cleaned data pickle
-    # collect training arrays
-    train_X, train_Y = process_data_norm(df)
-
-    # Create the train_dict
-    train_dict = {
-        "X": train_X,
-        "Y": train_Y,
+    test_dict = {
+        "laqn": {"X": test_laqn_X_norm, "Y": None},
+        "hexgrid": {"X": test_hexgrid_X_norm, "Y": None},
     }
 
-    return train_dict
-
-
-def generate_data_norm_sat(df):
-    # load cleaned data pickle
-    # collect training arrays
-    train_X, train_Y = process_sat_data(df)
-
-    # Create the train_dict
-    train_dict = {
-        "X": train_X,
-        "Y": train_Y,
+    meta_dict = {
+        "train": {"laqn": {"df": train_laqn_df}, "sat": {"df": train_sat_df}},
+        "test": {"laqn": {"df": test_laqn_df}, "hexgrid": {"df": test_hexgrid_df}},
     }
 
-    return train_dict
+    with open("raw_data_new_datacreation.pkl", "wb") as file:
+        pickle.dump(meta_dict, file)
 
-
-def generate_data_test(df):
-    # load cleaned data pickle
-    # collect training arrays
-    test_X = process_data_test(df)
-
-    # Create the train_dict
-    test_dict = {"X": test_X, "Y": None}
-
-    return test_dict
+    breakpoint()
+    return train_dict, test_dict
