@@ -193,17 +193,19 @@ class STGP_SVGP_SAT:
 
             latent_gp = GP(
                 sparsity=Z,
-                kernel=ScaleKernel(RBF(input_dim=D, lengthscales=[0.1, 1.0, 1.0, 0.1])),
+                kernel=ScaleKernel(RBF(input_dim=D, lengthscales=[0.1, 0.1, 0.1, 0.1])),
             )
 
             prior = Aggregate(Independent([latent_gp]))
 
             m = GP(data=data, likelihood=[lik], prior=prior, inference="Variational")
+            m.print()
+
             return m
 
         def train_sat(num_epoch, m_sat):
+            m_sat.likelihood.fix()
             sat_natgrad = NatGradTrainer(m_sat)
-
             for q in range(len(m_sat.approximate_posterior.approx_posteriors)):
                 m_sat.approximate_posterior.approx_posteriors[q]._S_chol.fix()
                 m_sat.approximate_posterior.approx_posteriors[q]._m.fix()
@@ -218,7 +220,7 @@ class STGP_SVGP_SAT:
                 lc_i, _ = sat_grad.train(0.01, 1)
                 sat_natgrad.train(0.1, 1)
                 lc_arr.append(lc_i)
-
+            m_sat.print()
             return lc_arr
 
         def predict_laqn_sat_from_sat_only(pred_laqn_data, pred_sat_data, m) -> dict:

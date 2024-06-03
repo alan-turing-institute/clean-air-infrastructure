@@ -1,3 +1,6 @@
+import numpy as np
+import pickle
+import os
 import jax.numpy as jnp
 from scipy.cluster.vq import kmeans2
 import objax
@@ -5,9 +8,6 @@ import jax
 from jax.config import config as jax_config
 
 jax_config.update("jax_enable_x64", True)
-import numpy as np
-import pickle
-import os
 from tqdm import trange
 from abc import abstractmethod
 from .predicting.utils import batch_predict
@@ -23,20 +23,9 @@ from stgp.sparsity import FullSparsity
 from stgp.trainers import NatGradTrainer, GradDescentTrainer
 from stgp.transforms import Aggregate, Independent
 
-results_path = "/Users/suedaciftci/projects/clean-air/clean-air-infrastructure/containers/cleanair/gpjax_models/data/mrdgp_production_results"
-# Create the directory if it doesn't exist
-if not os.path.exists(results_path):
-    os.makedirs(results_path)
-
 
 class STGP_MRDGP:
-    def __init__(
-        self,
-        M,
-        batch_size,
-        num_epochs,
-        pretrain_epochs,
-    ):
+    def __init__(self, M, batch_size, num_epochs, pretrain_epochs, results_path):
         """
         Initialize the JAX-based Air Quality Gaussian Process Model.
 
@@ -44,163 +33,139 @@ class STGP_MRDGP:
             M (int): Number of inducing variables.
             batch_size (int): Batch size for training.
             num_epochs (int): Number of training epochs.
+            pretrain_epochs (int): Number of pretraining epochs.
+            results_path (str): Path to save results.
         """
         self.M = M
         self.batch_size = batch_size
         self.num_epochs = num_epochs
         self.pretrain_epochs = pretrain_epochs
+        self.results_path = results_path
 
-    def fit(
-        self,
-        x_sat: np.array,
-        y_sat: np.ndarray,
-        x_laqn: np.ndarray,
-        y_laqn: np.ndarray,
-        pred_laqn_data,
-        pred_sat_data,
-    ) -> list[float]:
+        # Ensure the results directory exists
+        os.makedirs(self.results_path, exist_ok=True)
+
+    def fit(self, x_sat, y_sat, x_laqn, y_laqn, pred_laqn_data, pred_sat_data):
         """
         Fit the model to training data.
 
         Args:
-            x_sat (jnp.array): Sat training features.
-            y_sat (jnp.ndarray): Sat training targets.
-            x_laqn (jnp.ndarray): Laqn training features.
-            y_laqn (jnp.ndarray): Laqn training targets.
+            x_sat (jnp.array): Satellite training features.
+            y_sat (np.ndarray): Satellite training targets.
+            x_laqn (np.ndarray): LAQN training features.
+            y_laqn (np.ndarray): LAQN training targets.
+            pred_laqn_data (np.ndarray): LAQN prediction data.
+            pred_sat_data (np.ndarray): Satellite prediction data.
+
         Returns:
             list[float]: List of loss values during training.
         """
 
         def get_aggregated_sat_model(X_sat, Y_sat):
             N, D = X_sat.shape[0], X_sat.shape[-1]
-
             data = AggregatedData(X_sat, Y_sat, minibatch_size=self.batch_size)
-
-            lik = Gaussian(1.0)
-
+            likelihood = Gaussian(1.0)
             Z = FullSparsity(Z=kmeans2(jnp.vstack(X_sat), self.M, minit="points")[0])
-
             latent_gp = GP(
                 sparsity=Z,
                 kernel=ScaleKernel(RBF(input_dim=D, lengthscales=[0.1, 0.1, 0.1, 0.1])),
             )
-
             prior = Aggregate(Independent([latent_gp]))
-
-            m = GP(data=data, likelihood=[lik], prior=prior, inference="Variational")
-            return m
-
-        def get_laqn_sat(X_sat, Y_sat, X_laqn, Y_laqn):
-            m_sat = get_aggregated_sat_model(X_sat, Y_sat)
-
-            # we want to predict the continuous gp, not the aggregated
-            latent_m1 = LatentPredictor(m_sat)
-
-            data = Data(
-                X_laqn,
-                Y_laqn,
+            model = GP(
+                data=data, likelihood=[likelihood], prior=prior, inference="Variational"
             )
+            return model, Z.Z
 
+        def get_laqn_sat_model(X_sat, Y_sat, X_laqn, Y_laqn):
+            sat_model, Z_sat = get_aggregated_sat_model(X_sat, Y_sat)
+            latent_m1 = LatentPredictor(sat_model)
+            data = Data(X_laqn, Y_laqn)
             Z = FullSparsity(Z=kmeans2(jnp.vstack(X_laqn), self.M, minit="points")[0])
-
-            latent_gp = GP(  # prior
+            latent_gp = GP(
                 sparsity=Z,
-                kernel=ScaleKernel(DeepRBF(parent=latent_m1, lengthscale=[1]))
+                kernel=ScaleKernel(DeepRBF(parent=latent_m1, lengthscale=[0.1]))
                 * RBF(
                     input_dim=4,
                     lengthscales=[0.1, 0.1, 0.1, 0.1],
                     active_dims=[1, 2, 3, 4],
                 ),
             )
-
             prior = Independent([latent_gp])
-
-            m2 = GP(  # posterior
+            laqn_model = GP(
                 data=data,
                 prior=prior,
                 likelihood=[Gaussian(0.1)],
                 inference="Variational",
             )
+            return [laqn_model, sat_model], [Z.Z, Z_sat]
 
-            return [m2, m_sat]
+        def train_model(model, num_epochs):
+            laqn_model, sat_model = model
+            combined_model = MultiObjectiveModel([laqn_model, sat_model])
 
-        def train_laqn_sat(m, num_epochs):
-            m_sat = m[1]
-            m_laqn = m[0]
+            sat_natgrad = NatGradTrainer(sat_model)
+            laqn_natgrad = NatGradTrainer(laqn_model)
+            for q in range(len(laqn_model.approximate_posterior.approx_posteriors)):
+                laqn_model.approximate_posterior.approx_posteriors[q]._S_chol.fix()
+                laqn_model.approximate_posterior.approx_posteriors[q]._m.fix()
+            for q in range(len(sat_model.approximate_posterior.approx_posteriors)):
+                sat_model.approximate_posterior.approx_posteriors[q]._S_chol.fix()
+                sat_model.approximate_posterior.approx_posteriors[q]._m.fix()
+            sat_grad = GradDescentTrainer(sat_model, objax.optimizer.Adam)
+            laqn_grad = GradDescentTrainer(laqn_model, objax.optimizer.Adam)
+            joint_grad = GradDescentTrainer(combined_model, objax.optimizer.Adam)
 
-            m = MultiObjectiveModel([m_laqn, m_sat])
-
-            sat_natgrad = NatGradTrainer(m_sat)
-            laqn_natgrad = NatGradTrainer(m_laqn)
-
-            for q in range(len(m_laqn.approximate_posterior.approx_posteriors)):
-                m_laqn.approximate_posterior.approx_posteriors[q]._S_chol.fix()
-                m_laqn.approximate_posterior.approx_posteriors[q]._m.fix()
-
-            for q in range(len(m_sat.approximate_posterior.approx_posteriors)):
-                m_sat.approximate_posterior.approx_posteriors[q]._S_chol.fix()
-                m_sat.approximate_posterior.approx_posteriors[q]._m.fix()
-
-            sat_grad = GradDescentTrainer(m_sat, objax.optimizer.Adam)
-
-            laqn_grad = GradDescentTrainer(m_laqn, objax.optimizer.Adam)
-
-            joint_grad = GradDescentTrainer(m, objax.optimizer.Adam)
-
-            lc_arr = []
+            loss_curve = []
             sat_natgrad.train(1.0, 1)
             laqn_natgrad.train(1.0, 1)
 
+            # Pretrain SAT model
             # pretrain sat
-            print("pretraining sat")
+            print("Pretraining sat")
             for i in trange(self.pretrain_epochs):
                 lc_i, _ = sat_grad.train(0.01, 1)
                 sat_natgrad.train(0.1, 1)
-                lc_arr.append(lc_i)
-
+                loss_curve.append(lc_i)
             # pretrain laqn
-            print("pretraining laqn")
+            print("Pretraining laqn")
             for i in trange(self.pretrain_epochs):
                 lc_i, _ = laqn_grad.train(0.01, 1)
                 laqn_natgrad.train(0.1, 1)
-                lc_arr.append(lc_i)
+                loss_curve.append(lc_i)
 
+            print("Joint training")
             for i in trange(self.num_epochs):
                 lc_i, _ = joint_grad.train(0.01, 1)
-                lc_arr.append(lc_i)
-
+                loss_curve.append(lc_i)
                 sat_natgrad.train(0.1, 1)
                 laqn_natgrad.train(0.1, 1)
 
-            joint_elbo_path = os.path.join(results_path, "joint_lc_1_500ip.pkl")
-            with open(joint_elbo_path, "wb") as file:
-                pickle.dump(lc_arr, file)
+            with open(os.path.join("joint_loss_curve_7.pkl"), "wb") as file:
+                pickle.dump(loss_curve, file)
 
-            return lc_arr
+            return loss_curve
 
-        def predict_laqn_sat(pred_laqn_data, pred_sat_data, m) -> dict:
-            m_laqn = m[0]
-            m_sat = m[1]
+        def predict_model(pred_laqn_data, pred_sat_data, model):
+            laqn_model, sat_model = model
 
-            jitted_sat_pred_fn = objax.Jit(
-                lambda x: m_sat.predict_y(x, squeeze=False), m_laqn.vars()
+            sat_pred_fn = objax.Jit(
+                lambda x: sat_model.predict_y(x, squeeze=False), sat_model.vars()
+            )
+            laqn_pred_fn = objax.Jit(
+                lambda x: laqn_model.predict_y(x, squeeze=False), laqn_model.vars()
             )
 
-            def sat_pred_fn(XS):
-                mu, var = jitted_sat_pred_fn(XS)
+            def predict_sat(X):
+                mu, var = sat_pred_fn(X)
                 return mu.T, var.T
 
-            jitted_laqn_pred_fn = objax.Jit(
-                lambda x: m_laqn.predict_y(x, squeeze=False), m_laqn.vars()
-            )
-
-            def laqn_pred_fn(XS):
-                def _reshape_pred(XS):
-                    mu, var = jitted_laqn_pred_fn(XS)
+            def predict_laqn(X):
+                def _reshape_pred(X):
+                    mu, var = laqn_pred_fn(X)
                     return mu.T, var.T
 
                 return batch_predict(
-                    XS,
+                    X,
                     _reshape_pred,
                     batch_size=self.batch_size,
                     verbose=True,
@@ -208,38 +173,46 @@ class STGP_MRDGP:
                     ci=False,
                 )
 
-            results_sat = collect_results(
+            sat_results = collect_results(
                 None,
-                m,
-                sat_pred_fn,
+                sat_model,
+                predict_sat,
                 pred_sat_data,
                 returns_ci=False,
                 data_type="regression",
             )
-
-            results_laqn = collect_results(
+            laqn_results = collect_results(
                 None,
-                m,
-                laqn_pred_fn,
+                laqn_model,
+                predict_laqn,
                 pred_laqn_data,
                 returns_ci=False,
                 data_type="regression",
             )
 
-            results_laqn["predictions"]["sat"] = results_sat["predictions"]["sat"]
-            results_laqn["metrics"]["sat_0"] = results_sat["metrics"]["sat_0"]
+            laqn_results["predictions"]["sat"] = sat_results["predictions"]["sat"]
+            laqn_results["metrics"]["sat_0"] = sat_results["metrics"]["sat_0"]
 
-            return results_laqn
+            return laqn_results
 
-        m = get_laqn_sat(x_sat, y_sat, x_laqn, y_laqn)
-        loss_values = train_laqn_sat(m, self.num_epochs)
-        results = predict_laqn_sat(pred_laqn_data, pred_sat_data, m)
+        models, inducing_points = get_laqn_sat_model(x_sat, y_sat, x_laqn, y_laqn)
+        loss_values = train_model(models, self.num_epochs)
+        results = predict_model(pred_laqn_data, pred_sat_data, models)
 
-        # Save the loss values to a pickle file
-        training_path = os.path.join(results_path, "training_loss_mrdgp_1_500ip.pkl")
-        with open(training_path, "wb") as file:
-            pickle.dump(loss_values, file)
-        # All prediction path
-        prediction_path = os.path.join(results_path, "predictions_mrdgp_1_500ip.pkl")
-        with open(prediction_path, "wb") as file:
+        # Save predictions
+        with open(
+            os.path.join(self.results_path, "predictions_mrdgp_7.pkl"), "wb"
+        ) as file:
             pickle.dump(results, file)
+
+        # Save inducing points
+        with open(
+            os.path.join(self.results_path, "inducing_points_7.pkl"), "wb"
+        ) as file:
+            pickle.dump(inducing_points, file)
+
+        # Print model and inducing points
+        print("Model:", models)
+        print("Inducing points (z):", inducing_points)
+
+        return loss_values

@@ -7,6 +7,7 @@ from typing import Optional
 import os
 import jax
 import optax
+import numpy as np
 import jax.numpy as jnp
 
 from jax.config import config as jax_config
@@ -144,7 +145,7 @@ def train_svgp_sat(
 def train_mrdgp(
     root_dir: str,
     M: Optional[int] = 500,
-    batch_size: Optional[int] = 300,
+    batch_size: Optional[int] = 200,
     num_epochs: Optional[int] = 2500,
     pretrain_epochs: Optional[int] = 2500,
 ):
@@ -157,7 +158,8 @@ def train_mrdgp(
         batch_size (int): Batch size for training.
         num_epochs (int): Number of training epochs.
     """
-    model = STGP_MRDGP(M, batch_size, num_epochs, pretrain_epochs)
+
+    model = STGP_MRDGP(M, batch_size, num_epochs, pretrain_epochs, root_dir)
     # Load training data
     typer.echo("Loading training data!")
     # Iterate over the directories and subdirectories
@@ -205,7 +207,5 @@ def train_mrdgp(
             "Y": train_dict["laqn"]["Y"],
         },
     }
-
-    print(model)
     model.fit(x_sat, y_sat, x_laqn, y_laqn, pred_laqn_data, pred_sat_data)
     typer.echo("Training complete!")

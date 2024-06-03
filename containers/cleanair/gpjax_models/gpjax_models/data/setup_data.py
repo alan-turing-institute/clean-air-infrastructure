@@ -29,6 +29,10 @@ def get_Y_sat(df):
     return np.array([df["NO2"].iloc[0]])[:, None]
 
 
+def get_X_norm(df):
+    return np.array(df[["epoch_norm", "lat_norm", "lon_norm", "value_200_park_norm"]])
+
+
 def process_sat_data(train_data_sat):
     """process satellite to group by box id"""
     train_data_sat = train_data_sat.sort_values(by=["box_id", "lat", "lon"])
@@ -41,6 +45,10 @@ def process_sat_data(train_data_sat):
     Y_sat = Y_sat[..., 0]
 
     return X_sat, Y_sat
+
+
+def process_data_test(df):
+    return get_X_norm(df)
 
 
 def process_data(df):
@@ -107,55 +115,28 @@ def norm_X(X, wrt_X):
 
 
 def generate_data(train_data, test_data):
+
+    # Load dataframes
     train_laqn_df = train_data["laqn"]
     train_sat_df = train_data["satellite"]
     test_laqn_df = test_data["laqn"]
     test_hexgrid_df = test_data["hexgrid"]
 
-    train_laqn_df["measurement_start_utc"] = pd.to_datetime(
-        train_laqn_df["measurement_start_utc"]
-    )
-    test_laqn_df["measurement_start_utc"] = pd.to_datetime(
-        test_laqn_df["measurement_start_utc"]
-    )
-    test_hexgrid_df["measurement_start_utc"] = pd.to_datetime(
-        test_hexgrid_df["measurement_start_utc"]
-    )
+    # Extract X and Y
 
-    test_hexgrid_sites = test_hexgrid_df.drop_duplicates(subset="point_id")
-
-    test_hexgrid_df = ensure_continuous_timeseries(
-        test_hexgrid_sites,
-        dt_col="measurement_start_utc",
-        id_col="point_id",
-        freq="H",
-        min_dt=train_laqn_df["measurement_start_utc"].min(),
-        max_dt=test_laqn_df["measurement_start_utc"].max(),
-    )
-    test_hexgrid_df = test_hexgrid_df[["measurement_start_utc", "point_id"]].merge(
-        test_hexgrid_sites.drop(columns="measurement_start_utc"), on=["point_id"]
-    )
-
-    test_hexgrid_df["epoch"] = datetime_to_epoch(
-        test_hexgrid_df["measurement_start_utc"]
-    )
-
+    # collect training arrays
     train_laqn_X, train_laqn_Y = process_data(train_laqn_df)
     train_sat_X, train_sat_Y = process_sat_data(train_sat_df)
 
+    # collect training arrays -- no Y available for testing data
     test_laqn_X = get_X(test_laqn_df)
     test_hexgrid_X = get_X(test_hexgrid_df)
-    breakpoint()
+
     # Remove NaN data
     train_laqn_X, train_laqn_Y = clean_data(train_laqn_X, train_laqn_Y)
     train_sat_X, train_sat_Y = clean_data(train_sat_X, train_sat_Y)
-    test_laqn_X, _ = clean_data(
-        test_laqn_X, np.zeros((test_laqn_X.shape[0], 1))
-    )  # Test data has no Y
-    test_hexgrid_X, _ = clean_data(
-        test_hexgrid_X, np.zeros((test_hexgrid_X.shape[0], 1))
-    )  # Test data has no Y
 
+    # Normalize X, laqn_X is used as the reference
     train_laqn_X_norm = norm_X(train_laqn_X, train_laqn_X)
     train_sat_X_norm_list = [
         norm_X(train_sat_X[i], train_laqn_X) for i in range(train_sat_X.shape[0])
@@ -165,6 +146,7 @@ def generate_data(train_data, test_data):
     test_laqn_X_norm = norm_X(test_laqn_X, train_laqn_X)
     test_hexgrid_X_norm = norm_X(test_hexgrid_X, train_laqn_X)
 
+    # check shapes
     print("======")
     print(
         f"LAQN train: {train_laqn_X_norm.shape}, {train_laqn_X.shape}, {train_laqn_Y.shape}"
@@ -176,6 +158,7 @@ def generate_data(train_data, test_data):
     print(f"HEXGRID test: {test_hexgrid_X_norm.shape}, {test_hexgrid_X.shape}, -")
     print("======")
 
+    # save data
     train_dict = {
         "laqn": {"X": train_laqn_X_norm, "Y": train_laqn_Y},
         "sat": {"X": train_sat_X_norm, "Y": train_sat_Y},
@@ -191,8 +174,6 @@ def generate_data(train_data, test_data):
         "test": {"laqn": {"df": test_laqn_df}, "hexgrid": {"df": test_hexgrid_df}},
     }
 
-    with open("raw_data_new_datacreation.pkl", "wb") as file:
+    with open("raw_data.pkl", "wb") as file:
         pickle.dump(meta_dict, file)
-
-    breakpoint()
     return train_dict, test_dict
