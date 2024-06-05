@@ -1,84 +1,47 @@
-# Secret file for database connection
+# Secret File for Database Connection
 
-The connection information for a PostgreSQL database is stored in a JSON "secret" file.
-It contains entries for the username, password, host, port, database name and SSL mode.
+The connection information for a PostgreSQL database is stored in a JSON "secret" file. This file contains entries for the username, password, host, port, database name, and SSL mode.
 
-**Before starting this guide**, please make sure you have [installed the packages](installation.md), [logged into the Azure CLI](azure.md) and read the [developer guide](developer.md).
-You may also find it useful to look at our [guide for docker](docker.md) and [mounting a secret file](docker.md#mounting-a-secrets-file).
+**Before starting this guide**, ensure you have [installed the necessary packages](installation.md) and read the [developer guide](developer.md). Additionally, refer to our guides on [Docker](docker.md) and [mounting a secret file](docker.md#mounting-a-secrets-file).
 
-**The contents of this guide** include:
+**Contents of this Guide:**
 
-- Connecting to the [Azure database](#Azure-database)
-- Secret file for a local [docker database](#docker-database)
+- Secret file for a local [Docker database](#docker-database)
+- Secret file for a server [Aquifer database](#server-database)
 
 ***
 
-## Azure database
+## Local Database
 
-The connection to the Azure database in Azure is managed through the urbanair CLI.
-The username and password are generated using the [Azure CLI](azure.md).
+We store database credentials in JSON files. **For production databases, never store database passwords in these files. For more information, see the production database section.**
 
-***With Turing account***
-
-You can store the connection credentials for the Azure database by running:
+Create the secrets directory and the local database secrets file:
 
 ```bash
-urbanair init production
-```
-
-You *should* now be able to connect to the Azure database using the urbanair CLI.
-If you would like to get the location of the JSON secret file for the Azure database,
-you can run:
-
-```bash
-urbanair config path
-```
-
-If you would like to get the username and password stored in the Azure JSON secret file, use the `urbanair echo` CLI:
-
-```bash
-urbanair echo dbuser
-urbanair echo dbtoken
-```
-
-***Without Turing account***
-
-We are going to store the settings for the azure database in a JSON file.First, create environment variables to store the location of filepaths and create the hidden `.secrets` directory. We recommend doing this inside the repo.
-
-```bash
-cd clean-air-infrastructure
-export SECRETS_DIR="$(pwd)/.secrets"
-export DB_SECRET_FILE="${SECRETS_DIR}/.db_secrets_azure.json"
-mkdir "${SECRETS_DIR}"
-```
-
-Next create `.db_secrets_azurer.json`:
-
-```bash
-echo '{   
-    "host": "cleanair-inputs-2021-server.postgres.database.azure.com",
+mkdir -p .secrets
+echo '{
+    "username": "postgres",
+    "password": "",
+    "host": "localhost",
     "port": 5432,
-    "db_name": "cleanair_inputs_db",
-    "ssl_mode": "require",
-    "username": USERNAME,
-    "password": PASSWORD,
-}' >> $DB_SECRET_FILE
+    "db_name": "cleanair_test_db",
+    "ssl_mode": "prefer"
+}' >> .secrets/.db_secrets_offline.json
 ```
 
-Fill the `USERNAME` and `PASSWORD` apporipiated.fThen run the comand to ???.
+Initialize the local environment:
 
-```
+```bash
 urbanair init local --secretfile $DB_SECRET_FILE
 ```
 
 ***
 
-## Docker database
+## Docker Database
 
-> Create a [test docker PostgreSQL database](developer.md#setting-up-a-test-database-with-docker) before starting this section.
+> **Note:** Create a [test Docker PostgreSQL database](developer.md#setting-up-a-test-database-with-docker) before starting this section.
 
-We are going to store the settings for the test docker database in a JSON file.
-First, create environment variables to store the location of filepaths and create the hidden `.secrets` directory. We recommend doing this inside the repo.
+Store the settings for the test Docker database in a JSON file. First, create environment variables to store the location of file paths and create the hidden `.secrets` directory. It is recommended to do this inside the repository.
 
 ```bash
 cd clean-air-infrastructure
@@ -87,9 +50,9 @@ export DB_SECRET_FILE="${SECRETS_DIR}/.db_secrets_docker.json"
 mkdir "${SECRETS_DIR}"
 ```
 
-> If using conda, you might like to [save these environment variables](https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#saving-environment-variables) so you never have to set them again
+> **Tip:** If using Conda, you might want to [save these environment variables](https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#saving-environment-variables) to avoid setting them again.
 
-Next create `.db_secrets_docker.json`:
+Next, create the `.db_secrets_docker.json` file:
 
 ```bash
 echo '{
@@ -102,23 +65,50 @@ echo '{
 }' >> $DB_SECRET_FILE
 ```
 
-<<<<<<< HEAD
+***
+
+## Server Database
+
+Store the settings for the Aquifer PostgreSQL database in a JSON file. First, ensure you have access to the Aquifer server located in the Department of Computer Science at Warwick. Create environment variables to store the location of file paths and create the hidden `.secrets` directory. It is recommended to do this inside the repository.
+
+```bash
+cd clean-air-infrastructure
+export SECRETS_DIR="$(pwd)/.secrets"
+export DB_SECRET_FILE="${SECRETS_DIR}/.db_secrets_aqifer.json"
+mkdir "${SECRETS_DIR}"
+```
+
+> **Tip:** If using Conda, you might want to [save these environment variables](https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#saving-environment-variables) to avoid setting them again.
+
+Next, create the `.db_secrets_aqifer.json` file:
+
+```bash
+echo '{
+    "username": "postgres",
+    "password": "<PASSWORD>",
+    "host": "localhost",
+    "port": 5432,
+    "db_name": "cleanair_inputs_db",
+    "ssl_mode": "prefer"
+}' >> $DB_SECRET_FILE
+```
+
+If you do not have admin access to the Aquifer server or encounter any issues connecting to the database, please contact [Sueda Ciftci](mailto:sueda.ciftci@warwick.ac.uk).
 
 ***
 
-## Mounting a secrets file
+## Mounting a Secrets File
 
-If you are running a docker container and you need the container to connect to the database,
-you will need to [mount the directory](https://docs.docker.com/storage/bind-mounts/) `SECRETS_DIR` containing the JSON secret file on the host machine onto a target directory `/secrets` on the container file system.
+When running a Docker container that needs to connect to the database, you must [mount the directory](https://docs.docker.com/storage/bind-mounts/) containing the JSON secret file from the host machine onto a target directory `/secrets` on the container file system.
 
-Add the `-v "${SECRET_DIR}":/secrets` option to any `docker run` commands that need a database connection.
+Add the `-v "${SECRETS_DIR}":/secrets` option to any `docker run` commands that require a database connection.
 
-You will also need to *append* the location of the JSON secret file by using the `--secretfile` option for most urbanair CLI commands.
+Additionally, append the location of the JSON secret file using the `--secretfile` option for most Urbanair CLI commands.
 
-In summary, a docker run command might look something like:
+A typical Docker run command might look like this:
 
 ```bash
-docker run -v "${SECRET_DIR}":/secrets ... --secretfile /secrets/.db_secrets_docker.json
+docker run -v "${SECRETS_DIR}":/secrets ... --secretfile /secrets/.db_secrets_docker.json
 ```
 
-If you don't use the `--secretfile` option for running the command, you *might* also need to add an environment variable that tells the *docker container* about the name of the secrets file by adding `-e DB_SECRET_FILE=".db_secrets_docker.json"`.
+If you don't use the `--secretfile` option, you may need to add an environment variable that informs the Docker container about the secrets file by adding `-e DB_SECRET_FILE=".db_secrets_docker.json"`.
