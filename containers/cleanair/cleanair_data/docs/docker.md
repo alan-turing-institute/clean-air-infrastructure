@@ -8,8 +8,4 @@ Before starting this guide:
 
 ## Contents
 
-- [Our docker images](#our-docker-images)
-- [Pulling a docker image](#pulling) from the [Azure container registry](#azure-container-registry).
-- [Building a docker image](#building)
-- [Running a docker image](#running) including [mounting a secret file](#mounting-a-secrets-file)
-- [(Optional) Networks of docker containers](#multi-container-networks)
+**TODO**
