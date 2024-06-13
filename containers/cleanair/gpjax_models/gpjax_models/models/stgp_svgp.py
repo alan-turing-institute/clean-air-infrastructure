@@ -130,9 +130,6 @@ class STGP_SVGP:
                 returns_ci=False,
                 data_type="regression",
             )
-            with open("predictions_svgp.pickle", "wb") as file:
-                pickle.dump(results, file)
-
             return results
 
         m = get_laqn_svgp(x_train, y_train)
@@ -141,9 +138,9 @@ class STGP_SVGP:
 
         print(results["metrics"])
         # Save the loss values to a pickle file
-        with open("loss_values_svgp.pickle", "wb") as file:
+        with open("loss_values_svgp_laqn.pkl", "wb") as file:
             pickle.dump(loss_values, file)
-        with open("predictions_svgp.pickle", "wb") as file:
+        with open("predictions_svgp_laqn.pkl", "wb") as file:
             pickle.dump(results, file)
 
 
