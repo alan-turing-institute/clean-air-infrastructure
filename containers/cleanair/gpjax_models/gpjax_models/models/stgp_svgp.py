@@ -65,7 +65,10 @@ class STGP_SVGP:
             latent_gp = GP(
                 sparsity=Z,
                 kernel=ScaleKernel(
-                    RBF(input_dim=D, lengthscales=[0.1, 1.0, 1.0, 0.1]),
+                    RBF(
+                        input_dim=D,
+                        lengthscales=[0.1, 0.1, 0.1, 0.1],
+                    ),
                     variance=np.nanstd(Y_laqn),
                 ),
             )
