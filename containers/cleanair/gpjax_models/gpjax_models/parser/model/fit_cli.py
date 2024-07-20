@@ -229,7 +229,7 @@ def train_mrdgp(
     training_data = file_manager.load_training_data()
 
     typer.echo("Loading testing data!")
-    test_data = file_manager.load_training_data()
+    test_data = file_manager.load_testing_data()
 
     breakpoint()
     training_dict, test_dict = generate_data(training_data, test_data)

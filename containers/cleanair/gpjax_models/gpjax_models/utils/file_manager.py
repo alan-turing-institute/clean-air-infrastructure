@@ -69,7 +69,7 @@ class FileManager:
         """Load training data from the dataset directory."""
         for dirpath, _, filenames in os.walk(self.input_dir):
             # Check if 'training_dataset.pkl' exists in the current directory
-            if "test_dataset.pkl" in filenames:
+            if "training_dataset.pkl" in filenames:
                 # If found, load the data
                 file_path = os.path.join(dirpath, "training_dataset.pkl")
                 with open(file_path, "rb") as file:
@@ -84,7 +84,7 @@ class FileManager:
             # Check if 'training_dataset.pkl' exists in the current directory
             if "test_dataset.pkl" in filenames:
                 # If found, load the data
-                file_path = os.path.join(dirpath, "testing_dataset.pkl")
+                file_path = os.path.join(dirpath, "test_dataset.pkl")
                 with open(file_path, "rb") as file:
                     return pickle.load(file)
         raise FileNotFoundError(
