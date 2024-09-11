@@ -1,7 +1,7 @@
 """Configure database roles"""
-from cleanair.loggers import initialise_logging
-from cleanair.databases import DBConfig
-from cleanair.parsers import DataBaseRoleParser
+from cleanair_data.loggers import initialise_logging
+from cleanair_data.databases import DBConfig
+from cleanair_data.parsers import DataBaseRoleParser
 
 
 def main():
@@ -28,5 +28,4 @@ def main():
 
 
 if __name__ == "__main__":
-
     main()
