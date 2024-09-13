@@ -20,17 +20,18 @@ DESCRIPTION = "Jax Models Module"
 
 # Dependencies
 INSTALL_REQUIRES = [
-    "jax",
-    "numpy",
-    "pandas==2.1.3",
+    "jax==0.4.25",
+    "jaxlib==0.4.27",
+    "numpy==1.26.4",
+    "pandas==2.2.2",
     "pydantic==1.10.12",
-    "scikit-learn",
+    "scikit-learn==1.5.1",
     "scipy==1.11.2",
-    "typer==0.9.0",
     "tinygp==0.3.0",
-    "tensorflow-probability",
-    "colorlog==6.7.0",
+    "tensorflow-probability==0.23.0",
     "nptyping==2.5.0",
+    "matplotlib==3.9.1",
+    "geopandas==1.0.1",
 ]
 SETUP_REQUIRES = ["setuptools_scm"]
 
