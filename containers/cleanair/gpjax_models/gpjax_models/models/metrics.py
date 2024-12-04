@@ -6,7 +6,11 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import os
 from stdata.vis.spacetime import SpaceTimeVisualise
+import geopandas as gpd
+from stdata.utils import to_gdf
 
+from pysal.explore import esda  # Exploratory Spatial analytics
+from pysal.lib import weights  # Spatial weights
 
 directory_path = Path('/Users/oliverhamelijnck/Downloads/dataset/')
 
@@ -97,8 +101,6 @@ if __name__ == "__main__":
     train_laqn_df = fix_df_columns(raw_data["train"]["laqn"]["df"])
     test_laqn_df = fix_df_columns(raw_data["test"]["laqn"]["df"])
     true_val = fix_df_columns(day_3_gt)
-    # test_laqn_true_values = true_y
-    hexgrid_df = fix_df_columns(raw_data["test"]["hexgrid"]["df"])
 
     # Load results
     results = load_results(data_root)
@@ -112,42 +114,20 @@ if __name__ == "__main__":
     test_laqn_df["var"] = np.squeeze(results["predictions"]["test_laqn"]["var"][0])
     test_laqn_df["observed"] = day_3_gt["NO2"]
 
-    # train_laqn_df["pred"] = train_laqn_df["traffic"]
-    # test_laqn_df["pred"] = test_laqn_df["traffic"]
+    test_laqn_df['residual'] =  test_laqn_df['observed'] - test_laqn_df['pred']
 
-    # train_laqn_df["measurement_start_utc"] = pd.to_datetime(
-    #     train_laqn_df["measurement_start_utc"]
-    # )
-    train_end = train_laqn_df["epoch"].max()
-    laqn_df = pd.concat([train_laqn_df, test_laqn_df])
-    if False:
-        #'geom' is the column containing Shapely Point geometries
-        hexgrid_df["geom"] = gpd.points_from_xy(hexgrid_df["lon"], hexgrid_df["lat"])
+    test_df = to_gdf(test_laqn_df[test_laqn_df['epoch']==test_laqn_df['epoch'].iloc[0]].copy())
+    test_df = test_df[test_df['residual'].notna()].copy()
 
-        # Buffer each Point geometry by 0.002
-        hexgrid_df["geom"] = hexgrid_df["geom"].apply(lambda point: point.buffer(0.002))
+    # Generate W from the GeoDataFrame
+    w = weights.distance.KNN.from_dataframe(test_df, k=8)
+    # Row-standardization
+    w.transform = "R"
 
-        # Create a GeoDataFrame using the 'geom' column
-        hexgrid_gdf = gpd.GeoDataFrame(hexgrid_df, geometry="geom")
-        hexgrid_df["pred"] = results["predictions"]["hexgrid"]["mu"][0].T
-        # hexgrid_df["pred"] = hexgrid_df["traffic"]
-        hexgrid_df["var"] = np.squeeze(results["predictions"]["hexgrid"]["var"][0])
-    else:
-        hexgrid_df = None
+    test_df["w_residual"] = weights.lag_spatial(w, test_df['residual'])
 
-    sat_df = fix_df_columns(raw_data["train"]['sat']['df'])
-    # TODO: NEED TO CHECK!! this should match is handling the satllite data
-    sat_df = sat_df[['lon', 'lat', 'NO2', 'epoch', 'box_id']].groupby(['epoch', 'box_id']).mean().reset_index()
-    # copy predictions 
-    sat_df['pred'] = results["predictions"]['sat']['mu'][0]
-    sat_df['var'] = results["predictions"]['sat']['var'][0]
-    sat_df['observed'] = sat_df['NO2']
+    test_df["residual_std"] = test_df["residual"] - test_df["residual"].mean()
+    test_df["w_residual_std"] = weights.lag_spatial(w, test_df['residual_std'])
 
-    laqn_df['residual'] =  laqn_df['observed'] - laqn_df['pred']
-    laqn_df['pred'] = laqn_df['residual']
-
-    vis_obj = SpaceTimeVisualise( laqn_df, hexgrid_df, sat_df=sat_df, geopandas_flag=True, test_start=train_end)
-    #vis_obj = SpaceTimeVisualise( laqn_df, hexgrid_df, geopandas_flag=True, test_start=train_end)
-
-    # Show the visualization
-    vis_obj.show()
+    lisa = esda.moran.Moran_Local(test_df['residual'], w)
+    breakpoint()
