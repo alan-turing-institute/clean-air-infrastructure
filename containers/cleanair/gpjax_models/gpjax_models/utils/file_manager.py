@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 from pathlib import Path
 import logging
+import os
 
 
 class ExperimentInstanceNotFoundError(Exception):
@@ -21,10 +22,10 @@ class FileManager:
 
     # Constants
     DEFAULT_TRAINING_NAME = "training"
-    DATASET = Path("datasets")
+    DATASET = Path("dataset")
     RAW_DATA_PICKLE = DATASET / "raw_data.pkl"
-    TRAINING_DATA_PICKLE = DATASET / "training_data.pkl"
-    TEST_DATA_PICKLE = DATASET / "test_dataset.pkl"
+    TRAINING_DATA_PICKLE = "training_data.pkl"
+    TEST_DATA_PICKLE = "test_dataset.pkl"
     RESOURCE_GROUP = "Datasets"
     STORAGE_CONTAINER_NAME = "aqdata"
     STORAGE_ACCOUNT_NAME = "londonaqdatasets"
@@ -65,9 +66,41 @@ class FileManager:
             cls.logger.error(f"An error occurred during download: {str(e)}")
 
     def load_training_data(self) -> dict:
-        self.download_data_blob(name="training", input_dir=Path.cwd())
-        pickle_path = Path.cwd() / FileManager.TRAINING_DATA_PICKLE
-        return self.load_pickle(pickle_path)
+        """Load training data from the dataset directory."""
+        for dirpath, _, filenames in os.walk(self.input_dir):
+            # Check if 'training_dataset.pkl' exists in the current directory
+            if "training_dataset.pkl" in filenames:
+                # If found, load the data
+                file_path = os.path.join(dirpath, "training_dataset.pkl")
+                with open(file_path, "rb") as file:
+                    return pickle.load(file)
+        raise FileNotFoundError(
+            f"{FileManager.TRAINING_DATA_PICKLE} not found in {self.input_dir}"
+        )
+
+    def load_testing_data(self) -> dict:
+        """Load training data from the dataset directory."""
+        for dirpath, _, filenames in os.walk(self.input_dir):
+            # Check if 'training_dataset.pkl' exists in the current directory
+            if "test_dataset.pkl" in filenames:
+                # If found, load the data
+                file_path = os.path.join(dirpath, "test_dataset.pkl")
+                with open(file_path, "rb") as file:
+                    return pickle.load(file)
+        raise FileNotFoundError(
+            f"{FileManager.TEST_DATA_PICKLE} not found in {self.input_dir}"
+        )
+
+    def load_pickle(self, pickle_path: Path) -> any:
+        """Load either training or test data from a pickled file."""
+        self.logger.debug("Loading object from pickle file from %s", pickle_path)
+        if not pickle_path.exists():
+            raise FileNotFoundError(f"Could not find file at path {pickle_path}")
+
+        with open(pickle_path, "rb") as pickle_f:
+            return pickle.load(
+                pickle_f, fix_imports=True, encoding="ASCII", errors="strict"
+            )
 
     def validate_input_directory(self, input_dir: Path) -> None:
         if not input_dir.exists():
@@ -80,17 +113,6 @@ class FileManager:
         self.logger.debug("Saving object to pickle file at %s", input_dir)
         with open(input_dir, "wb") as pickle_file:
             pickle.dump(obj, pickle_file)
-
-    def load_pickle(self, pickle_path: Path) -> any:
-        """Load either training or test data from a pickled file."""
-        self.logger.debug("Loading object from pickle file from %s", pickle_path)
-        if not pickle_path.exists():
-            raise FileNotFoundError(f"Could not find file at path {pickle_path}")
-
-        with open(pickle_path, "rb") as pickle_f:
-            return pickle.load(
-                pickle_f, fix_imports=True, encoding="ASCII", errors="strict"
-            )
 
     def load_test_data(self) -> dict:
         """Load test data from either the CACHE or input_dir."""

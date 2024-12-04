@@ -20,6 +20,13 @@ def get_X(df):
     )
 
 
+def get_X_trf(df):
+    # return np.array(df[['epoch', 'lat', 'lon', 'value_100_total_a_road_length', 'value_100_total_a_road_primary_length', 'value_100_flat', 'value_100_max_canyon_ratio']])
+    return np.array(
+        df[["epoch", "lat", "lon", "value_200_total_a_road_primary_length", "traffic"]]
+    )
+
+
 def get_Y(df):
     return np.array(df["NO2"])[:, None]
 
@@ -47,12 +54,30 @@ def process_sat_data(train_data_sat):
     return X_sat, Y_sat
 
 
+def process_sat_trf_data(train_data_sat):
+    """process satellite to group by box id"""
+    train_data_sat = train_data_sat.sort_values(by=["box_id", "lat", "lon"])
+
+    sat_gb = train_data_sat.groupby(["box_id", "epoch"])
+    sat_arr = [sat_gb.get_group(i) for i in sat_gb.groups]
+    X_sat = np.array([get_X_trf(df_i) for df_i in sat_arr])
+    Y_sat = np.array([get_Y_sat(df_i) for df_i in sat_arr])
+
+    Y_sat = Y_sat[..., 0]
+
+    return X_sat, Y_sat
+
+
 def process_data_test(df):
     return get_X_norm(df)
 
 
 def process_data(df):
     return get_X(df), get_Y(df)
+
+
+def process_data_trf(df):
+    return get_X_trf(df), get_Y(df)
 
 
 def clean_data(x_array, y_array):
@@ -174,6 +199,171 @@ def generate_data(train_data, test_data):
         "test": {"laqn": {"df": test_laqn_df}, "hexgrid": {"df": test_hexgrid_df}},
     }
 
-    with open("raw_data.pkl", "wb") as file:
+    with open("raw_data_svgp_sat_without_trf.pkl", "wb") as file:
         pickle.dump(meta_dict, file)
+    return train_dict, test_dict
+
+
+def generate_data_trf(train_data, test_data):
+
+    # Load dataframes
+    train_laqn_df = train_data["laqn"]
+    train_sat_df = train_data["satellite"]
+    test_laqn_df = test_data["laqn"]
+    test_hexgrid_df = test_data["hexgrid"]
+
+    # Extract X and Y
+
+    # collect training arrays
+    train_laqn_X, train_laqn_Y = process_data_trf(train_laqn_df)
+    train_sat_X, train_sat_Y = process_sat_trf_data(train_sat_df)
+
+    # collect training arrays -- no Y available for testing data
+    test_laqn_X = get_X_trf(test_laqn_df)
+    test_hexgrid_X = get_X_trf(test_hexgrid_df)
+
+    # Remove NaN data
+    train_laqn_X, train_laqn_Y = clean_data(train_laqn_X, train_laqn_Y)
+    train_sat_X, train_sat_Y = clean_data(train_sat_X, train_sat_Y)
+
+    # Normalize X, laqn_X is used as the reference
+    train_laqn_X_norm = norm_X(train_laqn_X, train_laqn_X)
+    train_sat_X_norm_list = [
+        norm_X(train_sat_X[i], train_laqn_X) for i in range(train_sat_X.shape[0])
+    ]
+    train_sat_X_norm = np.array(train_sat_X_norm_list)
+
+    test_laqn_X_norm = norm_X(test_laqn_X, train_laqn_X)
+    test_hexgrid_X_norm = norm_X(test_hexgrid_X, train_laqn_X)
+
+    # check shapes
+    print("======")
+    print(
+        f"LAQN train: {train_laqn_X_norm.shape}, {train_laqn_X.shape}, {train_laqn_Y.shape}"
+    )
+    print(
+        f"SAT train: {train_sat_X_norm.shape}, {train_sat_X.shape}, {train_sat_Y.shape}"
+    )
+    print(f"LAQN test: {test_laqn_X_norm.shape}, {test_laqn_X.shape}, -")
+    print(f"HEXGRID test: {test_hexgrid_X_norm.shape}, {test_hexgrid_X.shape}, -")
+    print("======")
+
+    # save data
+    train_dict = {
+        "laqn": {"X": train_laqn_X_norm, "Y": train_laqn_Y},
+        "sat": {"X": train_sat_X_norm, "Y": train_sat_Y},
+    }
+
+    test_dict = {
+        "laqn": {"X": test_laqn_X_norm, "Y": None},
+        "hexgrid": {"X": test_hexgrid_X_norm, "Y": None},
+    }
+
+    meta_dict = {
+        "train": {"laqn": {"df": train_laqn_df}, "sat": {"df": train_sat_df}},
+        "test": {"laqn": {"df": test_laqn_df}, "hexgrid": {"df": test_hexgrid_df}},
+    }
+
+    with open("raw_data_mrdgp_trf.pkl", "wb") as file:
+        pickle.dump(meta_dict, file)
+    return train_dict, test_dict
+
+
+def generate_data_laqn(train_data, test_data):
+
+    # Load dataframes
+    train_laqn_df = train_data["laqn"]
+    test_laqn_df = test_data["laqn"]
+    test_hexgrid_df = test_data["hexgrid"]
+
+    # Extract X and Y for training data
+    train_laqn_X, train_laqn_Y = process_data(train_laqn_df)
+
+    # Extract X for test data
+    test_laqn_X = get_X(test_laqn_df)
+    test_hexgrid_X = get_X(test_hexgrid_df)
+
+    # Remove NaN data
+    train_laqn_X, train_laqn_Y = clean_data(train_laqn_X, train_laqn_Y)
+
+    # Normalize X, using laqn_X as the reference
+    train_laqn_X_norm = norm_X(train_laqn_X, train_laqn_X)
+    test_laqn_X_norm = norm_X(test_laqn_X, train_laqn_X)
+    test_hexgrid_X_norm = norm_X(test_hexgrid_X, train_laqn_X)
+
+    # Check shapes
+    print("======")
+    print(
+        f"LAQN train: {train_laqn_X_norm.shape}, {train_laqn_X.shape}, {train_laqn_Y.shape}"
+    )
+    print(f"LAQN test: {test_laqn_X_norm.shape}, {test_laqn_X.shape}, -")
+    print(f"HEXGRID test: {test_hexgrid_X_norm.shape}, {test_hexgrid_X.shape}, -")
+    print("======")
+
+    # Save data
+    train_dict = {"laqn": {"X": train_laqn_X_norm, "Y": train_laqn_Y}}
+
+    test_dict = {
+        "laqn": {"X": test_laqn_X_norm, "Y": None},
+        "hexgrid": {"X": test_hexgrid_X_norm, "Y": None},
+    }
+
+    meta_dict = {
+        "train": {"laqn": {"df": train_laqn_df}},
+        "test": {"laqn": {"df": test_laqn_df}, "hexgrid": {"df": test_hexgrid_df}},
+    }
+
+    with open("raw_data_svgp.pkl", "wb") as file:
+        pickle.dump(meta_dict, file)
+
+    return train_dict, test_dict
+
+
+def generate_data_trf_laqn(train_data, test_data):
+
+    # Load dataframes
+    train_laqn_df = train_data["laqn"]
+    test_laqn_df = test_data["laqn"]
+    test_hexgrid_df = test_data["hexgrid"]
+
+    # Extract X and Y for training data
+    train_laqn_X, train_laqn_Y = process_data_trf(train_laqn_df)
+
+    # Extract X for test data
+    test_laqn_X = get_X_trf(test_laqn_df)
+    test_hexgrid_X = get_X_trf(test_hexgrid_df)
+
+    # Remove NaN data
+    train_laqn_X, train_laqn_Y = clean_data(train_laqn_X, train_laqn_Y)
+
+    # Normalize X, using laqn_X as the reference
+    train_laqn_X_norm = norm_X(train_laqn_X, train_laqn_X)
+    test_laqn_X_norm = norm_X(test_laqn_X, train_laqn_X)
+    test_hexgrid_X_norm = norm_X(test_hexgrid_X, train_laqn_X)
+
+    # Check shapes
+    print("======")
+    print(
+        f"LAQN train: {train_laqn_X_norm.shape}, {train_laqn_X.shape}, {train_laqn_Y.shape}"
+    )
+    print(f"LAQN test: {test_laqn_X_norm.shape}, {test_laqn_X.shape}, -")
+    print(f"HEXGRID test: {test_hexgrid_X_norm.shape}, {test_hexgrid_X.shape}, -")
+    print("======")
+
+    # Save data
+    train_dict = {"laqn": {"X": train_laqn_X_norm, "Y": train_laqn_Y}}
+
+    test_dict = {
+        "laqn": {"X": test_laqn_X_norm, "Y": None},
+        "hexgrid": {"X": test_hexgrid_X_norm, "Y": None},
+    }
+
+    meta_dict = {
+        "train": {"laqn": {"df": train_laqn_df}},
+        "test": {"laqn": {"df": test_laqn_df}, "hexgrid": {"df": test_hexgrid_df}},
+    }
+
+    with open("raw_data_mrdgp_trf.pkl", "wb") as file:
+        pickle.dump(meta_dict, file)
+
     return train_dict, test_dict
