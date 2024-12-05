@@ -18,6 +18,7 @@ def get_X(df):
     return np.array(
         df[["epoch", "lat", "lon", "value_200_total_a_road_primary_length"]]
     )
+    # return np.array(df[["epoch", "lat", "lon"]])
 
 
 def get_X_trf(df):
@@ -275,7 +276,6 @@ def generate_data_laqn(train_data, test_data):
     train_laqn_df = train_data["laqn"]
     test_laqn_df = test_data["laqn"]
     test_hexgrid_df = test_data["hexgrid"]
-
     # Extract X and Y for training data
     train_laqn_X, train_laqn_Y = process_data(train_laqn_df)
 
@@ -313,7 +313,7 @@ def generate_data_laqn(train_data, test_data):
         "test": {"laqn": {"df": test_laqn_df}, "hexgrid": {"df": test_hexgrid_df}},
     }
 
-    with open("raw_data_svgp.pkl", "wb") as file:
+    with open("raw_data_svgp_only_laqn_best.pkl", "wb") as file:
         pickle.dump(meta_dict, file)
 
     return train_dict, test_dict

@@ -1,4 +1,4 @@
-"""Parser for GPflow 2 model fitting."""
+"""Parser for JAX model fitting."""
 
 import typer
 from . import fit_cli

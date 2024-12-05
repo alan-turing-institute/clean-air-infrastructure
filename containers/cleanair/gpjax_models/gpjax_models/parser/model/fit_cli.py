@@ -84,7 +84,7 @@ def train_svgp_sat(
         batch_size (int): Batch size for training.
         num_epochs (int): Number of training epochs.
     """
-    model = STGP_SVGP_SAT(M, batch_size, num_epochs, random_seed=42)
+    model = STGP_SVGP_SAT(M, batch_size, num_epochs)
 
     typer.echo("Loading training data!")
     # Iterate over the directories and subdirectories
@@ -138,7 +138,7 @@ def train_svgp_sat(
 
 @app.command()
 def train_svgp_laqn(
-    root_dir: str,
+    root_dir: Path,
     M: int = 500,
     batch_size: int = 200,
     num_epochs: int = 1000,
@@ -209,8 +209,8 @@ def train_mrdgp(
     root_dir: Path,
     M: Optional[int] = 500,
     batch_size: Optional[int] = 200,
-    num_epochs: Optional[int] = 100,
-    pretrain_epochs: Optional[int] = 100,
+    num_epochs: Optional[int] = 1500,
+    pretrain_epochs: Optional[int] = 1500,
 ):
     """
     Train the SVGP_GPF2 model on the given training data.

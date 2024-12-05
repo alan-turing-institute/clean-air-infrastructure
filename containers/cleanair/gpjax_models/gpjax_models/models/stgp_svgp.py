@@ -7,9 +7,7 @@ import numpy as np
 from jax.example_libraries import stax
 from jax import random
 from scipy.cluster.vq import kmeans2
-from jax.config import config as jax_config
 
-jax_config.update("jax_enable_x64", True)
 import stgp
 from stgp.models import GP
 from stgp.kernels import ScaleKernel, RBF
@@ -26,6 +24,7 @@ from tqdm import tqdm, trange
 class STGP_SVGP:
     def __init__(
         self,
+        results_path,  # Non-default argument moved to the first position
         M: int = 100,
         batch_size: int = 100,
         num_epochs: int = 10,
@@ -34,13 +33,18 @@ class STGP_SVGP:
         Initialize the JAX-based Air Quality Gaussian Process Model.
 
         Args:
+            results_path (str): Path to the directory for saving results.
             M (int): Number of inducing variables.
             batch_size (int): Batch size for training.
             num_epochs (int): Number of training epochs.
         """
+        self.results_path = results_path
         self.M = M
         self.batch_size = batch_size
         self.num_epochs = num_epochs
+
+        # Ensure the results directory exists
+        os.makedirs(self.results_path, exist_ok=True)
 
     def fit(self, x_train: np.ndarray, y_train: np.ndarray, pred_data) -> list[float]:
         """
@@ -58,7 +62,6 @@ class STGP_SVGP:
             N, D = X_laqn.shape
 
             data = Data(X_laqn, Y_laqn)
-            # data = TransformedData(data, [Log()])
 
             Z = stgp.sparsity.FullSparsity(Z=kmeans2(X_laqn, 200, minit="points")[0])
 
@@ -67,7 +70,7 @@ class STGP_SVGP:
                 kernel=ScaleKernel(
                     RBF(
                         input_dim=D,
-                        lengthscales=[0.1, 0.1, 0.1, 0.1],
+                        lengthscales=[0.1] * D,
                     ),
                     variance=np.nanstd(Y_laqn),
                 ),
@@ -97,10 +100,9 @@ class STGP_SVGP:
             joint_grad = GradDescentTrainer(m_laqn, objax.optimizer.Adam)
 
             lc_arr = []
-            num_epochs = num_epoch
             laqn_natgrad.train(1.0, 1)
 
-            for i in trange(num_epochs):
+            for i in trange(num_epoch):
                 lc_i, _ = joint_grad.train(0.01, 1)
                 lc_arr.append(lc_i)
 
@@ -140,11 +142,19 @@ class STGP_SVGP:
         results = predict_laqn_svgp(pred_data, m)
 
         print(results["metrics"])
-        # Save the loss values to a pickle file
-        with open("loss_values_svgp_laqn.pkl", "wb") as file:
-            pickle.dump(loss_values, file)
-        with open("predictions_svgp_laqn.pkl", "wb") as file:
+        # Save predictions
+        with open(
+            os.path.join(self.results_path, "predictions_svgp_laqn__.pkl"), "wb"
+        ) as file:
             pickle.dump(results, file)
+
+        # Save inducing points
+        inducing_points = m.prior[0].sparsity.inducing_locations
+        with open(
+            os.path.join(self.results_path, "inducing_points_svgp_laqn__.pkl"), "wb"
+        ) as file:
+            pickle.dump(inducing_points, file)
+        return loss_values
 
 
 class STGP_SVGP_SAT:

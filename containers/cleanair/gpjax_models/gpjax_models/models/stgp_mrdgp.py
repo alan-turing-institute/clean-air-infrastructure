@@ -5,9 +5,6 @@ import jax.numpy as jnp
 from scipy.cluster.vq import kmeans2
 import objax
 import jax
-from jax.config import config as jax_config
-
-jax_config.update("jax_enable_x64", True)
 from tqdm import trange
 from abc import abstractmethod
 from .predicting.utils import batch_predict
@@ -201,14 +198,12 @@ class STGP_MRDGP:
 
         # Save predictions
         with open(
-            os.path.join(self.results_path, "predictions_mrdgp_7.pkl"), "wb"
+            os.path.join(self.results_path, "predictions_mrdgp.pkl"), "wb"
         ) as file:
             pickle.dump(results, file)
 
         # Save inducing points
-        with open(
-            os.path.join(self.results_path, "inducing_points_7.pkl"), "wb"
-        ) as file:
+        with open(os.path.join(self.results_path, "inducing_points.pkl"), "wb") as file:
             pickle.dump(inducing_points, file)
 
         # Print model and inducing points
