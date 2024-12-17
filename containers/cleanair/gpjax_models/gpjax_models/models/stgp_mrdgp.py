@@ -65,7 +65,7 @@ class STGP_MRDGP:
             Z = FullSparsity(Z=kmeans2(jnp.vstack(X_sat), self.M, minit="points")[0])
             latent_gp = GP(
                 sparsity=Z,
-                kernel=ScaleKernel(RBF(input_dim=D, lengthscales=[0.1, 0.1, 0.1, 0.1])),
+                kernel=ScaleKernel(RBF(input_dim=D, lengthscales=[5.0, 0.5, 0.5, 0.5])),
             )
             prior = Aggregate(Independent([latent_gp]))
             model = GP(
@@ -83,7 +83,7 @@ class STGP_MRDGP:
                 kernel=ScaleKernel(DeepRBF(parent=latent_m1, lengthscale=[0.1]))
                 * RBF(
                     input_dim=4,
-                    lengthscales=[0.1, 0.1, 0.1, 0.1],
+                    lengthscales=[0.1, 0.5, 0.5, 0.1],
                     active_dims=[1, 2, 3, 4],
                 ),
             )
@@ -102,34 +102,75 @@ class STGP_MRDGP:
 
             sat_natgrad = NatGradTrainer(sat_model)
             laqn_natgrad = NatGradTrainer(laqn_model)
+
             for q in range(len(laqn_model.approximate_posterior.approx_posteriors)):
                 laqn_model.approximate_posterior.approx_posteriors[q]._S_chol.fix()
                 laqn_model.approximate_posterior.approx_posteriors[q]._m.fix()
             for q in range(len(sat_model.approximate_posterior.approx_posteriors)):
                 sat_model.approximate_posterior.approx_posteriors[q]._S_chol.fix()
                 sat_model.approximate_posterior.approx_posteriors[q]._m.fix()
+
             sat_grad = GradDescentTrainer(sat_model, objax.optimizer.Adam)
             laqn_grad = GradDescentTrainer(laqn_model, objax.optimizer.Adam)
             joint_grad = GradDescentTrainer(combined_model, objax.optimizer.Adam)
 
+            sat_model.likelihood.fix()
+            laqn_model.likelihood.fix()
+            sat_lik_fixed_grad = GradDescentTrainer(sat_model, objax.optimizer.Adam)
+            laqn_lik_fixed_grad = GradDescentTrainer(laqn_model, objax.optimizer.Adam)
+            joint_lik_fixed_grad = GradDescentTrainer(
+                combined_model, objax.optimizer.Adam
+            )
+
+            sat_model.likelihood.release()
+            laqn_model.likelihood.release()
+
             loss_curve = []
+
+            # pretrain/initial the approximate posterior with natural gradients
             sat_natgrad.train(1.0, 1)
             laqn_natgrad.train(1.0, 1)
 
             # Pretrain SAT model
             # pretrain sat
+
+            pretrain_lik_fixed_epochs = int(self.pretrain_epochs * 0.4)
+            pretrain_lik_released_epochs = (
+                self.pretrain_epochs - pretrain_lik_fixed_epochs
+            )
+
+            num_lik_fixed_epochs = int(self.num_epochs * 0.4)
+            num_lik_released_epochs = self.num_epochs - num_lik_fixed_epochs
+
+            # pretrain satellite
+            # for 40% of epochs use likelihood fixed
             print("Pretraining sat")
-            for i in trange(self.pretrain_epochs):
+            for i in trange(pretrain_lik_fixed_epochs):
+                lc_i, _ = sat_lik_fixed_grad.train(0.01, 1)
+                sat_natgrad.train(0.1, 1)
+                loss_curve.append(lc_i)
+
+            # for 60% of epochs use likelihood released
+            for i in trange(pretrain_lik_released_epochs):
                 lc_i, _ = sat_grad.train(0.01, 1)
                 sat_natgrad.train(0.1, 1)
                 loss_curve.append(lc_i)
+
             # pretrain laqn
             print("Pretraining laqn")
-            for i in trange(self.pretrain_epochs):
+
+            for i in trange(pretrain_lik_fixed_epochs):
+                lc_i, _ = laqn_lik_fixed_grad.train(0.01, 1)
+                laqn_natgrad.train(0.1, 1)
+                loss_curve.append(lc_i)
+
+            # for 60% of epochs use likelihood released
+            for i in trange(pretrain_lik_released_epochs):
                 lc_i, _ = laqn_grad.train(0.01, 1)
                 laqn_natgrad.train(0.1, 1)
                 loss_curve.append(lc_i)
 
+            # TODO: not sure if this should have likleihood fixed or not
             print("Joint training")
             for i in trange(self.num_epochs):
                 lc_i, _ = joint_grad.train(0.01, 1)
@@ -137,7 +178,7 @@ class STGP_MRDGP:
                 sat_natgrad.train(0.1, 1)
                 laqn_natgrad.train(0.1, 1)
 
-            with open(os.path.join("joint_loss_curve_7.pkl"), "wb") as file:
+            with open(os.path.join("joint_loss_curve_hold_len5.pkl"), "wb") as file:
                 pickle.dump(loss_curve, file)
 
             return loss_curve
@@ -198,12 +239,14 @@ class STGP_MRDGP:
 
         # Save predictions
         with open(
-            os.path.join(self.results_path, "predictions_mrdgp.pkl"), "wb"
+            os.path.join(self.results_path, "predictions_mrdgp_hold_len5.pkl"), "wb"
         ) as file:
             pickle.dump(results, file)
 
         # Save inducing points
-        with open(os.path.join(self.results_path, "inducing_points.pkl"), "wb") as file:
+        with open(
+            os.path.join(self.results_path, "inducing_points_hold_len5.pkl"), "wb"
+        ) as file:
             pickle.dump(inducing_points, file)
 
         # Print model and inducing points

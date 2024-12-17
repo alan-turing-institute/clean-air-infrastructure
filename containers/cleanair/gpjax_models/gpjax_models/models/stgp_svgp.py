@@ -24,7 +24,7 @@ from tqdm import tqdm, trange
 class STGP_SVGP:
     def __init__(
         self,
-        results_path,  # Non-default argument moved to the first position
+        results_path: str,  # Ensure this is passed as a string
         M: int = 100,
         batch_size: int = 100,
         num_epochs: int = 10,
@@ -92,21 +92,17 @@ class STGP_SVGP:
 
         def train_laqn(num_epoch, m_laqn):
             laqn_natgrad = NatGradTrainer(m_laqn)
-
             for q in range(len(m_laqn.approximate_posterior.approx_posteriors)):
                 m_laqn.approximate_posterior.approx_posteriors[q]._S_chol.fix()
                 m_laqn.approximate_posterior.approx_posteriors[q]._m.fix()
-
-            joint_grad = GradDescentTrainer(m_laqn, objax.optimizer.Adam)
+            laqn_grad = GradDescentTrainer(m_laqn, objax.optimizer.Adam)
 
             lc_arr = []
             laqn_natgrad.train(1.0, 1)
 
             for i in trange(num_epoch):
-                lc_i, _ = joint_grad.train(0.01, 1)
+                lc_i, _ = laqn_grad.train(0.01, 1)
                 lc_arr.append(lc_i)
-
-                laqn_natgrad.train(1.0, 1)
 
             return lc_arr
 
@@ -149,21 +145,15 @@ class STGP_SVGP:
             pickle.dump(results, file)
 
         # Save inducing points
-        inducing_points = m.prior[0].sparsity.inducing_locations
         with open(
-            os.path.join(self.results_path, "inducing_points_svgp_laqn__.pkl"), "wb"
+            os.path.join(self.results_path, "loss_values_svgp_laqn__.pkl"), "wb"
         ) as file:
-            pickle.dump(inducing_points, file)
+            pickle.dump(loss_values, file)
         return loss_values
 
 
 class STGP_SVGP_SAT:
-    def __init__(
-        self,
-        M,
-        batch_size,
-        num_epochs,
-    ):
+    def __init__(self, M, batch_size, num_epochs, results_path):
         """
         Initialize the JAX-based Air Quality Gaussian Process Model.
 
@@ -175,6 +165,7 @@ class STGP_SVGP_SAT:
         self.M = M
         self.batch_size = batch_size
         self.num_epochs = num_epochs
+        self.results_path = results_path
 
     def fit(
         self, x_sat: np.ndarray, y_sat: np.ndarray, pred_laqn_data, pred_sat_data
@@ -286,10 +277,12 @@ class STGP_SVGP_SAT:
         results = predict_laqn_sat_from_sat_only(pred_laqn_data, pred_sat_data, m)
 
         with open(
-            os.path.join("training_loss_svgp_sat.pkl"),
+            os.path.join(self.results_path, "training_svgp_sat.pkl"),
             "wb",
         ) as file:
             pickle.dump(loss_values, file)
         print(results["metrics"])
-        with open("predictions_svgp.pkl", "wb") as file:
+        with open(
+            os.path.join(self.results_path, "predictions_svgp_sat.pkl"), "wb"
+        ) as file:
             pickle.dump(results, file)
