@@ -1,6 +1,7 @@
 """
 Mixin for checking what satellite data is in database and what is missing
 """
+
 from sqlalchemy import text, column, String, values
 
 from ...decorators import db_query

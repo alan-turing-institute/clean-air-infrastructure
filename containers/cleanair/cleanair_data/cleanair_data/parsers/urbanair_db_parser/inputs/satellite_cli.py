@@ -1,4 +1,5 @@
 """Satellite input cli"""
+
 import webbrowser
 import tempfile
 import time

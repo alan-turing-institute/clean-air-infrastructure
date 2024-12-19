@@ -1,6 +1,7 @@
 """
 Upload static datasets
 """
+
 from cleanair_data.inputs import RectGridWriter
 from cleanair_data.loggers import initialise_logging
 from cleanair_data.parsers import StaticDatasetArgumentParser

@@ -1,6 +1,7 @@
 """
 Mixin for all datasources that obtain their data by calling a web API
 """
+
 import datetime
 import requests
 from ..loggers import get_logger, green

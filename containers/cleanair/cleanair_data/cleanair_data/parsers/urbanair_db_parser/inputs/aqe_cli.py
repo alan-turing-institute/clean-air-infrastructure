@@ -1,4 +1,5 @@
 """AQE input CLI"""
+
 import typer
 from cleanair_data.inputs import AQEWriter
 from cleanair_data.loggers import initialise_logging

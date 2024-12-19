@@ -1,4 +1,5 @@
 """Features CLI"""
+
 import typer
 from . import static_cli
 from . import scoot_cli

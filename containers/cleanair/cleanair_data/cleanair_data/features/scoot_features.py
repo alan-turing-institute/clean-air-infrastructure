@@ -1,6 +1,7 @@
 """
 Scoot feature extraction
 """
+
 # pylint: skip-file
 from sqlalchemy import func
 from .feature_extractor import FeatureExtractor

@@ -1,4 +1,5 @@
 """Declarative base class and table initialisation"""
+
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.sql.expression import FromClause
 from sqlalchemy.ext.declarative import declarative_base

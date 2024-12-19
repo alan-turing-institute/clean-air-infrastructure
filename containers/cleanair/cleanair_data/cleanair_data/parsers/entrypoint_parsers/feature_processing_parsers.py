@@ -1,4 +1,5 @@
 """Parsers for feature processing entrypoints"""
+
 from argparse import ArgumentParser
 from cleanair_data.parsers import (
     SatelliteArgumentParser,

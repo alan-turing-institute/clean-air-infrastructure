@@ -1,6 +1,7 @@
 """
 Timestamp conversion functions
 """
+
 from typing import Union
 from contextlib import suppress
 from datetime import date, datetime, timedelta

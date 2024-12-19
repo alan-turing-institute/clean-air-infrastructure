@@ -1,6 +1,7 @@
 """
 A base class for cleanair parsers.
 """
+
 import argparse
 from datetime import timedelta
 from ..mixins import SecretFileParserMixin, VerbosityMixin

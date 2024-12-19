@@ -1,4 +1,5 @@
 """Configure database roles"""
+
 from cleanair_data.loggers import initialise_logging
 from cleanair_data.databases import DBConfig
 from cleanair_data.parsers import DataBaseRoleParser

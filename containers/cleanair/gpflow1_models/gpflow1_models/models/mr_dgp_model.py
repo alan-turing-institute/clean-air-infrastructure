@@ -1,6 +1,7 @@
 """
 Multi-resolution DGP (LAQN + Satellite)
 """
+
 from typing import Dict, Optional, List
 import os
 import numpy as np

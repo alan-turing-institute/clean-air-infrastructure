@@ -1,4 +1,5 @@
 """CLI state"""
+
 from typing import Dict, Union, Optional
 from logging import Logger
 from .configuration import CONFIG_SECRETFILE_PATH

@@ -1,4 +1,5 @@
 """Return schemas for air quality forecast routes"""
+
 from typing import List, Dict, Optional, Union
 import json
 from pydantic import BaseModel

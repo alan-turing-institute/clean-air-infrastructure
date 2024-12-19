@@ -1,6 +1,7 @@
 """
 Functions for feature extractions
 """
+
 from sqlalchemy import func
 
 

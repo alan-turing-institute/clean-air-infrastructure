@@ -1,4 +1,5 @@
 """Module for interacting with the Azure Postgres database"""
+
 from .base import Base
 from .connector import Connector
 from .db_interactor import DBInteractor

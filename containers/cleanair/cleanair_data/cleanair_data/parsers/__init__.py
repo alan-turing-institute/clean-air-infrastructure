@@ -1,6 +1,7 @@
 """
 Module for cleanair parsers.
 """
+
 from .complex import (
     DataBaseRoleParser,
     DatabaseSetupParser,

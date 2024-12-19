@@ -1,4 +1,5 @@
 """API decorators"""
+
 import functools
 import time
 import logging

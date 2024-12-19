@@ -1,6 +1,7 @@
 """
 Module for interacting with tables in the Azure Postgres database
 """
+
 from .air_quality_instance_tables import (
     AirQualityDataTable,
     AirQualityInstanceTable,

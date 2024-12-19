@@ -1,4 +1,5 @@
 """Model fitting classes"""
+
 from model_base.models import ModelMixin
 
 # from .svgp import SVGP

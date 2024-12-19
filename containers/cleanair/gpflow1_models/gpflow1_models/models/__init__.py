@@ -1,4 +1,5 @@
 """Model fitting classes"""
+
 from ..cleanair.models.model import ModelMixin
 
 # from .svgp import SVGP

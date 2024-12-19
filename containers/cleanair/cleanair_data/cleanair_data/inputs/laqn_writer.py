@@ -1,6 +1,7 @@
 """
 LAQN
 """
+
 import datetime
 import requests
 from ..mixins import APIRequestMixin, DateRangeMixin

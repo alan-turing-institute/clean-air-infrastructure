@@ -1,4 +1,5 @@
 """Util functions for interacting with Azure blob storage"""
+
 from datetime import datetime, timedelta, timezone
 from typing import Optional, List
 

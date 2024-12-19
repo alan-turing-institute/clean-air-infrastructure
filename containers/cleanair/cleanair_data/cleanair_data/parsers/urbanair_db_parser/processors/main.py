@@ -1,4 +1,5 @@
 """Processors parser"""
+
 import typer
 from . import scoot_forecast_cli
 

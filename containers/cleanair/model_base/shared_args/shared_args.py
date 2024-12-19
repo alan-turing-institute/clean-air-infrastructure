@@ -1,4 +1,5 @@
 """Shared CLI arguments"""
+
 from typing import Dict, List
 import os
 import json

@@ -3,6 +3,7 @@ Output suppression context manager
 
 from https://github.com/facebook/prophet/issues/223
 """
+
 import os
 
 

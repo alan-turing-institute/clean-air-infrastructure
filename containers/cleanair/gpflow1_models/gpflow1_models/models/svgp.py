@@ -10,7 +10,14 @@ from scipy.cluster.vq import kmeans2
 import tensorflow as tf
 import numpy.typing as npt
 from ..cleanair.models.model import ModelMixin
-from ..cleanair.types import FeaturesDict, KernelType, Source, Species, TargetDict, SVGPParams
+from ..cleanair.types import (
+    FeaturesDict,
+    KernelType,
+    Source,
+    Species,
+    TargetDict,
+    SVGPParams,
+)
 
 # turn off tensorflow warnings for gpflow
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"

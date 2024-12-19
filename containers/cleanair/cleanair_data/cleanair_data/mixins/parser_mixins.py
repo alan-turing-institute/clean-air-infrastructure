@@ -1,6 +1,7 @@
 """
 Mixins which are used by multiple argument parsers
 """
+
 import os
 import json
 from argparse import ArgumentTypeError, Action

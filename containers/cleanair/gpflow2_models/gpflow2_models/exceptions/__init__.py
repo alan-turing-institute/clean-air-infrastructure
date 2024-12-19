@@ -1,4 +1,5 @@
 """CleanAir Exceptions"""
+
 from .exceptions import (
     AuthenticationException,
     DatabaseAuthenticationException,

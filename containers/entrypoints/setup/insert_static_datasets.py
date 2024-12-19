@@ -1,6 +1,7 @@
 """
 Insert static datasets into the database
 """
+
 import logging
 import os
 import sys

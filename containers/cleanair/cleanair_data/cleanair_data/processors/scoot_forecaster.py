@@ -1,4 +1,5 @@
 """Traffic model fitting"""
+
 # pylint: disable=wrong-import-position
 import datetime
 from functools import partial, reduce

@@ -1,6 +1,7 @@
 """
 Simple per-entrypoint argument parsers
 """
+
 # pylint: disable=too-many-ancestors
 from argparse import ArgumentParser
 from ..mixins import (
@@ -32,7 +33,6 @@ class SourcesParser(SecretFileParserMixin, ArgumentParser):
 
 
 class DurationParser(DurationParserMixin, ArgumentParser):
-
     """
     Parser for any entrypoint which needs a duration
     """

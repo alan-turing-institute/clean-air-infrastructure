@@ -1,4 +1,5 @@
 """Functions for hashing."""
+
 from typing import Dict, Any
 import os
 import json

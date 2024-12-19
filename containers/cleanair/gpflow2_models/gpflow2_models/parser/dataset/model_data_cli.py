@@ -1,4 +1,5 @@
 """Commands for a Sparse Variational GP to model air quality."""
+
 from pathlib import Path
 import pandas as pd
 import pickle

@@ -1,6 +1,7 @@
 """
 Tables for SCOOT data source
 """
+
 from sqlalchemy import Column, ForeignKey, Integer, String
 from sqlalchemy.dialects.postgresql import DATE, DOUBLE_PRECISION, TIMESTAMP
 from sqlalchemy.ext.declarative import DeferredReflection

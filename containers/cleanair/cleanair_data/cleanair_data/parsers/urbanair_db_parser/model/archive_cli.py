@@ -1,4 +1,5 @@
 """Archive and download model instances"""
+
 from pathlib import Path
 
 import typer

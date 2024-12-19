@@ -1,4 +1,5 @@
 """Air quality forecast API route tests"""
+
 import json
 from datetime import datetime
 

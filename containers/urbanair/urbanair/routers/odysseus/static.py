@@ -1,4 +1,5 @@
 """Static routes"""
+
 # pylint: disable=C0116
 import os
 from fastapi import APIRouter, Request, Response

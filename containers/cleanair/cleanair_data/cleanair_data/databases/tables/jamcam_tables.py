@@ -1,4 +1,5 @@
 """Tables for jamcam results"""
+
 from geoalchemy2 import Geometry
 from sqlalchemy import Column, String, BigInteger, Text
 from sqlalchemy import Index, UniqueConstraint

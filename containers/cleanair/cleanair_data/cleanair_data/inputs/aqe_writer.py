@@ -1,6 +1,7 @@
 """
 Get data from the AQE network via the API
 """
+
 import csv
 import datetime
 import io

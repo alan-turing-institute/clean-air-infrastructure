@@ -1,4 +1,5 @@
 """Static features CLI"""
+
 from enum import Enum
 from typing import List
 import webbrowser

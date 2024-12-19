@@ -1,6 +1,7 @@
 """
 Table writer
 """
+
 import time
 import sqlalchemy
 from sqlalchemy.exc import IntegrityError

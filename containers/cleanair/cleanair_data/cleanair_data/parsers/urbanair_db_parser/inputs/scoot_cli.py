@@ -1,4 +1,5 @@
 """Scoot CLI"""
+
 import typer
 from cleanair_data.inputs import ScootWriter, ScootReader
 from cleanair_data.loggers import initialise_logging

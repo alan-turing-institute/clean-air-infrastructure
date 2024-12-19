@@ -1,4 +1,5 @@
 """Air quality forecast database queries and external api calls"""
+
 import csv
 import logging
 from datetime import datetime, date, timezone

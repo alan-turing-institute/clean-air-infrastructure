@@ -1,4 +1,5 @@
 """CleanAir module setup script"""
+
 from setuptools import setup, find_packages
 
 # sorted by surname

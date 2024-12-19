@@ -1,6 +1,7 @@
 """
 Table reader
 """
+
 from .db_interactor import DBInteractor
 from ..loggers import get_logger
 

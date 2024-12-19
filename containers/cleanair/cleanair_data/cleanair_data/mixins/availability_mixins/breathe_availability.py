@@ -1,6 +1,7 @@
 """
 Mixin for checking what Breathe London data is in database and what is missing
 """
+
 from typing import Optional
 from datetime import timedelta
 from sqlalchemy import func, text

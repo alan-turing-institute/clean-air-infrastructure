@@ -1,6 +1,7 @@
 """
 Mixin for classes that need to keep track of date ranges
 """
+
 from itertools import product
 from datetime import datetime, timedelta
 from dateutil.rrule import rrule

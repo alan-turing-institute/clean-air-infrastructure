@@ -2,6 +2,7 @@
 Upload static data currently held in geodatabase/shape file format in Azure
 Convert to PostgreSQL using ogr2ogr and upload to the inputs DB
 """
+
 import glob
 import subprocess
 from sqlalchemy.exc import OperationalError

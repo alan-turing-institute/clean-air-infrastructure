@@ -1,4 +1,5 @@
 """Shared arguments"""
+
 from .shared_args import (
     InputDir,
     NDays_callback,
