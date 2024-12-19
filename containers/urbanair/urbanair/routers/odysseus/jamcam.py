@@ -1,4 +1,5 @@
 """JamCam API routes"""
+
 import datetime
 
 # pylint: disable=C0116

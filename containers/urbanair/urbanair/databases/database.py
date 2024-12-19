@@ -1,4 +1,5 @@
 """UrbanAir API database interactions"""
+
 from typing import List, Tuple
 from fastapi import HTTPException
 from sqlalchemy import create_engine

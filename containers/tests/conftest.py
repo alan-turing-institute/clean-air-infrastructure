@@ -1,4 +1,5 @@
 """Fixtures for running database tests"""
+
 # pylint: disable=redefined-outer-name
 from shutil import copyfile
 import pytest

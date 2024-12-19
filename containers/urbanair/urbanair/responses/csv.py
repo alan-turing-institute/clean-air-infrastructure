@@ -1,4 +1,5 @@
 """CSV response for FastAPI"""
+
 from fastapi.responses import PlainTextResponse
 
 

@@ -1,4 +1,5 @@
 """Misc types"""
+
 from enum import Enum, unique
 from typing import Any, Dict, List, Union
 

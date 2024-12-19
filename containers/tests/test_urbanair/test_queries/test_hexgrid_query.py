@@ -1,4 +1,5 @@
 """Test the API's query for data"""
+
 from datetime import datetime, timedelta
 from math import nan
 

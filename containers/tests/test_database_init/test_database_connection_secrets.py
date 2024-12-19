@@ -1,4 +1,5 @@
 """Test database connection secrets"""
+
 # pylint: disable=redefined-outer-name
 import pytest
 from cleanair.databases import Connector, DBInteractor

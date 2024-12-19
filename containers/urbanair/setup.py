@@ -1,4 +1,5 @@
 """Urbanair API setup script"""
+
 import setuptools
 
 setuptools.setup(

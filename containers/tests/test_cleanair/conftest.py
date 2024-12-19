@@ -1,6 +1,7 @@
 """
 Fixtures for the cleanair module.
 """
+
 # pylint: disable=redefined-outer-name,C0103
 from typing import Tuple
 from datetime import datetime, timedelta

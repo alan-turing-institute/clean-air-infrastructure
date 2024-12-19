@@ -1,4 +1,5 @@
 """Air quality forecast API route tests"""
+
 from datetime import datetime, timedelta
 import pytest
 from sqlalchemy.exc import IntegrityError

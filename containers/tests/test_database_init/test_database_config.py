@@ -1,4 +1,5 @@
 """Tests for configuring database roles"""
+
 from cleanair.databases import DBConfig
 
 

@@ -1,4 +1,5 @@
 """Return Schemas for JamCam routes"""
+
 # pylint: disable=C0115
 from typing import List, Tuple
 from datetime import datetime, timezone, date

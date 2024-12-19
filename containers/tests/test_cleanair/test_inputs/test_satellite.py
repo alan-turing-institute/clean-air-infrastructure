@@ -1,4 +1,5 @@
 """Tests related to satellite inputs"""
+
 # pylint: skip-file
 
 import os

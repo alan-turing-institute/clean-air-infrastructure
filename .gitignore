@@ -1,6 +1,14 @@
 # OS X
 .DS_Store
 
+# Data files
+.pkl
+.zip
+.csv
+
+# build 
+containers/cleanair/gpjax_models/build/*
+
 # Terraform
 .terraform
 terraform/backend_config.tf

@@ -2,11 +2,9 @@
 
 | Name               | GitHub ID                                            | Email                       | Admin  |
 | ------------------ | -----------------------------------------------------| --------------------------- | ------ |
-| Sueda Ciftci       | [@edasu](https://github.com/edasu)                   | <Sueda.Ciftci@warwick.ac.uk> | Infrastructure, Software Engineering |
+| Sueda Ciftci       | [@edasu](https://github.com/edasu)                   | <sueda.ciftci@warwick.ac.uk> | Infrastructure, Software Engineering, Modelling |
 | Oliver Hamelijnck  | [@defaultobject](https://github.com/defaultobject)   | <ohamelijnck@turing.ac.uk>  | Modelling |
 | Patrick O'Hara     | [@PatrickOHara](https://github.com/PatrickOHara)     | <patrick.h.o-hara@warwick.ac.uk>       | Validation, visualisation |
-| James Robinson     | [@jemrobinson](https://github.com/jemrobinson)       | <jrobinson@turing.ac.uk>    | Infrastructure, Prod Database, Kubernetes Cluster |
-
 
 ## Alumni contributors
 
@@ -17,6 +15,7 @@
 | Chance Haycock     | [@chancehaycock](https://github.com/chancehaycock)   | <chaycock@turing.ac.uk>     | |
 | Christy Nakou      | [@ChristyNou](https://github.com/ChristyNou)         | <cnakou@turing.ac.uk>       | |
 | Harry Moss     | [@harryjmoss](https://github.com/harryjmoss)     | <h.moss@ucl.ac.uk>       | |
+| James Robinson     | [@jemrobinson](https://github.com/jemrobinson)       | <jrobinson@turing.ac.uk>    | Infrastructure, Prod Database, Kubernetes Cluster |
 | David Perez-Suarez | [@dpshelio](https://github.com/dpshelio)             | <d.perez-suarez@ucl.ac.uk>  | |
 | Tim Spain          | [@timspainUCL](https://github.com/timspainUCL)       | <t.spain@ucl.ac.uk>         | |
 | Edward Thorpe-Woods | [@TeddyTW](https://github.com/TeddyTW)              | <ethorpe-woods@turing.ac.uk>| |

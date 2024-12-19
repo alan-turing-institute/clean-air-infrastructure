@@ -1,4 +1,5 @@
 """JamCam API route tests"""
+
 import pytest
 from sqlalchemy.exc import IntegrityError
 from cleanair.databases import DBWriter
