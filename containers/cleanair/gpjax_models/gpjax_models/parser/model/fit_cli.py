@@ -3,8 +3,8 @@
 import typer
 import pickle
 import pandas as pd
-from typing import Optional
 from pathlib import Path
+from typing import Optional
 import os
 import jax
 import optax
@@ -15,11 +15,17 @@ from jax import config
 
 # Set a configuration option if needed (example)
 config.update("jax_enable_x64", True)
-from ...utils.file_manager import FileManager
+
 from ...models.svgp import SVGP
 from ...models.stgp_svgp import STGP_SVGP_SAT, STGP_SVGP
 from ...models.stgp_mrdgp import STGP_MRDGP
-from ...data.setup_data import generate_data, generate_data_trf, generate_data_laqn
+from ...utils.file_manager import FileManager
+from ...data.setup_data import (
+    generate_data,
+    generate_data_trf,
+    generate_data_laqn,
+    generate_data_trf_laqn,
+)
 
 app = typer.Typer(help="SVGP model fitting")
 train_file_path = "datasets/aq_data.pkl"
@@ -71,36 +77,34 @@ def svgp(
 @app.command()
 def train_svgp_sat(
     root_dir: str,
+    results_path: Path,
     M: int = 500,
     batch_size: int = 200,
-    num_epochs: int = 50,
+    num_epochs: int = 1500,
 ):
     """
     Train the SVGP_GPF2 model on the given training data.
 
     Args:
-        train_file_path (str): Path to the training data pickle file.
-        M (int): Number of inducing variables.
-        batch_size (int): Batch size for training.
-        num_epochs (int): Number of training epochs.
+        root_dir (str): Path to the root directory containing data files.
+        results_path (Path): Path to save the results.
+        M (int): Number of inducing variables. Defaults to 500.
+        batch_size (int): Batch size for training. Defaults to 200.
+        num_epochs (int): Number of training epochs. Defaults to 1500.
     """
-    model = STGP_SVGP_SAT(M, batch_size, num_epochs)
+    model = STGP_SVGP_SAT(M, batch_size, num_epochs, results_path)
 
     typer.echo("Loading training data!")
     # Iterate over the directories and subdirectories
     for dirpath, dirnames, filenames in os.walk(root_dir):
-        # Check if 'training_dataset.pkl' exists in the current directory
         if "training_dataset.pkl" in filenames:
-            # If found, print the path of the file
             file_path = os.path.join(dirpath, "training_dataset.pkl")
             with open(file_path, "rb") as file:
                 train_data = pickle.load(file)
 
     typer.echo("Loading testing data!")
     for dirpath, dirnames, filenames in os.walk(root_dir):
-        # Check if 'training_dataset.pkl' exists in the current directory
-        if "training_dataset.pkl" in filenames:
-            # If found, print the path of the file
+        if "test_dataset.pkl" in filenames:
             file_path = os.path.join(dirpath, "test_dataset.pkl")
             with open(file_path, "rb") as file:
                 test_data_dict = pickle.load(file)
@@ -131,17 +135,16 @@ def train_svgp_sat(
         },
     }
     # Train the model
-    breakpoint()
     model.fit(x_sat, y_sat, pred_laqn_data, pred_sat_data)
     typer.echo("Training complete!")
 
 
 @app.command()
-def train_svgp_laqn(
-    root_dir: Path,
+def train_svgp_laqn_tr(
+    root_dir: str,
     M: int = 500,
     batch_size: int = 200,
-    num_epochs: int = 1000,
+    num_epochs: int = 1500,
 ):
     """
     Train the SVGP_GPF2 model on the given training data.
@@ -152,6 +155,77 @@ def train_svgp_laqn(
         num_epochs (int): Number of training epochs.
     """
     model = STGP_SVGP(M, batch_size, num_epochs)
+
+    # Load training data
+    typer.echo("Loading training data!")
+    # Iterate over the directories and subdirectories
+    for dirpath, dirnames, filenames in os.walk(root_dir):
+        # Check if 'training_dataset.pkl' exists in the current directory
+        if "training_dataset.pkl" in filenames:
+            # If found, print the path of the file
+            file_path = os.path.join(dirpath, "training_dataset.pkl")
+            with open(file_path, "rb") as file:
+                train_data = pickle.load(file)
+
+    typer.echo("Loading testing data!")
+    for dirpath, dirnames, filenames in os.walk(root_dir):
+        # Check if 'training_dataset.pkl' exists in the current directory
+        if "training_dataset.pkl" in filenames:
+            # If found, print the path of the file
+            file_path = os.path.join(dirpath, "test_dataset.pkl")
+            with open(file_path, "rb") as file:
+                test_data_dict = pickle.load(file)
+
+    train_dict, test_dict = generate_data_trf_laqn(train_data, test_data_dict)
+    x_laqn = train_dict["laqn"]["X"]
+    y_laqn = train_dict["laqn"]["Y"]
+
+    pred_laqn_data = {
+        "laqn": {
+            "X": train_dict["laqn"]["X"],
+            "Y": train_dict["laqn"]["Y"],
+        },
+    }
+
+    pred_laqn_data = {
+        "hexgrid": {
+            "X": test_dict["hexgrid"]["X"],
+            "Y": None,
+        },
+        "test_laqn": {
+            "X": test_dict["laqn"]["X"],
+            "Y": None,
+        },
+        "train_laqn": {
+            "X": train_dict["laqn"]["X"],
+            "Y": train_dict["laqn"]["Y"],
+        },
+    }
+    # Train the model
+    model.fit(x_laqn, y_laqn, pred_laqn_data)
+    typer.echo("Training complete!")
+
+
+@app.command()
+def train_svgp_laqn(
+    root_dir: str,
+    M: int = 500,
+    batch_size: int = 200,
+    num_epochs: int = 1500,
+):
+    """
+    Train the SVGP_GPF2 model on the given training data.
+    Args:
+        train_file_path (str): Path to the training data pickle file.
+        M (int): Number of inducing variables.
+        batch_size (int): Batch size for training.
+        num_epochs (int): Number of training epochs.
+    """
+    # Create a results directory path
+    results_path = os.path.join(root_dir, "results")
+    model = STGP_SVGP(
+        M=M, batch_size=batch_size, num_epochs=num_epochs, results_path=results_path
+    )
 
     # Load training data
     typer.echo("Loading training data!")
@@ -203,7 +277,143 @@ def train_svgp_laqn(
     typer.echo("Training complete!")
 
 
+@app.command()
+def train_svgp_laqn_continuously(
+    root_dir: Path,
+    M: Optional[int] = 500,
+    batch_size: Optional[int] = 200,
+    num_epochs: Optional[int] = 1500,
+):
+    """
+    Train the SVGP_GPF2 model on the given training data for each dataset in the root directory.
+
+    Args:
+        root_dir (Path): Path to the root directory containing dataset subdirectories.
+        M (int): Number of inducing variables.
+        batch_size (int): Batch size for training.
+        num_epochs (int): Number of training epochs.
+    """
+    for dataset_dir in sorted(root_dir.iterdir()):
+        if dataset_dir.is_dir():
+            typer.echo(f"Processing dataset in directory: {dataset_dir}")
+
+            # Define a results directory inside the dataset directory
+            results_path = dataset_dir / "results"
+            typer.echo(f"Results will be saved in: {results_path}")
+
+            # Instantiate the model with the results_path
+            model = STGP_SVGP(
+                results_path=str(results_path),  # Convert Path object to string
+                M=M,
+                batch_size=batch_size,
+                num_epochs=num_epochs,
+            )
+
+            file_manager = FileManager(dataset_dir)
+
+            typer.echo("Loading training data!")
+            training_data = file_manager.load_training_data()
+
+            typer.echo("Loading testing data!")
+            test_data = file_manager.load_testing_data()
+
+            # Prepare training and prediction data
+            training_dict, test_dict = generate_data_laqn(training_data, test_data)
+            x_laqn = training_dict["laqn"]["X"]
+            y_laqn = training_dict["laqn"]["Y"]
+
+            pred_laqn_data = {
+                "hexgrid": {
+                    "X": test_dict["hexgrid"]["X"],
+                    "Y": None,
+                },
+                "test_laqn": {
+                    "X": test_dict["laqn"]["X"],
+                    "Y": None,
+                },
+                "train_laqn": {
+                    "X": training_dict["laqn"]["X"],
+                    "Y": training_dict["laqn"]["Y"],
+                },
+            }
+
+            # Train the model
+            model.fit(x_laqn, y_laqn, pred_laqn_data)
+            typer.echo(f"Training complete for dataset in directory: {dataset_dir}!")
+
+
 # TODO make one train comand to reach out config to get the model name
+# @app.command()
+# def train_mrdgp(
+#     root_dir: str,
+#     M: Optional[int] = 500,
+#     batch_size: Optional[int] = 200,
+#     num_epochs: Optional[int] = 2500,
+#     pretrain_epochs: Optional[int] = 2500,
+# ):
+#     """
+#     Train the mrdgp model on the given training data.
+
+#     Args:
+#         train_file_path (str): Path to the training data pickle file.
+#         M (int): Number of inducing variables.
+#         batch_size (int): Batch size for training.
+#         num_epochs (int): Number of training epochs.
+#         pretrain_epochs (int): num pretraining epochs.
+#     """
+
+#     model = STGP_MRDGP(M, batch_size, num_epochs, pretrain_epochs, root_dir)
+#     # Load training data
+#     typer.echo("Loading training data!")
+#     # Iterate over the directories and subdirectories
+#     for dirpath, _, filenames in os.walk(root_dir):
+#         # Check if 'training_dataset.pkl' exists in the current directory
+#         if "training_dataset.pkl" in filenames:
+#             # If found, load the data
+#             file_path = os.path.join(dirpath, "training_dataset.pkl")
+#             with open(file_path, "rb") as file:
+#                 train_data = pickle.load(file)
+
+#     typer.echo("Loading testing data!")
+#     for dirpath, _, filenames in os.walk(root_dir):
+#         # Check if 'training_dataset.pkl' exists in the current directory
+#         if "test_dataset.pkl" in filenames:
+#             # If found, load the data
+#             file_path = os.path.join(dirpath, "test_dataset.pkl")
+#             with open(file_path, "rb") as file:
+#                 test_data_dict = pickle.load(file)
+
+#     train_dict, test_dict = generate_data(train_data, test_data_dict)
+#     x_laqn = train_dict["laqn"]["X"]
+#     y_laqn = train_dict["laqn"]["Y"]
+#     x_sat = train_dict["sat"]["X"]
+#     y_sat = train_dict["sat"]["Y"]
+
+#     pred_sat_data = {
+#         "sat": {
+#             "X": train_dict["sat"]["X"],
+#             "Y": train_dict["sat"]["Y"],
+#         },
+#     }
+
+#     pred_laqn_data = {
+#         "hexgrid": {
+#             "X": test_dict["hexgrid"]["X"],
+#             "Y": None,
+#         },
+#         "test_laqn": {
+#             "X": test_dict["laqn"]["X"],
+#             "Y": None,
+#         },
+#         "train_laqn": {
+#             "X": train_dict["laqn"]["X"],
+#             "Y": train_dict["laqn"]["Y"],
+#         },
+#     }
+#     model.fit(x_sat, y_sat, x_laqn, y_laqn, pred_laqn_data, pred_sat_data)
+#     typer.echo("Training complete!")
+
+
 @app.command()
 def train_mrdgp(
     root_dir: Path,
@@ -213,54 +423,58 @@ def train_mrdgp(
     pretrain_epochs: Optional[int] = 1500,
 ):
     """
-    Train the SVGP_GPF2 model on the given training data.
+    Train the MRDGP  model on the given training data for each dataset in the root directory.
 
     Args:
-        train_file_path (str): Path to the training data pickle file.
+        root_dir (Path): Path to the root directory containing dataset subdirectories.
         M (int): Number of inducing variables.
         batch_size (int): Batch size for training.
         num_epochs (int): Number of training epochs.
+        pretrain_epochs (int): Number of pre-training epochs.
     """
+    for dataset_dir in sorted(root_dir.iterdir()):
+        if dataset_dir.is_dir():
+            typer.echo(f"Processing dataset in directory: {dataset_dir}")
 
-    model = STGP_MRDGP(M, batch_size, num_epochs, pretrain_epochs, root_dir)
-    file_manager = FileManager(root_dir)
-    # Load training data
-    typer.echo("Loading training data!")
-    training_data = file_manager.load_training_data()
+            model = STGP_MRDGP(M, batch_size, num_epochs, pretrain_epochs, dataset_dir)
+            file_manager = FileManager(dataset_dir)
 
-    typer.echo("Loading testing data!")
-    test_data = file_manager.load_testing_data()
+            typer.echo("Loading training data!")
+            training_data = file_manager.load_training_data()
 
-    breakpoint()
-    training_dict, test_dict = generate_data(training_data, test_data)
-    x_laqn = training_dict["laqn"]["X"]
-    y_laqn = training_dict["laqn"]["Y"]
-    x_sat = training_dict["sat"]["X"]
-    y_sat = training_dict["sat"]["Y"]
+            typer.echo("Loading testing data!")
+            test_data = file_manager.load_testing_data()
 
-    pred_sat_data = {
-        "sat": {
-            "X": training_dict["sat"]["X"],
-            "Y": training_dict["sat"]["Y"],
-        },
-    }
+            training_dict, test_dict = generate_data(training_data, test_data)
+            x_laqn = training_dict["laqn"]["X"]
+            y_laqn = training_dict["laqn"]["Y"]
+            x_sat = training_dict["sat"]["X"]
+            y_sat = training_dict["sat"]["Y"]
 
-    pred_laqn_data = {
-        "hexgrid": {
-            "X": test_dict["hexgrid"]["X"],
-            "Y": None,
-        },
-        "test_laqn": {
-            "X": test_dict["laqn"]["X"],
-            "Y": None,
-        },
-        "training_laqn": {
-            "X": training_dict["laqn"]["X"],
-            "Y": training_dict["laqn"]["Y"],
-        },
-    }
-    model.fit(x_sat, y_sat, x_laqn, y_laqn, pred_laqn_data, pred_sat_data)
-    typer.echo("Training complete!")
+            pred_sat_data = {
+                "sat": {
+                    "X": training_dict["sat"]["X"],
+                    "Y": training_dict["sat"]["Y"],
+                },
+            }
+
+            pred_laqn_data = {
+                "hexgrid": {
+                    "X": test_dict["hexgrid"]["X"],
+                    "Y": None,
+                },
+                "test_laqn": {
+                    "X": test_dict["laqn"]["X"],
+                    "Y": None,
+                },
+                "training_laqn": {
+                    "X": training_dict["laqn"]["X"],
+                    "Y": training_dict["laqn"]["Y"],
+                },
+            }
+
+            model.fit(x_sat, y_sat, x_laqn, y_laqn, pred_laqn_data, pred_sat_data)
+            typer.echo(f"Training complete for dataset in directory: {dataset_dir}!")
 
 
 @app.command()
@@ -343,3 +557,66 @@ def train_mrdgp_trf(
     }
     model.fit(x_sat, y_sat, x_laqn, y_laqn, pred_laqn_data, pred_sat_data)
     typer.echo("Training complete!")
+
+
+@app.command()
+def train_mrdgp_continuously(
+    root_dir: Path,
+    M: Optional[int] = 500,
+    batch_size: Optional[int] = 200,
+    num_epochs: Optional[int] = 1500,
+    pretrain_epochs: Optional[int] = 1500,
+):
+    """
+    Train the MRDGP  model on the given training data for each dataset in the root directory.
+
+    Args:
+        root_dir (Path): Path to the root directory containing dataset subdirectories.
+        M (int): Number of inducing variables.
+        batch_size (int): Batch size for training.
+        num_epochs (int): Number of training epochs.
+        pretrain_epochs (int): Number of pre-training epochs.
+    """
+    for dataset_dir in sorted(root_dir.iterdir()):
+        if dataset_dir.is_dir():
+            typer.echo(f"Processing dataset in directory: {dataset_dir}")
+
+            model = STGP_MRDGP(M, batch_size, num_epochs, pretrain_epochs, dataset_dir)
+            file_manager = FileManager(dataset_dir)
+
+            typer.echo("Loading training data!")
+            training_data = file_manager.load_training_data()
+
+            typer.echo("Loading testing data!")
+            test_data = file_manager.load_testing_data()
+
+            training_dict, test_dict = generate_data(training_data, test_data)
+            x_laqn = training_dict["laqn"]["X"]
+            y_laqn = training_dict["laqn"]["Y"]
+            x_sat = training_dict["sat"]["X"]
+            y_sat = training_dict["sat"]["Y"]
+
+            pred_sat_data = {
+                "sat": {
+                    "X": training_dict["sat"]["X"],
+                    "Y": training_dict["sat"]["Y"],
+                },
+            }
+
+            pred_laqn_data = {
+                "hexgrid": {
+                    "X": test_dict["hexgrid"]["X"],
+                    "Y": None,
+                },
+                "test_laqn": {
+                    "X": test_dict["laqn"]["X"],
+                    "Y": None,
+                },
+                "training_laqn": {
+                    "X": training_dict["laqn"]["X"],
+                    "Y": training_dict["laqn"]["Y"],
+                },
+            }
+
+            model.fit(x_sat, y_sat, x_laqn, y_laqn, pred_laqn_data, pred_sat_data)
+            typer.echo(f"Training complete for dataset in directory: {dataset_dir}!")

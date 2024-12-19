@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 import pytest
-from ..setup_data import (
+from ..gpjax_models.data.setup_data import (
     clean_data,
     norm_X,
     normalise,

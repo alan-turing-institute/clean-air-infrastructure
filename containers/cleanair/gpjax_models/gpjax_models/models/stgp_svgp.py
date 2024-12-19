@@ -24,10 +24,11 @@ from tqdm import tqdm, trange
 class STGP_SVGP:
     def __init__(
         self,
-        results_path: str,  # Ensure this is passed as a string
+        results_path: str,
         M: int = 100,
         batch_size: int = 100,
         num_epochs: int = 10,
+        seed: int = 0,  # Add seed parameter
     ):
         """
         Initialize the JAX-based Air Quality Gaussian Process Model.
@@ -42,28 +43,27 @@ class STGP_SVGP:
         self.M = M
         self.batch_size = batch_size
         self.num_epochs = num_epochs
+        self.seed = seed
 
         # Ensure the results directory exists
         os.makedirs(self.results_path, exist_ok=True)
 
     def fit(self, x_train: np.ndarray, y_train: np.ndarray, pred_data) -> list[float]:
-        """
-        Fit the model to training data.
-
-        Args:
-            x_train (np.ndarray): Training features.
-            y_train (np.ndarray): Training targets.
-
-        Returns:
-            list[float]: List of loss values during training.
-        """
-
         def get_laqn_svgp(X_laqn, Y_laqn):
             N, D = X_laqn.shape
 
+            # Use consistent seed for kmeans
+            key = jax.random.PRNGKey(self.seed)
+            centroid_indices = jax.random.choice(
+                key, X_laqn.shape[0], shape=(200,), replace=False
+            )
+            initial_centroids = X_laqn[centroid_indices]
+
             data = Data(X_laqn, Y_laqn)
 
-            Z = stgp.sparsity.FullSparsity(Z=kmeans2(X_laqn, 200, minit="points")[0])
+            Z = stgp.sparsity.FullSparsity(
+                Z=kmeans2(X_laqn, initial_centroids, minit="matrix")[0]
+            )
 
             latent_gp = GP(
                 sparsity=Z,
@@ -81,7 +81,7 @@ class STGP_SVGP:
             m = GP(
                 data=data,
                 prior=prior,
-                likelihood=[stgp.likelihood.Gaussian(0.1)],
+                likelihood=[stgp.likelihood.Gaussian(0.01)],
                 inference="Variational",
             )
             print(m.approximate_posterior)
@@ -103,6 +103,8 @@ class STGP_SVGP:
             for i in trange(num_epoch):
                 lc_i, _ = laqn_grad.train(0.01, 1)
                 lc_arr.append(lc_i)
+
+                # laqn_natgrad.train(0.1, 1)
 
             return lc_arr
 
@@ -153,19 +155,31 @@ class STGP_SVGP:
 
 
 class STGP_SVGP_SAT:
-    def __init__(self, M, batch_size, num_epochs, results_path):
+    def __init__(
+        self,
+        results_path: str,  # Ensure this is passed as a string
+        M: int = 100,
+        batch_size: int = 100,
+        num_epochs: int = 10,
+        seed: int = 0,
+    ):
         """
         Initialize the JAX-based Air Quality Gaussian Process Model.
 
         Args:
+            results_path (str): Path to the directory for saving results.
             M (int): Number of inducing variables.
             batch_size (int): Batch size for training.
             num_epochs (int): Number of training epochs.
         """
+        self.results_path = results_path
         self.M = M
         self.batch_size = batch_size
         self.num_epochs = num_epochs
-        self.results_path = results_path
+        self.seed = seed
+
+        # Ensure the results directory exists
+        os.makedirs(self.results_path, exist_ok=True)
 
     def fit(
         self, x_sat: np.ndarray, y_sat: np.ndarray, pred_laqn_data, pred_sat_data
@@ -184,12 +198,16 @@ class STGP_SVGP_SAT:
         def get_aggregated_sat_model(X_sat, Y_sat):
             N, D = X_sat.shape[0], X_sat.shape[-1]
 
-            data = AggregatedData(X_sat, Y_sat, minibatch_size=200)
-
-            lik = stgp.likelihood.Gaussian(1.0)
+            # Use consistent seed for kmeans
+            key = jax.random.PRNGKey(self.seed)
+            X_stacked = np.vstack(X_sat)
+            centroid_indices = jax.random.choice(
+                key, X_stacked.shape[0], shape=(100,), replace=False
+            )
+            initial_centroids = X_stacked[centroid_indices]
 
             Z = stgp.sparsity.FullSparsity(
-                Z=kmeans2(np.vstack(X_sat), 100, minit="points")[0]
+                Z=kmeans2(X_stacked, initial_centroids, minit="matrix")[0]
             )
 
             latent_gp = GP(
@@ -273,16 +291,19 @@ class STGP_SVGP_SAT:
             return results_laqn
 
         m = get_aggregated_sat_model(x_sat, y_sat)
-        loss_values = train_sat(self.num_epochs, m)
+        loss_values = train_sat(jnp.array(self.num_epochs), m)
         results = predict_laqn_sat_from_sat_only(pred_laqn_data, pred_sat_data, m)
 
-        with open(
-            os.path.join(self.results_path, "training_svgp_sat.pkl"),
-            "wb",
-        ) as file:
-            pickle.dump(loss_values, file)
         print(results["metrics"])
+        # Save predictions
         with open(
-            os.path.join(self.results_path, "predictions_svgp_sat.pkl"), "wb"
+            os.path.join(self.results_path, "predictions_svgp_sat__.pkl"), "wb"
         ) as file:
             pickle.dump(results, file)
+
+        # Save loss values
+        with open(
+            os.path.join(self.results_path, "loss_values_svgp_sat__.pkl"), "wb"
+        ) as file:
+            pickle.dump(loss_values, file)
+        return loss_values
