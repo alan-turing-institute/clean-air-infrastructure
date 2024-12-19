@@ -8,7 +8,7 @@ import os
 from stdata.vis.spacetime import SpaceTimeVisualise
 
 
-directory_path = Path('/Users/oliverhamelijnck/Downloads/dataset/')
+directory_path = Path(".../")
 
 # Create the directory if it doesn't exist
 if not os.path.exists(directory_path):
@@ -17,16 +17,12 @@ if not os.path.exists(directory_path):
 
 def load_data(root):
     with open(
-        str(
-            directory_path / "training_dataset.pkl"
-        ),
+        str(directory_path / "training_dataset.pkl"),
         "rb",
     ) as file:
         training_data = pd.read_pickle(file)
     with open(
-        str(
-            directory_path/ "test_dataset.pkl"
-        ),
+        str(directory_path / "test_dataset.pkl"),
         "rb",
     ) as file:
         testing_data = pd.read_pickle(file)
@@ -73,9 +69,7 @@ def load_data(root):
 
 
 def load_results(root):
-    with open(
-        str(root / "predictions_mrdgp_3.pkl"), "rb"
-    ) as file:
+    with open(str(root / "predictions_mrdgp_3.pkl"), "rb") as file:
         results = pd.read_pickle(file)
     return results
 
@@ -135,19 +129,26 @@ if __name__ == "__main__":
     else:
         hexgrid_df = None
 
-    sat_df = fix_df_columns(raw_data["train"]['sat']['df'])
+    sat_df = fix_df_columns(raw_data["train"]["sat"]["df"])
     # TODO: NEED TO CHECK!! this should match is handling the satllite data
-    sat_df = sat_df[['lon', 'lat', 'NO2', 'epoch', 'box_id']].groupby(['epoch', 'box_id']).mean().reset_index()
-    # copy predictions 
-    sat_df['pred'] = results["predictions"]['sat']['mu'][0]
-    sat_df['var'] = results["predictions"]['sat']['var'][0]
-    sat_df['observed'] = sat_df['NO2']
+    sat_df = (
+        sat_df[["lon", "lat", "NO2", "epoch", "box_id"]]
+        .groupby(["epoch", "box_id"])
+        .mean()
+        .reset_index()
+    )
+    # copy predictions
+    sat_df["pred"] = results["predictions"]["sat"]["mu"][0]
+    sat_df["var"] = results["predictions"]["sat"]["var"][0]
+    sat_df["observed"] = sat_df["NO2"]
 
-    laqn_df['residual'] =  laqn_df['observed'] - laqn_df['pred']
-    laqn_df['pred'] = laqn_df['residual']
+    laqn_df["residual"] = laqn_df["observed"] - laqn_df["pred"]
+    laqn_df["pred"] = laqn_df["residual"]
 
-    vis_obj = SpaceTimeVisualise( laqn_df, hexgrid_df, sat_df=sat_df, geopandas_flag=True, test_start=train_end)
-    #vis_obj = SpaceTimeVisualise( laqn_df, hexgrid_df, geopandas_flag=True, test_start=train_end)
+    vis_obj = SpaceTimeVisualise(
+        laqn_df, hexgrid_df, sat_df=sat_df, geopandas_flag=True, test_start=train_end
+    )
+    # vis_obj = SpaceTimeVisualise( laqn_df, hexgrid_df, geopandas_flag=True, test_start=train_end)
 
     # Show the visualization
     vis_obj.show()
