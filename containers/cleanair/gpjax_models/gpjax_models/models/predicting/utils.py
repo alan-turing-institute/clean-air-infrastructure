@@ -1,8 +1,12 @@
 """ Common functions that are usually required for runnign experiments. """
+
 import numpy as np
 from tqdm import tqdm
 
-def batch_predict(XS, prediction_fn=None, batch_size=1000, verbose=False, axis=0, ci=False):
+
+def batch_predict(
+    XS, prediction_fn=None, batch_size=1000, verbose=False, axis=0, ci=False
+):
     # Ensure batch is less than the number of test points
     if XS.shape[0] < batch_size:
         batch_size = XS.shape[0]
@@ -44,7 +48,7 @@ def batch_predict(XS, prediction_fn=None, batch_size=1000, verbose=False, axis=0
             ys_var_arr.append(y_var)
 
         if verbose:
-             bar.update(1)
+            bar.update(1)
 
     if ci:
         y_median = np.concatenate(ys_median_arr, axis=axis)

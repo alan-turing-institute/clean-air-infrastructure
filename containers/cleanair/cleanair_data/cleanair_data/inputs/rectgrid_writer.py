@@ -1,6 +1,7 @@
 """
 Get data from the AQE network via the API
 """
+
 import numpy as np
 from sqlalchemy.schema import CreateSchema
 from ..databases import DBWriter
@@ -83,9 +84,9 @@ class RectGridWriter(DBWriter):
         ]
         self.commit_records(meta_points, on_conflict="overwrite")
         for grid_cell, meta_point in zip(grid_cells, meta_points):
-            grid_cell[
-                "point_id"
-            ] = meta_point.id  # this will be None if the record was not inserted
+            grid_cell["point_id"] = (
+                meta_point.id
+            )  # this will be None if the record was not inserted
 
         # Commit the grid cell records to the database
         grid_records = [
