@@ -29,7 +29,6 @@ INSTALL_REQUIRES = [
     "tinygp",
     "tensorflow-probability",
     "colorlog",
-    "nptyping",
     "obtax",
     "psycopg2-binary",
 ]
