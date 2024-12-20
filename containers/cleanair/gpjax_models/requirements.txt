@@ -1,24 +1,35 @@
-loguru
-slurmjobs
-sacred
-seml
+# Core data science and ML
 scikit-learn
-tabulate
-PyYAML
-black
-matplotlib
+jaxlib
+numpy
+
+# Geospatial dependencies
 geopandas
 rtree
-dvc
 convertbng
+bng_latlon
+
+# Visualization and reporting
+matplotlib
 rich
-bibtexparser
+tabulate
+
+# Development tools
+black
 flake8
 flake8-docstrings
-bng_latlon
-jaxlib
+
+# Logging and experiment tracking
+loguru
+sacred
+seml
+dvc
+
+# File handling and parsing
+PyYAML
+bibtexparser
+
+# Custom dependencies
 git+https://github.com/defaultobject/batchjax
-git+https://github.com/defaultobject/stgp@pigp
+git+https://github.com/defaultobject/stgp@pigp_stable
 git+https://github.com/defaultobject/stdata
-
-
