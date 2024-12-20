@@ -10,8 +10,8 @@ import sys
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import DeferredReflection
 from sqlalchemy.orm import sessionmaker, Session
-from cleanair.databases.tables import JamCamDayStats
-from cleanair.databases.mixins import DBConnectionMixin
+from cleanair_data.databases.tables import JamCamDayStats
+from cleanair_data.databases.mixins import DBConnectionMixin
 from urbanair.config import get_settings
 from urbanair.databases.queries import get_jamcam_hourly
 from urbanair.types import DetectionClass
@@ -49,7 +49,6 @@ session: Session = SESSION_LOCAL()
 date = datetime.date(2020, 5, 29)
 today = datetime.date.today()
 while date != today:
-
     data = {}
     for detection_class in DETECTION_CLASSES:
         detection_class_string = DETECTION_CLASSES_MAP[detection_class]

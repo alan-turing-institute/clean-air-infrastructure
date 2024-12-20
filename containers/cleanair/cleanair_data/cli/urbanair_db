@@ -1,0 +1,32 @@
+#! /usr/bin/env python
+"""Urbanair_db CLI"""
+from curses import echo
+import importlib
+import typer
+from cleanair_data.parsers.urbanair_db_parser import (
+    config,
+    experiment,
+    init,
+    inputs,
+    features,
+    dataset,
+)
+
+has_prophet = importlib.util.find_spec("fbprophet")
+has_pystan = importlib.util.find_spec("pystan")
+
+app = typer.Typer()
+app.add_typer(config.app, name="config")
+app.add_typer(dataset.app, name="dataset")
+app.add_typer(experiment.app, name="experiment")
+app.add_typer(init.app, name="init")
+app.add_typer(inputs.app, name="inputs")
+app.add_typer(features.app, name="features")
+
+if has_prophet and has_pystan:
+    from cleanair_data.parsers.urbanair_db_parser import processors
+
+    app.add_typer(processors.app, name="processors")
+
+if __name__ == "__main__":
+    app()

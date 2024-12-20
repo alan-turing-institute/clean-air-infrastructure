@@ -2,7 +2,6 @@
 Class for querying traffic and scoot data.
 """
 
-
 from cleanair.databases import DBReader
 from cleanair.databases.tables import (
     TrafficInstanceTable,
