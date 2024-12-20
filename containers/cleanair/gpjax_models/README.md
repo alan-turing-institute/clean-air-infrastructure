@@ -1,49 +1,59 @@
-# Installation
+# GPJax Models
 
-First, we recommend creating a conda environment called `urbanair`.
-Our packages work with *python 3.10 or later*, but we recommend python 3.11.
+This package provides implementations of various Gaussian Process models using JAX.
 
-> Please take care to install all packages from the *conda-forge* channel!
+## Installation
+
+1. Create and activate a conda environment:
 
 ```bash
-# create the environment and activate
-conda create -n gpjax_models
+conda create -n gpjax_models python=3.11
 conda activate gpjax_models
+```
+
+> **Note**: All packages must be installed from the *conda-forge* channel. Python 3.10 or later is required, with 3.11 recommended.
+
+2. Install dependencies:
+
+```bash
 pip install numpy>=2.0.0
-
-```
-
-# Installation
-
-```bash
 pip install -e containers/cleanair/cleanair_types 
-
 pip install -e containers/cleanair/gpjax_models
-
 pip install -r containers/cleanair/gpjax_models/requirements.txt
-
 ```
 
-# Running the MRDGP models
+## Usage
+
+### MRDGP Models
+
+Run single-mode training:
 
 ```bash
-
-urbanair_jax model fit  train-mrdgp <DATA_DIR>
-
+urbanair_jax model fit train-mrdgp --mode single <DATA_DIR>
 ```
 
-# Running the SVGP models only LAQN
+Run sequential training:
 
 ```bash
-
-urbanair_jax model fit  train-svgp_laqn <DATA_DIR>
-
+urbanair_jax model fit train-mrdgp --mode sequential <DATA_DIR>
 ```
 
-# Running the SVGP models only Satellite models
+### SVGP Models
+
+For LAQN data:
 
 ```bash
+urbanair_jax model fit train-svgp_laqn <DATA_DIR>
+```
 
-urbanair_jax model fit  train-svgp_sat <DATA_DIR>
+Run sequential training:
 
+```bash
+urbanair_jax model fit train-svgp_laqn --sequential <DATA_DIR>
+```
+
+For Satellite data:
+
+```bash
+urbanair_jax model fit train-svgp_sat <DATA_DIR>
 ```
