@@ -1,0 +1,35 @@
+# Core data science and ML
+scikit-learn
+jaxlib
+numpy
+
+# Geospatial dependencies
+geopandas
+rtree
+convertbng
+bng_latlon
+
+# Visualization and reporting
+matplotlib
+rich
+tabulate
+
+# Development tools
+black
+flake8
+flake8-docstrings
+
+# Logging and experiment tracking
+loguru
+sacred
+seml
+dvc
+
+# File handling and parsing
+PyYAML
+bibtexparser
+
+# Custom dependencies
+git+https://github.com/defaultobject/batchjax
+git+https://github.com/defaultobject/stgp@pigp_stable
+git+https://github.com/defaultobject/stdata

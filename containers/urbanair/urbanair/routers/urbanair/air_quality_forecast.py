@@ -1,4 +1,5 @@
 """Air quality forecast API routes"""
+
 import logging
 from datetime import datetime, timedelta, date, timezone
 from time import time

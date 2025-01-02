@@ -1,4 +1,5 @@
 """Tests for the secret parser mixin"""
+
 from argparse import ArgumentParser
 import pytest
 from cleanair.mixins import SecretFileParserMixin

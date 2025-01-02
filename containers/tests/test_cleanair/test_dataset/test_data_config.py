@@ -1,6 +1,7 @@
 """
 Tests related to the ModelConfig class
 """
+
 from enum import Enum
 
 import pytest

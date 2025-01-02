@@ -1,6 +1,7 @@
 """
 Gets data from sources other than the database
 """
+
 import requests
 from requests import Response
 

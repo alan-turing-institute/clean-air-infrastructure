@@ -1,4 +1,5 @@
 """Jamcam database queries and external api calls"""
+
 from datetime import datetime, timedelta, date
 from typing import Optional
 from sqlalchemy import func, text

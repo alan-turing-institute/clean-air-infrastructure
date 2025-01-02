@@ -1,4 +1,5 @@
 """UrbanAir API"""
+
 import os
 import logging
 from fastapi import FastAPI

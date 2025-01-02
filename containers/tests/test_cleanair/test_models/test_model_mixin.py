@@ -1,4 +1,5 @@
 """Test the model mixin."""
+
 import numpy as np
 from cleanair.models import SVGP
 

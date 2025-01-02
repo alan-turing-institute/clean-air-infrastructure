@@ -1,6 +1,7 @@
 """
 Authenticate with Azure and get relevant keys
 """
+
 # pylint: skip-file
 import logging
 import termcolor

@@ -1,4 +1,5 @@
 """Test we can execute queries in parallel"""
+
 from concurrent.futures import ThreadPoolExecutor
 import pytest
 from cleanair.databases import DBReader

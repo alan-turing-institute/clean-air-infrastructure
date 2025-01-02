@@ -1,4 +1,5 @@
 """GeoJSON response for FastAPI"""
+
 from fastapi.responses import JSONResponse
 
 

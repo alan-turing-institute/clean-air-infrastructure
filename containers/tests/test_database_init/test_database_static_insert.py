@@ -1,4 +1,5 @@
 """Test that static data has been correctly inserted into a database"""
+
 # pylint: disable=redefined-outer-name
 
 import pytest

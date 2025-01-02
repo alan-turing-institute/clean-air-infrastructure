@@ -1,0 +1,184 @@
+"""
+Mixin for useful database queries
+"""
+
+from datetime import datetime
+from typing import List, Any
+
+from sqlalchemy import func, or_, desc
+
+from ...databases.materialised_views import LondonBoundaryView
+from ...databases.tables import (
+    AQEReading,
+    AQESite,
+    LAQNReading,
+    LAQNSite,
+    BreatheReading,
+    BreatheSite,
+    SatelliteForecast,
+    SatelliteGrid,
+)
+from ...decorators import db_query
+from ...loggers import get_logger
+from cleanair_types.types import Species
+
+
+class DBQueryMixin:
+    """Common database queries. Child classes must also inherit from DBWriter"""
+
+    def __init__(self, **kwargs):
+        # Pass unused arguments onwards
+        super().__init__(**kwargs)
+
+        # Ensure logging is available
+        if not hasattr(self, "logger"):
+            self.logger = get_logger(__name__)
+
+    @db_query()
+    def query_london_boundary(self) -> Any:
+        """Query LondonBoundary to obtain the bounding geometry for London.
+        Only get the first row as should only be one entry"""
+        with self.dbcnxn.open_session() as session:
+            # pylint: disable=no-member
+            return session.query(LondonBoundaryView.geom).limit(1)
+
+    @db_query()
+    def get_laqn_readings(
+        self, start_date: datetime, end_date: datetime, species: List[Species]
+    ):
+        """Get LAQN readings from database"""
+
+        species = [spec.value for spec in species]
+
+        with self.dbcnxn.open_session() as session:
+            laqn_reading_q = (
+                session.query(
+                    LAQNSite.point_id,
+                    LAQNReading.measurement_start_utc,
+                    LAQNReading.species_code,
+                    LAQNReading.value,
+                )
+                .join(LAQNSite)
+                .filter(
+                    LAQNReading.measurement_start_utc >= start_date.isoformat(),
+                    LAQNReading.measurement_start_utc < end_date.isoformat(),
+                    LAQNReading.species_code.in_(species),
+                    LAQNReading.value.isnot(None),
+                )
+            )
+            return laqn_reading_q
+
+    @db_query()
+    def get_aqe_readings(
+        self, start_date: datetime, end_date: datetime, species: List[Species]
+    ):
+        """Get AQE readings from database"""
+
+        species = [spec.value for spec in species]
+
+        with self.dbcnxn.open_session() as session:
+            aqe_reading_q = (
+                session.query(
+                    AQESite.point_id,
+                    AQEReading.measurement_start_utc,
+                    AQEReading.species_code,
+                    AQEReading.value,
+                )
+                .join(AQESite)
+                .filter(
+                    AQEReading.measurement_start_utc >= start_date.isoformat(),
+                    AQEReading.measurement_start_utc < end_date.isoformat(),
+                    AQEReading.species_code.in_(species),
+                    AQEReading.value.isnot(None),
+                )
+            )
+            return aqe_reading_q
+
+    @db_query()
+    def query_london_boundary(self):
+        """Query LondonBoundary to obtain the bounding geometry for London.
+        Only get the first row as should only be one entry"""
+        with self.dbcnxn.open_session() as session:
+            # pylint: disable=no-member
+            return session.query(LondonBoundaryView.geom).limit(1)
+
+    @db_query()
+    def get_breathe_readings(
+        self, start_date: datetime, end_date: datetime, species: List[Species]
+    ):
+        """Get Breathe readings from database"""
+
+        species = [spec.value for spec in species]
+
+        with self.dbcnxn.open_session() as session:
+            breathe_reading_q = (
+                session.query(
+                    BreatheSite.point_id,
+                    BreatheReading.measurement_start_utc,
+                    BreatheReading.species_code,
+                    BreatheReading.value,
+                )
+                .join(BreatheSite)
+                .filter(
+                    BreatheReading.measurement_start_utc >= start_date.isoformat(),
+                    BreatheReading.measurement_start_utc < end_date.isoformat(),
+                    BreatheReading.species_code.in_(species),
+                    BreatheReading.value.isnot(None),
+                )
+            )
+            return breathe_reading_q
+
+    @db_query()
+    def get_satellite_readings(
+        self, start_date: datetime, end_date: datetime, species: List[Species]
+    ):
+        """Get Satellite data
+        As we get 72 hours of Satellite forecast on each day,
+        here we only get Satellite data where the reference date
+        is the same as the forecast time.
+        i.e. Get data between start_datetime and end_datetime which
+        consists of the first 24 hours of forecasts on each of those days
+        """
+
+        all_species = [spc.value for spc in species]
+
+        with self.dbcnxn.open_session() as session:
+            # Get the latest forecast date
+
+            latest_forecast = (
+                session.query(SatelliteForecast.reference_start_utc)
+                .distinct()
+                .order_by(desc(SatelliteForecast.reference_start_utc))
+                .limit(1)
+                .all()[0]
+            )
+
+            # The sort by is very important for creating numpy arrays
+            sat_q = (
+                session.query(
+                    SatelliteForecast.measurement_start_utc,
+                    SatelliteForecast.box_id,
+                    SatelliteForecast.species_code,
+                    SatelliteForecast.value,
+                    SatelliteGrid.point_id,
+                )
+                .filter(
+                    SatelliteForecast.measurement_start_utc >= start_date.isoformat(),
+                    SatelliteForecast.measurement_start_utc < end_date.isoformat(),
+                    or_(
+                        func.date(SatelliteForecast.measurement_start_utc)
+                        == func.date(SatelliteForecast.reference_start_utc),
+                        func.date(latest_forecast)
+                        == func.date(SatelliteForecast.reference_start_utc),
+                    ),
+                    SatelliteForecast.species_code.in_(all_species),
+                )
+                .join(SatelliteGrid, SatelliteForecast.box_id == SatelliteGrid.box_id)
+                .order_by(
+                    SatelliteForecast.box_id,
+                    SatelliteForecast.measurement_start_utc,
+                    SatelliteGrid.point_id,
+                )
+            )
+
+            return sat_q
