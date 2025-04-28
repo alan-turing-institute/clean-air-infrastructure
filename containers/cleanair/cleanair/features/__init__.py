@@ -9,10 +9,12 @@ from .feature_conf import (
     ALL_FEATURES_DYNAMIC,
 )
 from .feature_extractor import FeatureExtractor, ScootFeatureExtractor
+from .point_road_mapper import PointRoadMapper
 
 __all__ = [
     "ALL_FEATURES",
     "FeatureExtractor",
+    "PointRoadMapper",
     "ScootForecastFeatures",
     "ScootReadingFeatures",
     "ScootFeatureExtractor",
